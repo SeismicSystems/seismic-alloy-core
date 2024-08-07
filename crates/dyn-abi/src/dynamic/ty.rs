@@ -103,6 +103,13 @@ pub enum DynSolType {
     /// Tuple.
     Tuple(Vec<DynSolType>),
 
+    #[cfg(feature = "seismic")]
+    Saddress,
+    #[cfg(feature = "seismic")]
+    Sint(usize),
+    #[cfg(feature = "seismic")]
+    Suint(usize),
+
     /// User-defined struct.
     #[cfg(feature = "eip712")]
     CustomStruct {
@@ -166,6 +173,8 @@ impl DynSolType {
             | Self::Function
             | Self::Bytes
             | Self::String => 0,
+            #[cfg(feature = "seismic")]
+            Self::Saddress | Self::Sint(_) | Self::Suint(_) => 0,
             Self::Array(contents) | Self::FixedArray(contents, _) => 1 + contents.nesting_depth(),
             as_tuple!(Self tuple) => 1 + tuple.iter().map(Self::nesting_depth).max().unwrap_or(0),
         }
@@ -258,6 +267,12 @@ impl DynSolType {
                     false
                 }
             }
+            #[cfg(feature = "seismic")]
+            Self::Saddress => matches!(value, DynSolValue::Saddress(_)),
+            #[cfg(feature = "seismic")]
+            Self::Sint(size) => matches!(value, DynSolValue::Sint(_, s) if s == size),
+            #[cfg(feature = "seismic")]
+            Self::Suint(size) => matches!(value, DynSolValue::Suint(_, s) if s == size),
         }
     }
 
@@ -376,7 +391,6 @@ impl DynSolType {
             Self::Address | Self::Function | Self::Bool | Self::Bytes | Self::String => {
                 out.push_str(unsafe { self.sol_type_name_simple().unwrap_unchecked() });
             }
-
             Self::FixedBytes(size) | Self::Int(size) | Self::Uint(size) => {
                 let prefix = match self {
                     Self::FixedBytes(..) => "bytes",
@@ -387,7 +401,6 @@ impl DynSolType {
                 out.push_str(prefix);
                 out.push_str(itoa::Buffer::new().format(*size));
             }
-
             as_tuple!(Self tuple) => {
                 out.push('(');
                 for (i, val) in tuple.iter().enumerate() {
@@ -410,6 +423,18 @@ impl DynSolType {
                 out.push('[');
                 out.push_str(itoa::Buffer::new().format(*len));
                 out.push(']');
+            }
+            #[cfg(feature = "seismic")]
+            Self::Saddress => out.push_str("saddress"),
+            #[cfg(feature = "seismic")]
+            Self::Sint(size) => {
+                out.push_str("sint");
+                out.push_str(itoa::Buffer::new().format(*size));
+            }
+            #[cfg(feature = "seismic")]
+            Self::Suint(size) => {
+                out.push_str("suint");
+                out.push_str(itoa::Buffer::new().format(*size));
             }
         }
     }
@@ -437,6 +462,8 @@ impl DynSolType {
 
             as_tuple!(Self tuple) // sum(tuple) + len(tuple) + 2
             => tuple.iter().map(Self::sol_type_name_capacity).sum::<usize>() + 8,
+            #[cfg(feature = "seismic")]
+            Self::Saddress | Self::Sint(_) | Self::Suint(_) => 8,
         }
     }
 
@@ -494,6 +521,8 @@ impl DynSolType {
                 }
                 DynToken::FixedSeq(tokens.into(), tuple.len())
             }
+            #[cfg(feature = "seismic")]
+            Self::Saddress | Self::Suint(_) | Self::Sint(_) => DynToken::Word(Word::ZERO),
         })
     }
 
@@ -578,6 +607,8 @@ impl DynSolType {
             Self::Tuple(tuple) => tuple.iter().map(|ty| ty.minimum_words()).sum(),
             #[cfg(feature = "eip712")]
             Self::CustomStruct { tuple, ..} => tuple.iter().map(|ty| ty.minimum_words()).sum(),
+            #[cfg(feature = "seismic")]
+            Self::Saddress | Self::Sint(_) | Self::Suint(_) => 1,
         }
     }
 

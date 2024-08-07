@@ -71,6 +71,7 @@ arbitrary = [
     "dep:derive_arbitrary",
     "dep:proptest",
 ]
+seismic = []
 
 # Debug winnow parsers; intentionally doesn't enable `winnow/debug`
 debug = ["std", "alloy-sol-type-parser/debug"]
