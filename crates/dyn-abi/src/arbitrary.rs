@@ -401,6 +401,12 @@ impl DynSolValue {
                     .collect::<Result<Vec<_>, _>>()?;
                 Ok(Self::CustomStruct { name, prop_names, tuple })
             }
+            #[cfg(feature = "seismic")]
+            DynSolType::Saddress => u.arbitrary().map(Self::Saddress),
+            #[cfg(feature = "seismic")]
+            &DynSolType::Sint(bytes) => u.arbitrary().map(|x| Self::Sint(x, bytes)),
+            #[cfg(feature = "seismic")]
+            &DynSolType::Suint(bytes) => u.arbitrary().map(|x| Self::Suint(x, bytes)),
         }
     }
 
@@ -450,6 +456,18 @@ impl DynSolValue {
                         tuple,
                     })
                     .sboxed()
+            }
+            #[cfg(feature = "seismic")]
+            &DynSolType::Saddress => {
+                any::<B256>().prop_map(move |x| Self::FixedBytes(adjust_fb(x, 32), 32)).sboxed()
+            }
+            #[cfg(feature = "seismic")]
+            &DynSolType::Sint(bytes) => {
+                any::<B256>().prop_map(move |x| Self::Sint(adjust_fb(x, 32), bytes)).sboxed()
+            }
+            #[cfg(feature = "seismic")]
+            &DynSolType::Suint(bytes) => {
+                any::<B256>().prop_map(move |x| Self::Suint(adjust_fb(x, 32), bytes)).sboxed()
             }
         }
     }

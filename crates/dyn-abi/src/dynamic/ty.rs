@@ -104,10 +104,13 @@ pub enum DynSolType {
     Tuple(Vec<DynSolType>),
 
     #[cfg(feature = "seismic")]
+    /// Seismic shielded address
     Saddress,
     #[cfg(feature = "seismic")]
+    /// Seismic shielded signed integer
     Sint(usize),
     #[cfg(feature = "seismic")]
+    /// Seismic shielded unsigned integer
     Suint(usize),
 
     /// User-defined struct.
