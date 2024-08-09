@@ -34,6 +34,10 @@ impl DynSolType {
             Self::CustomStruct { name, prop_names, tuple } => {
                 custom_struct(name, prop_names, tuple, value)
             }
+            #[cfg(feature = "seismic")]
+            Self::Saddress | Self::Suint(_) | Self::Sint(_) => {
+                self.coerce_json_simple(value).ok_or_else(err)
+            }
         }
     }
 
