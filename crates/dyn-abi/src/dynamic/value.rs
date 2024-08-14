@@ -801,7 +801,9 @@ impl DynSolValue {
             Self::Array(t) => DynToken::from_dyn_seq(t),
             as_fixed_seq!(t) => DynToken::from_fixed_seq(t),
             #[cfg(feature = "seismic")]
-            Self::Saddress(buf) | Self::Sint(buf, _) | Self::Suint(buf, _) => (*buf).into(),
+            Self::Saddress(commitment) | Self::Sint(commitment, _) | Self::Suint(commitment, _) => {
+                commitment.to_be_bytes::<32>().into()
+            }
         }
     }
 

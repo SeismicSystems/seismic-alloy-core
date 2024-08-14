@@ -32,4 +32,4 @@ default = ["std"]
 std = ["winnow/std"]
 serde = ["dep:serde"]
 seismic = []
-debug = ["std"]       # intentionally doesn't enable `winnow/debug`
+debug = ["std"] # intentionally doesn't enable `winnow/debug`
