@@ -40,10 +40,12 @@ pub fn rec_expand_type(ty: &Type, crates: &ExternCrates, tokens: &mut TokenStrea
             let size = Literal::u16_unsuffixed(size.get());
             quote_spanned! {span=> #alloy_sol_types::sol_data::FixedBytes<#size> }
         }
-        Type::Int(span, size) | Type::Uint(span, size) => {
+        Type::Int(span, size) | Type::Uint(span, size) | Type::Sint(span, size) | Type::Suint(span, size) => {
             let name = match ty {
                 Type::Int(..) => "Int",
                 Type::Uint(..) => "Uint",
+                Type::Sint(..) => "Sint",
+                Type::Suint(..) => "Suint",
                 _ => unreachable!(),
             };
             let name = Ident::new(name, span);
@@ -54,6 +56,8 @@ pub fn rec_expand_type(ty: &Type, crates: &ExternCrates, tokens: &mut TokenStrea
 
             quote_spanned! {span=> #alloy_sol_types::sol_data::#name<#size> }
         }
+
+        Type::Saddress(span) => quote_spanned! {span=> #alloy_sol_types::sol_data::Saddress },
 
         Type::Tuple(ref tuple) => {
             return tuple.paren_token.surround(tokens, |tokens| {
@@ -100,13 +104,18 @@ pub fn rec_expand_rust_type(ty: &Type, crates: &ExternCrates, tokens: &mut Token
             let size = Literal::u16_unsuffixed(size.get());
             quote_spanned! {span=> #alloy_sol_types::private::FixedBytes<#size> }
         }
-        Type::Int(span, size) | Type::Uint(span, size) => {
+        Type::Int(span, size)
+         | Type::Uint(span, size)
+         | Type::Sint(span, size)
+         | Type::Suint(span, size) => {
             let size = size.map_or(256, NonZeroU16::get);
             let primitive = matches!(size, 8 | 16 | 32 | 64 | 128);
             if primitive {
                 let prefix = match ty {
                     Type::Int(..) => "i",
                     Type::Uint(..) => "u",
+                    Type::Sint(..) => "si",
+                    Type::Suint(..) => "su",
                     _ => unreachable!(),
                 };
                 return Ident::new(&format!("{prefix}{size}"), span).to_tokens(tokens);
@@ -114,11 +123,15 @@ pub fn rec_expand_rust_type(ty: &Type, crates: &ExternCrates, tokens: &mut Token
             let prefix = match ty {
                 Type::Int(..) => "I",
                 Type::Uint(..) => "U",
+                Type::Sint(..) => "U",
+                Type::Suint(..) => "U",
                 _ => unreachable!(),
             };
             let name = Ident::new(&format!("{prefix}{size}"), span);
             quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::#name }
         }
+
+        Type::Saddress(span) => quote_spanned! {span=> #alloy_sol_types::private::Saddress },
 
         Type::Tuple(ref tuple) => {
             return tuple.paren_token.surround(tokens, |tokens| {
@@ -176,6 +189,8 @@ pub(super) fn type_base_data_size(cx: &ExpCtxt<'_>, ty: &Type) -> usize {
         | Type::Uint(..)
         | Type::FixedBytes(..)
         | Type::Function(_) => 32,
+
+        Type::Sint(..) | Type::Suint(..) | Type::Saddress(_) => 32,
 
         // dynamic types: 1 offset word, 1 length word
         Type::String(_) | Type::Bytes(_) | Type::Array(TypeArray { size: None, .. }) => 64,

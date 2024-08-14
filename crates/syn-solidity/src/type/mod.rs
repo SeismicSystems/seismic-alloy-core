@@ -49,6 +49,13 @@ pub enum Type {
     /// `uint[size]`
     Uint(Span, Option<NonZeroU16>),
 
+    /// `sint[size]`
+    Sint(Span, Option<NonZeroU16>),
+    /// `suint[size]`
+    Suint(Span, Option<NonZeroU16>),
+    /// `saddress`
+    Saddress(Span),
+
     /// `$ty[$($size)?]`
     Array(TypeArray),
     /// `$(tuple)? ( $($types,)* )`
@@ -74,6 +81,9 @@ impl PartialEq for Type {
             (Self::Int(_, a), Self::Int(_, b)) => a == b,
             (Self::Uint(_, a), Self::Uint(_, b)) => a == b,
 
+            (Self::Sint(_, a), Self::Sint(_, b)) => a == b,
+            (Self::Suint(_, a), Self::Suint(_, b)) => a == b,
+
             (Self::Tuple(a), Self::Tuple(b)) => a == b,
             (Self::Array(a), Self::Array(b)) => a == b,
             (Self::Function(a), Self::Function(b)) => a == b,
@@ -96,6 +106,10 @@ impl Hash for Type {
             Self::FixedBytes(_, size) => size.hash(state),
             Self::Int(_, size) => size.hash(state),
             Self::Uint(_, size) => size.hash(state),
+
+            Self::Sint(_, size) => size.hash(state),
+            Self::Suint(_, size) => size.hash(state),
+            Self::Saddress(_) => {},
 
             Self::Tuple(tuple) => tuple.hash(state),
             Self::Array(array) => array.hash(state),
@@ -120,6 +134,10 @@ impl fmt::Debug for Type {
             Self::Int(_, size) => f.debug_tuple("Int").field(size).finish(),
             Self::Uint(_, size) => f.debug_tuple("Uint").field(size).finish(),
 
+            Self::Sint(_, size) => f.debug_tuple("Sint").field(size).finish(),
+            Self::Suint(_, size) => f.debug_tuple("Suint").field(size).finish(),
+            Self::Saddress(_) => f.write_str("Saddress"),
+
             Self::Tuple(tuple) => tuple.fmt(f),
             Self::Array(array) => array.fmt(f),
             Self::Function(function) => function.fmt(f),
@@ -141,6 +159,10 @@ impl fmt::Display for Type {
             Self::FixedBytes(_, size) => write!(f, "bytes{size}"),
             Self::Int(_, size) => write_opt(f, "int", *size),
             Self::Uint(_, size) => write_opt(f, "uint", *size),
+
+            Self::Sint(_, size) => write_opt(f, "sint", *size),
+            Self::Suint(_, size) => write_opt(f, "suint", *size),
+            Self::Saddress(_) => f.write_str("saddress"),
 
             Self::Tuple(tuple) => tuple.fmt(f),
             Self::Array(array) => array.fmt(f),
@@ -177,6 +199,7 @@ impl Spanned for Type {
             | Self::FixedBytes(span, _)
             | Self::Int(span, _)
             | Self::Uint(span, _) => *span,
+            Self::Sint(span, _) | Self::Suint(span, _) | Self::Saddress(span) => *span,
             Self::Tuple(tuple) => tuple.span(),
             Self::Array(array) => array.span(),
             Self::Function(function) => function.span(),
@@ -199,6 +222,8 @@ impl Spanned for Type {
             | Self::FixedBytes(span, _)
             | Self::Int(span, _)
             | Self::Uint(span, _) => *span = new_span,
+
+            Self::Sint(span, _) | Self::Suint(span, _) | Self::Saddress(span) => *span = new_span,
 
             Self::Tuple(tuple) => tuple.set_span(new_span),
             Self::Array(array) => array.set_span(new_span),
@@ -301,6 +326,8 @@ impl Type {
             | Self::FixedBytes(..)
             | Self::Address(..)
             | Self::Function(_) => false,
+        
+            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) => false,
 
             Self::String(_) | Self::Bytes(_) | Self::Custom(_) => true,
 
@@ -353,6 +380,7 @@ impl Type {
             | Self::Address(..)
             | Self::String(_)
             | Self::Bytes(_) => false,
+            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) => false,
         }
     }
 
@@ -372,6 +400,7 @@ impl Type {
             | Self::Function(_)
             | Self::String(_)
             | Self::Bytes(_) => false,
+            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) => false,
         }
     }
 
