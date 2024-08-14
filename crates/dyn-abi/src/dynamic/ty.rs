@@ -394,6 +394,7 @@ impl DynSolType {
             Self::Address | Self::Function | Self::Bool | Self::Bytes | Self::String => {
                 out.push_str(unsafe { self.sol_type_name_simple().unwrap_unchecked() });
             }
+
             Self::FixedBytes(size) | Self::Int(size) | Self::Uint(size) => {
                 let prefix = match self {
                     Self::FixedBytes(..) => "bytes",
@@ -404,6 +405,7 @@ impl DynSolType {
                 out.push_str(prefix);
                 out.push_str(itoa::Buffer::new().format(*size));
             }
+
             as_tuple!(Self tuple) => {
                 out.push('(');
                 for (i, val) in tuple.iter().enumerate() {

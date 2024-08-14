@@ -86,15 +86,15 @@ pub enum DynSolValue {
 
     #[cfg(feature = "seismic")]
     /// A seismic shielded address. Always 32 bytes
-    Saddress(Word),
+    Saddress(U256),
     #[cfg(feature = "seismic")]
     /// A seismic shielded signed integer. Always 32 bytes
     /// The second parameter is the number of bits, not bytes.
-    Sint(Word, usize),
+    Sint(U256, usize),
     #[cfg(feature = "seismic")]
     /// A seismic shielded unsigned integer. Always 32 bytes
     /// The second parameter is the number of bits, not bytes.
-    Suint(Word, usize),
+    Suint(U256, usize),
 
     /// A named struct, treated as a tuple with a name parameter.
     #[cfg(feature = "eip712")]
@@ -761,8 +761,8 @@ impl DynSolValue {
                 }
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress(word) | Self::Sint(word, _) | Self::Suint(word, _) => {
-                buf.extend_from_slice(&word[..32])
+            Self::Saddress(commitment) | Self::Sint(commitment, _) | Self::Suint(commitment, _) => {
+                buf.extend_from_slice(&commitment.to_be_bytes::<32>())
             }
         }
     }
@@ -801,7 +801,9 @@ impl DynSolValue {
             Self::Array(t) => DynToken::from_dyn_seq(t),
             as_fixed_seq!(t) => DynToken::from_fixed_seq(t),
             #[cfg(feature = "seismic")]
-            Self::Saddress(buf) | Self::Sint(buf, _) | Self::Suint(buf, _) => (*buf).into(),
+            Self::Saddress(commitment) | Self::Sint(commitment, _) | Self::Suint(commitment, _) => {
+                commitment.to_be_bytes::<32>().into()
+            }
         }
     }
 

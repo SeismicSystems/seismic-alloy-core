@@ -123,15 +123,15 @@ impl<'i> Parser<Input<'i>, DynSolValue, ContextError> for ValueParser<'_> {
             }
             #[cfg(feature = "seismic")]
             DynSolType::Saddress => {
-                fixed_bytes(32).parse_next(input).map(|word| DynSolValue::Saddress(word))
+                uint(32).parse_next(input).map(|commitment| DynSolValue::Saddress(commitment))
             }
             #[cfg(feature = "seismic")]
             DynSolType::Sint(size) => {
-                fixed_bytes(32).parse_next(input).map(|int| DynSolValue::Sint(int, *size))
+                uint(32).parse_next(input).map(|commitment| DynSolValue::Sint(commitment, *size))
             }
             #[cfg(feature = "seismic")]
             DynSolType::Suint(size) => {
-                fixed_bytes(32).parse_next(input).map(|uint| DynSolValue::Suint(uint, *size))
+                uint(32).parse_next(input).map(|commitment| DynSolValue::Suint(commitment, *size))
             }
         })
         .parse_next(input)
