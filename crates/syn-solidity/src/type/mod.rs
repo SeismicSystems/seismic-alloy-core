@@ -286,6 +286,22 @@ impl Type {
                         }
                         Some(size) => Self::Uint(span, size),
                     }
+                } else if let Some(s) = s.strip_prefix("sint") {
+                    match parse_size(s, span)? {
+                        None => Self::custom(ident),
+                        Some(Some(size)) if size.get() > 256 || size.get() % 8 != 0 => {
+                            return Err(Error::new(span, "sintX must be a multiple of 8 up to 256"))
+                        }
+                        Some(size) => Self::Sint(span, size),
+                    }
+                } else if let Some(s) = s.strip_prefix("suint") {
+                    match parse_size(s, span)? {
+                        None => Self::custom(ident),
+                        Some(Some(size)) if size.get() > 256 || size.get() % 8 != 0 => {
+                            return Err(Error::new(span, "suintX must be a multiple of 8 up to 256"))
+                        }
+                        Some(size) => Self::Suint(span, size),
+                    }
                 } else {
                     Self::custom(ident)
                 }

@@ -110,12 +110,15 @@ pub fn rec_expand_rust_type(ty: &Type, crates: &ExternCrates, tokens: &mut Token
          | Type::Suint(span, size) => {
             let size = size.map_or(256, NonZeroU16::get);
             let primitive = matches!(size, 8 | 16 | 32 | 64 | 128);
+            let size = match ty {
+                Type::Sint(..) | Type::Suint(..) => 256,
+                _ => size,
+            };
             if primitive {
                 let prefix = match ty {
                     Type::Int(..) => "i",
                     Type::Uint(..) => "u",
-                    Type::Sint(..) => "si",
-                    Type::Suint(..) => "su",
+                    Type::Sint(..) | Type::Suint(..) => "u",
                     _ => unreachable!(),
                 };
                 return Ident::new(&format!("{prefix}{size}"), span).to_tokens(tokens);
@@ -123,8 +126,7 @@ pub fn rec_expand_rust_type(ty: &Type, crates: &ExternCrates, tokens: &mut Token
             let prefix = match ty {
                 Type::Int(..) => "I",
                 Type::Uint(..) => "U",
-                Type::Sint(..) => "U",
-                Type::Suint(..) => "U",
+                Type::Sint(..) | Type::Suint(..) => "U",
                 _ => unreachable!(),
             };
             let name = Ident::new(&format!("{prefix}{size}"), span);
