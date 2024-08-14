@@ -459,15 +459,15 @@ impl DynSolValue {
             }
             #[cfg(feature = "seismic")]
             &DynSolType::Saddress => {
-                any::<B256>().prop_map(move |x| Self::FixedBytes(adjust_fb(x, 32), 32)).sboxed()
+                any::<U256>().prop_map(move |x| Self::FixedBytes(adjust_uint(x, 32), 32)).sboxed()
             }
             #[cfg(feature = "seismic")]
             &DynSolType::Sint(bytes) => {
-                any::<B256>().prop_map(move |x| Self::Sint(adjust_fb(x, 32), bytes)).sboxed()
+                any::<U256>().prop_map(move |x| Self::Sint(adjust_uint(x, 32), bytes)).sboxed()
             }
             #[cfg(feature = "seismic")]
             &DynSolType::Suint(bytes) => {
-                any::<B256>().prop_map(move |x| Self::Suint(adjust_fb(x, 32), bytes)).sboxed()
+                any::<U256>().prop_map(move |x| Self::Suint(adjust_uint(x, 32), bytes)).sboxed()
             }
         }
     }
