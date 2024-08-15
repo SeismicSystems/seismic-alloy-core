@@ -8,6 +8,7 @@
 
 #![allow(missing_copy_implementations, missing_debug_implementations)]
 
+pub use crate::types::data_type_seismic::{Saddress, Sint, Suint, SupportedSint};
 use crate::{abi::token::*, private::SolTypeValue, utils, SolType, Word};
 use alloc::{string::String as RustString, vec::Vec};
 use alloy_primitives::{
@@ -841,7 +842,7 @@ all_the_tuples!(tuple_impls);
 mod sealed {
     pub trait Sealed {}
 }
-use sealed::Sealed;
+pub use sealed::Sealed;
 
 /// Specifies the number of bytes in a [`FixedBytes`] array as a type.
 pub struct ByteCount<const N: usize>;
