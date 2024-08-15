@@ -8,7 +8,6 @@
 
 #![allow(missing_copy_implementations, missing_debug_implementations)]
 
-pub use crate::types::data_type_seismic::{Saddress, Sint, Suint, SupportedSint};
 use crate::{abi::token::*, private::SolTypeValue, utils, SolType, Word};
 use alloc::{string::String as RustString, vec::Vec};
 use alloy_primitives::{
@@ -840,8 +839,12 @@ all_the_tuples!(tuple_impls);
 
 #[allow(unknown_lints, unnameable_types)]
 mod sealed {
+    /// To prevent users from implementing downstream
     pub trait Sealed {}
 }
+#[cfg(not(feature = "seismic"))]
+use sealed::Sealed;
+#[cfg(feature = "seismic")]
 pub use sealed::Sealed;
 
 /// Specifies the number of bytes in a [`FixedBytes`] array as a type.

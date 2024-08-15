@@ -1,3 +1,4 @@
+//! Seismic Solidity types.
 use crate::types::data_type::{IntBitCount, Sealed};
 use crate::{abi::token::*, private::SolTypeValue, utils, SolType, Word};
 use alloc::vec::Vec;

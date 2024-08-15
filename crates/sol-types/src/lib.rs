@@ -38,6 +38,9 @@ pub use types::{
     SolType, SolValue, TopicList,
 };
 
+#[cfg(feature = "seismic")]
+pub use types::data_type_seismic as sol_data_seismic;
+
 pub mod utils;
 
 mod eip712;
