@@ -8,6 +8,10 @@
 
 #![allow(missing_copy_implementations, missing_debug_implementations)]
 
+#[cfg(feature = "seismic")]
+// TODO: Saddress
+pub use crate::types::data_type_seismic::{Sint, Suint, SupportedSint};
+
 use crate::{abi::token::*, private::SolTypeValue, utils, SolType, Word};
 use alloc::{string::String as RustString, vec::Vec};
 use alloy_primitives::{

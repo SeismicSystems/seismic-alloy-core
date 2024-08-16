@@ -109,7 +109,7 @@ impl Hash for Type {
 
             Self::Sint(_, size) => size.hash(state),
             Self::Suint(_, size) => size.hash(state),
-            Self::Saddress(_) => {},
+            Self::Saddress(_) => {}
 
             Self::Tuple(tuple) => tuple.hash(state),
             Self::Array(array) => array.hash(state),
@@ -260,7 +260,41 @@ impl Type {
             "address" => Self::Address(span, None),
             "bool" => Self::Bool(span),
             "string" => Self::String(span),
+            #[cfg(feature = "seismic")]
+            "saddress" => Self::Saddress(span),
             s => {
+                #[cfg(feature = "seismic")]
+                {
+                    let seismic_type = if let Some(s) = s.strip_prefix("sint") {
+                        match parse_size(s, span)? {
+                            None => None,
+                            Some(Some(size)) if size.get() > 256 || size.get() % 8 != 0 => {
+                                return Err(Error::new(
+                                    span,
+                                    "sintX must be a multiple of 8 up to 256",
+                                ))
+                            }
+                            Some(size) => Some(Self::Sint(span, size)),
+                        }
+                    } else if let Some(s) = s.strip_prefix("suint") {
+                        match parse_size(s, span)? {
+                            None => None,
+                            Some(Some(size)) if size.get() > 256 || size.get() % 8 != 0 => {
+                                return Err(Error::new(
+                                    span,
+                                    "suintX must be a multiple of 8 up to 256",
+                                ))
+                            }
+                            Some(size) => Some(Self::Suint(span, size)),
+                        }
+                    } else {
+                        None
+                    };
+                    if let Some(ty) = seismic_type {
+                        return Ok(ty);
+                    }
+                }
+
                 if let Some(s) = s.strip_prefix("bytes") {
                     match parse_size(s, span)? {
                         None => Self::custom(ident),
@@ -285,22 +319,6 @@ impl Type {
                             return Err(Error::new(span, "uintX must be a multiple of 8 up to 256"))
                         }
                         Some(size) => Self::Uint(span, size),
-                    }
-                } else if let Some(s) = s.strip_prefix("sint") {
-                    match parse_size(s, span)? {
-                        None => Self::custom(ident),
-                        Some(Some(size)) if size.get() > 256 || size.get() % 8 != 0 => {
-                            return Err(Error::new(span, "sintX must be a multiple of 8 up to 256"))
-                        }
-                        Some(size) => Self::Sint(span, size),
-                    }
-                } else if let Some(s) = s.strip_prefix("suint") {
-                    match parse_size(s, span)? {
-                        None => Self::custom(ident),
-                        Some(Some(size)) if size.get() > 256 || size.get() % 8 != 0 => {
-                            return Err(Error::new(span, "suintX must be a multiple of 8 up to 256"))
-                        }
-                        Some(size) => Self::Suint(span, size),
                     }
                 } else {
                     Self::custom(ident)
@@ -342,7 +360,7 @@ impl Type {
             | Self::FixedBytes(..)
             | Self::Address(..)
             | Self::Function(_) => false,
-        
+
             Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) => false,
 
             Self::String(_) | Self::Bytes(_) | Self::Custom(_) => true,

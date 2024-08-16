@@ -1,49 +1,56 @@
 //! Seismic Solidity types.
 use crate::types::data_type::{IntBitCount, Sealed};
-use crate::{abi::token::*, private::SolTypeValue, utils, SolType, Word};
+use crate::{abi::token::*, private::SolTypeValue, SolType, Word};
 use alloc::vec::Vec;
-use alloy_primitives::{FixedBytes as RustFixedBytes, U256};
+use alloy_primitives::U256;
 use core::{borrow::Borrow, fmt::*, hash::Hash, ops::*};
 
+/*
 /// Saddress - `saddress`
 #[derive(Clone, Copy, Debug)]
 pub struct Saddress;
 
-impl<T: Borrow<[u8; 32]>> SolTypeValue<Saddress> for T {
+impl<T: Borrow<U256>> SolTypeValue<Saddress> for T
+// where
+//     T: Borrow<<IntBitCount<256> as SupportedSint>::Suint>,
+//     IntBitCount<256>: SupportedSint,
+{
     #[inline]
     fn stv_to_tokens(&self) -> WordToken {
-        WordToken(RustFixedBytes::<32>::new(*self.borrow()))
+        IntBitCount::<256>::tokenize_uint(*self.borrow())
     }
 
     #[inline]
     fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(self.borrow());
+        IntBitCount::<256>::encode_packed_to_uint(*self.borrow(), out);
     }
 
     #[inline]
     fn stv_eip712_data_word(&self) -> Word {
-        SolTypeValue::<Saddress>::stv_to_tokens(self).0
+        SolTypeValue::<Suint<256>>::stv_to_tokens(self).0
     }
 }
 
 impl SolType for Saddress {
-    type RustType = RustFixedBytes<32>;
+    type RustType = U256; // <IntBitCount<256> as SupportedSint>::Suint;
     type Token<'a> = WordToken;
 
     const SOL_NAME: &'static str = "saddress";
     const ENCODED_SIZE: Option<usize> = Some(32);
-    const PACKED_ENCODED_SIZE: Option<usize> = Some(20);
+    const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+
+    #[inline]
+    fn valid_token(_token: &Self::Token<'_>) -> bool {
+        return true;
+    }
 
     #[inline]
     fn detokenize(token: Self::Token<'_>) -> Self::RustType {
-        token.0.try_into().unwrap()
-    }
-
-    #[inline]
-    fn valid_token(token: &Self::Token<'_>) -> bool {
-        utils::check_zeroes(&token.0[..12])
+        let s = &token.0[0..];
+        U256::from_be_bytes::<32>(s.try_into().unwrap())
     }
 }
+*/
 
 /// Seismic Shielded Signed Integer - `sintX`
 #[derive(Debug)]
@@ -237,20 +244,20 @@ macro_rules! int_impls {
         #[inline]
         fn tokenize_uint(uint: $uty) -> WordToken {
             let mut word = Word::ZERO;
-            word[0..].copy_from_slice(&uint.to_be_bytes::<32>()[0..]);
+            word[..].copy_from_slice(&uint.to_be_bytes::<32>()[..]);
             WordToken(word)
         }
 
         #[inline]
         fn detokenize_uint(token: WordToken) -> $uty {
             // zero out bits to ignore
-            let s = &token.0[0..];
+            let s = &token.0[..];
             <$uty>::from_be_bytes::<32>(s.try_into().unwrap())
         }
 
         #[inline]
         fn encode_packed_to_uint(uint: $uty, out: &mut Vec<u8>) {
-            out.extend_from_slice(&uint.to_be_bytes::<32>()[0..]);
+            out.extend_from_slice(&uint.to_be_bytes::<32>()[..]);
         }
     };
 }

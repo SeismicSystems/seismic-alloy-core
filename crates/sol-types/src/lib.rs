@@ -38,9 +38,6 @@ pub use types::{
     SolType, SolValue, TopicList,
 };
 
-#[cfg(feature = "seismic")]
-pub use types::data_type_seismic as sol_data_seismic;
-
 pub mod utils;
 
 mod eip712;
@@ -85,6 +82,9 @@ pub mod private {
 
     #[cfg(feature = "json")]
     pub use alloy_json_abi;
+
+    #[cfg(feature = "seismic")]
+    pub use super::sol_data::{Sint, Suint, SupportedSint};
 
     /// An ABI-encodable is any type that may be encoded via a given `SolType`.
     ///
