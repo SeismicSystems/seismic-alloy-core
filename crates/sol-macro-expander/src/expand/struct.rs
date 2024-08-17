@@ -61,6 +61,7 @@ pub(super) fn expand(cx: &ExpCtxt<'_>, s: &ItemStruct) -> Result<TokenStream> {
     let fields = expand_fields(fields, cx);
 
     let doc = docs.then(|| mk_doc(format!("```solidity\n{s}\n```")));
+
     let tokens = quote! {
         #(#attrs)*
         #doc

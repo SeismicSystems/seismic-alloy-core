@@ -62,6 +62,60 @@ int_aliases! {
     U512, I512<512, 8>,
 }
 
+#[cfg(feature = "seismic")]
+macro_rules! sint_aliases {
+    ($($unsigned:ident, $signed:ident<$BITS:literal>),* $(,)?) => {$(
+        #[doc = concat!($BITS, "-bit [seismic unsigned integer type][Suint], where the preimage is an unsigned integer with ", $BITS, " bits.")]
+        pub type $unsigned = U256;
+
+        #[doc = concat!($BITS, "-bit [seismic signed integer type][Sint], where the preimage is a signed integer with ", $BITS, " bits.")]
+        pub type $signed = U256;
+    )*};
+}
+
+#[cfg(feature = "seismic")]
+/// Seismic-shielded address type. Preimage is an address
+pub type SAddress = U256;
+
+#[cfg(feature = "seismic")]
+sint_aliases! {
+   SU8,   SI8<  8 >,
+   SU16,  SI16< 16>,
+   SU24,  SI24< 24>,
+   SU32,  SI32< 32>,
+   SU40,  SI40< 40>,
+   SU48,  SI48< 48>,
+   SU56,  SI56< 56>,
+   SU64,  SI64< 64>,
+
+   SU72,  SI72< 72>,
+   SU80,  SI80< 80>,
+   SU88,  SI88< 88>,
+   SU96,  SI96< 96>,
+   SU104, SI104<104>,
+   SU112, SI112<112>,
+   SU120, SI120<120>,
+   SU128, SI128<128>,
+
+   SU136, SI136<136>,
+   SU144, SI144<144>,
+   SU152, SI152<152>,
+   SU160, SI160<160>,
+   SU168, SI168<168>,
+   SU176, SI176<176>,
+   SU184, SI184<184>,
+   SU192, SI192<192>,
+
+   SU200, SI200<200>,
+   SU208, SI208<208>,
+   SU216, SI216<216>,
+   SU224, SI224<224>,
+   SU232, SI232<232>,
+   SU240, SI240<240>,
+   SU248, SI248<248>,
+   SU256, SI256<256>,
+}
+
 macro_rules! fixed_bytes_aliases {
     ($($(#[$attr:meta])* $name:ident<$N:literal>),* $(,)?) => {$(
         #[doc = concat!($N, "-byte [fixed byte-array][FixedBytes] type.")]

@@ -1,23 +1,22 @@
 //! Seismic Solidity types.
 use crate::types::data_type::{IntBitCount, Sealed};
-use crate::{abi::token::*, private::SolTypeValue, SolType, Word};
+use crate::{abi::token::WordToken, private::SolTypeValue, SolType, Word};
 use alloc::vec::Vec;
-use alloy_primitives::U256;
+use alloy_primitives::aliases::{SAddress as RustSAddress, *};
 use core::{borrow::Borrow, fmt::*, hash::Hash, ops::*};
 
-/*
 /// Saddress - `saddress`
 #[derive(Clone, Copy, Debug)]
 pub struct Saddress;
 
-impl<T: Borrow<U256>> SolTypeValue<Saddress> for T
+impl<T: Borrow<RustSAddress>> SolTypeValue<Saddress> for T
 // where
 //     T: Borrow<<IntBitCount<256> as SupportedSint>::Suint>,
 //     IntBitCount<256>: SupportedSint,
 {
     #[inline]
     fn stv_to_tokens(&self) -> WordToken {
-        IntBitCount::<256>::tokenize_uint(*self.borrow())
+        IntBitCount::<256>::tokenize_int(*self.borrow())
     }
 
     #[inline]
@@ -32,7 +31,7 @@ impl<T: Borrow<U256>> SolTypeValue<Saddress> for T
 }
 
 impl SolType for Saddress {
-    type RustType = U256; // <IntBitCount<256> as SupportedSint>::Suint;
+    type RustType = RustSAddress;
     type Token<'a> = WordToken;
 
     const SOL_NAME: &'static str = "saddress";
@@ -47,10 +46,9 @@ impl SolType for Saddress {
     #[inline]
     fn detokenize(token: Self::Token<'_>) -> Self::RustType {
         let s = &token.0[0..];
-        U256::from_be_bytes::<32>(s.try_into().unwrap())
+        Self::RustType::from_be_bytes::<32>(s.try_into().unwrap())
     }
 }
-*/
 
 /// Seismic Shielded Signed Integer - `sintX`
 #[derive(Debug)]
@@ -206,7 +204,7 @@ pub trait SupportedSint: Sealed {
     fn encode_packed_to_uint(uint: Self::Suint, out: &mut Vec<u8>);
 }
 
-macro_rules! supported_int {
+macro_rules! supported_sint {
     ($($n:literal => $i:ident, $u:ident;)+) => {$(
         impl SupportedSint for IntBitCount<$n> {
             type Sint = $i;
@@ -217,13 +215,13 @@ macro_rules! supported_int {
 
             const BITS: usize = $n;
 
-            int_impls2!($i);
-            uint_impls2!($u);
+            sint_impls2!($i);
+            suint_impls2!($u);
         }
     )+};
 }
 
-macro_rules! int_impls {
+macro_rules! sint_impls {
     (@big_int $ity:ident) => {
         #[inline]
         fn tokenize_int(int: $ity) -> WordToken {
@@ -263,46 +261,46 @@ macro_rules! int_impls {
 }
 
 #[rustfmt::skip]
-macro_rules! int_impls2 {
-    ($t:ident) => { int_impls! { @big_int $t } };
+macro_rules! sint_impls2 {
+    ($t:ident) => { sint_impls! { @big_int $t } };
 }
 
 #[rustfmt::skip]
-macro_rules! uint_impls2 {
-    ($t:ident) => { int_impls! { @big_uint $t } };
+macro_rules! suint_impls2 {
+    ($t:ident) => { sint_impls! { @big_uint $t } };
 }
 
-supported_int!(
-      8 => U256, U256;
-     16 => U256, U256;
-     24 => U256, U256;
-     32 => U256, U256;
-     40 => U256, U256;
-     48 => U256, U256;
-     56 => U256, U256;
-     64 => U256, U256;
-     72 => U256, U256;
-     80 => U256, U256;
-     88 => U256, U256;
-     96 => U256, U256;
-    104 => U256, U256;
-    112 => U256, U256;
-    120 => U256, U256;
-    128 => U256, U256;
-    136 => U256, U256;
-    144 => U256, U256;
-    152 => U256, U256;
-    160 => U256, U256;
-    168 => U256, U256;
-    176 => U256, U256;
-    184 => U256, U256;
-    192 => U256, U256;
-    200 => U256, U256;
-    208 => U256, U256;
-    216 => U256, U256;
-    224 => U256, U256;
-    232 => U256, U256;
-    240 => U256, U256;
-    248 => U256, U256;
-    256 => U256, U256;
+supported_sint!(
+      8 =>  SI8,    SU8;
+     16 =>  SI16,  SU16;
+     24 =>  SI24,  SU24;
+     32 =>  SI32,  SU32;
+     40 =>  SI40,  SU40;
+     48 =>  SI48,  SU48;
+     56 =>  SI56,  SU56;
+     64 =>  SI64,  SU64;
+     72 =>  SI72,  SU72;
+     80 =>  SI80,  SU80;
+     88 =>  SI88,  SU88;
+     96 =>  SI96,  SU96;
+    104 => SI104, SU104;
+    112 => SI112, SU112;
+    120 => SI120, SU120;
+    128 => SI128, SU128;
+    136 => SI136, SU136;
+    144 => SI144, SU144;
+    152 => SI152, SU152;
+    160 => SI160, SU160;
+    168 => SI168, SU168;
+    176 => SI176, SU176;
+    184 => SI184, SU184;
+    192 => SI192, SU192;
+    200 => SI200, SU200;
+    208 => SI208, SU208;
+    216 => SI216, SU216;
+    224 => SI224, SU224;
+    232 => SI232, SU232;
+    240 => SI240, SU240;
+    248 => SI248, SU248;
+    256 => SI256, SU256;
 );

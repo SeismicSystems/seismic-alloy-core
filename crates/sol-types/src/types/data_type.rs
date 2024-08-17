@@ -10,7 +10,7 @@
 
 #[cfg(feature = "seismic")]
 // TODO: Saddress
-pub use crate::types::data_type_seismic::{Sint, Suint, SupportedSint};
+pub use crate::types::data_type_seismic::*;
 
 use crate::{abi::token::*, private::SolTypeValue, utils, SolType, Word};
 use alloc::{string::String as RustString, vec::Vec};
@@ -18,6 +18,7 @@ use alloy_primitives::{
     aliases::*, keccak256, Address as RustAddress, Bytes as RustBytes,
     FixedBytes as RustFixedBytes, Function as RustFunction, I256, U256,
 };
+
 use core::{borrow::Borrow, fmt::*, hash::Hash, marker::PhantomData, ops::*};
 
 // IMPORTANT: Keep in sync with `rec_expand_rust_type` in

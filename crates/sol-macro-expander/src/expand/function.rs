@@ -155,6 +155,7 @@ pub(super) fn expand(cx: &ExpCtxt<'_>, function: &ItemFunction) -> Result<TokenS
             #abi
         };
     };
+    // println!("computes tokens: {}", tokens);
     Ok(tokens)
 }
 

@@ -86,6 +86,7 @@ std = [
 tiny-keccak = []
 native-keccak = []
 asm-keccak = ["dep:keccak-asm"]
+seismic = []
 
 postgres = ["std", "dep:postgres-types", "ruint/postgres"]
 getrandom = ["dep:getrandom"]

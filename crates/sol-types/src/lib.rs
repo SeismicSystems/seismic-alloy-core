@@ -84,7 +84,7 @@ pub mod private {
     pub use alloy_json_abi;
 
     #[cfg(feature = "seismic")]
-    pub use super::sol_data::{Sint, Suint, SupportedSint};
+    pub use crate::types::data_type_seismic::{Saddress, Sint, Suint, SupportedSint};
 
     /// An ABI-encodable is any type that may be encoded via a given `SolType`.
     ///

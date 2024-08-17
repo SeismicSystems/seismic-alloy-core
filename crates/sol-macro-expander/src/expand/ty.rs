@@ -40,12 +40,10 @@ pub fn rec_expand_type(ty: &Type, crates: &ExternCrates, tokens: &mut TokenStrea
             let size = Literal::u16_unsuffixed(size.get());
             quote_spanned! {span=> #alloy_sol_types::sol_data::FixedBytes<#size> }
         }
-        Type::Int(span, size) | Type::Uint(span, size) | Type::Sint(span, size) | Type::Suint(span, size) => {
+        Type::Int(span, size) | Type::Uint(span, size) => {
             let name = match ty {
                 Type::Int(..) => "Int",
                 Type::Uint(..) => "Uint",
-                Type::Sint(..) => "Sint",
-                Type::Suint(..) => "Suint",
                 _ => unreachable!(),
             };
             let name = Ident::new(name, span);
@@ -57,7 +55,28 @@ pub fn rec_expand_type(ty: &Type, crates: &ExternCrates, tokens: &mut TokenStrea
             quote_spanned! {span=> #alloy_sol_types::sol_data::#name<#size> }
         }
 
-        Type::Saddress(span) => quote_spanned! {span=> #alloy_sol_types::sol_data::Saddress },
+        #[cfg(feature = "seismic")]
+        Type::Sint(span, size) | Type::Suint(span, size) => {
+            let name = match ty {
+                Type::Sint(..) => "Sint",
+                Type::Suint(..) => "Suint",
+                _ => unreachable!(),
+            };
+            let name = Ident::new(name, span);
+
+            let size = size.map_or(256, NonZeroU16::get);
+            assert!(size <= 256 && size % 8 == 0);
+            let size = Literal::u16_unsuffixed(size);
+
+            println!("Seismic type: {} {} {:?}", name, size, span);
+
+            quote_spanned! {span=> #alloy_sol_types::sol_data::#name<#size> }
+        }
+
+        #[cfg(feature = "seismic")]
+        Type::Saddress(span) => {
+            quote_spanned! {span=> #alloy_sol_types::sol_data::Saddress }
+        }
 
         Type::Tuple(ref tuple) => {
             return tuple.paren_token.surround(tokens, |tokens| {
@@ -104,21 +123,13 @@ pub fn rec_expand_rust_type(ty: &Type, crates: &ExternCrates, tokens: &mut Token
             let size = Literal::u16_unsuffixed(size.get());
             quote_spanned! {span=> #alloy_sol_types::private::FixedBytes<#size> }
         }
-        Type::Int(span, size)
-         | Type::Uint(span, size)
-         | Type::Sint(span, size)
-         | Type::Suint(span, size) => {
+        Type::Int(span, size) | Type::Uint(span, size) => {
             let size = size.map_or(256, NonZeroU16::get);
             let primitive = matches!(size, 8 | 16 | 32 | 64 | 128);
-            let size = match ty {
-                Type::Sint(..) | Type::Suint(..) => 256,
-                _ => size,
-            };
             if primitive {
                 let prefix = match ty {
                     Type::Int(..) => "i",
                     Type::Uint(..) => "u",
-                    Type::Sint(..) | Type::Suint(..) => "u",
                     _ => unreachable!(),
                 };
                 return Ident::new(&format!("{prefix}{size}"), span).to_tokens(tokens);
@@ -126,14 +137,26 @@ pub fn rec_expand_rust_type(ty: &Type, crates: &ExternCrates, tokens: &mut Token
             let prefix = match ty {
                 Type::Int(..) => "I",
                 Type::Uint(..) => "U",
-                Type::Sint(..) | Type::Suint(..) => "U",
                 _ => unreachable!(),
             };
             let name = Ident::new(&format!("{prefix}{size}"), span);
             quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::#name }
         }
-
-        Type::Saddress(span) => quote_spanned! {span=> #alloy_sol_types::private::Saddress },
+        #[cfg(feature = "seismic")]
+        Type::Sint(span, size) | Type::Suint(span, size) => {
+            let size = size.map_or(256, NonZeroU16::get);
+            let prefix = match ty {
+                Type::Sint(..) => "SI",
+                Type::Suint(..) => "SU",
+                _ => unreachable!(),
+            };
+            let name = Ident::new(&format!("{prefix}{size}"), span);
+            quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::#name }
+        }
+        #[cfg(feature = "seismic")]
+        Type::Saddress(span) => {
+            quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::SAddress }
+        }
 
         Type::Tuple(ref tuple) => {
             return tuple.paren_token.surround(tokens, |tokens| {
@@ -192,6 +215,7 @@ pub(super) fn type_base_data_size(cx: &ExpCtxt<'_>, ty: &Type) -> usize {
         | Type::FixedBytes(..)
         | Type::Function(_) => 32,
 
+        #[cfg(feature = "seismic")]
         Type::Sint(..) | Type::Suint(..) | Type::Saddress(_) => 32,
 
         // dynamic types: 1 offset word, 1 length word
