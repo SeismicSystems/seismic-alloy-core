@@ -137,6 +137,12 @@ enum Choice {
     FixedBytes,
     Bytes,
     String,
+    #[cfg(feature = "seismic")]
+    Saddress,
+    #[cfg(feature = "seismic")]
+    Sint,
+    #[cfg(feature = "seismic")]
+    Suint,
 
     Array,
     FixedArray,
@@ -152,6 +158,12 @@ impl<'a> arbitrary::Arbitrary<'a> for DynSolType {
             Choice::Int => u.arbitrary().map(int_size).map(Self::Int),
             Choice::Uint => u.arbitrary().map(int_size).map(Self::Uint),
             Choice::Address => Ok(Self::Address),
+            #[cfg(feature = "seismic")]
+            Choice::Saddress => Ok(Self::Saddress),
+            #[cfg(feature = "seismic")]
+            Choice::Sint => u.arbitrary().map(int_size).map(Self::Sint),
+            #[cfg(feature = "seismic")]
+            Choice::Suint => u.arbitrary().map(int_size).map(Self::Suint),
             Choice::Function => Ok(Self::Function),
             Choice::FixedBytes => Ok(Self::FixedBytes(u.int_in_range(1..=32)?)),
             Choice::Bytes => Ok(Self::Bytes),
@@ -317,6 +329,12 @@ impl DynSolType {
             Just(Self::Address),
             any::<usize>().prop_map(|x| Self::Int(int_size(x))),
             any::<usize>().prop_map(|x| Self::Uint(int_size(x))),
+            #[cfg(feature = "seismic")]
+            Just(Self::Saddress),
+            #[cfg(feature = "seismic")]
+            any::<usize>().prop_map(|x| Self::Sint(int_size(x))),
+            #[cfg(feature = "seismic")]
+            any::<usize>().prop_map(|x| Self::Suint(int_size(x))),
             (1..=32usize).prop_map(Self::FixedBytes),
             Just(Self::Bytes),
             Just(Self::String),

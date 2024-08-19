@@ -1,8 +1,5 @@
 pub mod data_type;
 
-#[cfg(feature = "seismic")]
-pub(crate) mod data_type_seismic;
-
 mod r#enum;
 pub use r#enum::SolEnum;
 

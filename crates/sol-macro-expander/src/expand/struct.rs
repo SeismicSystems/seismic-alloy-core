@@ -27,6 +27,7 @@ use syn::Result;
 pub(super) fn expand(cx: &ExpCtxt<'_>, s: &ItemStruct) -> Result<TokenStream> {
     let ItemStruct { name, fields, .. } = s;
 
+    println!("fields: {:#?}", fields);
     let (sol_attrs, mut attrs) = s.split_attrs()?;
 
     cx.derives(&mut attrs, fields, true);

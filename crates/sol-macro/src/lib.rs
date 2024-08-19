@@ -237,7 +237,9 @@ use syn::parse_macro_input;
 #[proc_macro]
 #[proc_macro_error]
 pub fn sol(input: TokenStream) -> TokenStream {
+    // println!("Token stream: {:#?}", input);
     let input = parse_macro_input!(input as alloy_sol_macro_input::SolInput);
+    // println!("Sol input: {:#?}", input);
     SolMacroExpander.expand(&input).unwrap_or_else(syn::Error::into_compile_error).into()
 }
 
@@ -269,7 +271,7 @@ impl SolInputExpander for SolMacroExpander {
                 if !is_json {
                     file.attrs.extend(attrs);
                 }
-
+                println!("Calling expand sol");
                 crate::expand::expand(file)
             }
             SolInputKind::Type(ty) => {
@@ -283,11 +285,14 @@ impl SolInputExpander for SolMacroExpander {
 
                 let mut crates = crate::expand::ExternCrates::default();
                 crates.fill(&sol_attrs);
+                println!("Calling expand type");
                 Ok(crate::expand::expand_type(&ty, &crates))
             }
             #[cfg(feature = "json")]
             SolInputKind::Json(_, _) => unreachable!("input already normalized"),
         }?;
+
+        // println!("Token stream: {:#?}", tokens);
 
         Ok(quote! {
             #include

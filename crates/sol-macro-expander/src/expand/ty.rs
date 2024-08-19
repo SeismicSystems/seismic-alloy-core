@@ -21,6 +21,8 @@ pub fn expand_type(ty: &Type, crates: &ExternCrates) -> TokenStream {
 /// nicer code for documentation and IDE/LSP support when the type is not
 /// ambiguous.
 pub fn expand_rust_type(ty: &Type, crates: &ExternCrates) -> TokenStream {
+    // println!("expand_rust_type {:?}", ty);
+    // println!("expand_rust_type {:?}", crates);
     let mut tokens = TokenStream::new();
     rec_expand_rust_type(ty, crates, &mut tokens);
     tokens

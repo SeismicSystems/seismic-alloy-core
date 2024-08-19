@@ -2,6 +2,8 @@ use super::ty::as_tuple;
 use crate::{DynSolType, DynToken, Word};
 use alloc::{borrow::Cow, boxed::Box, string::String, vec::Vec};
 use alloy_primitives::{Address, Function, I256, U256};
+#[cfg(feature = "seismic")]
+use alloy_primitives::{SAddress, SI256, SU256};
 use alloy_sol_types::{abi::Encoder, utils::words_for_len};
 
 #[cfg(feature = "eip712")]
@@ -86,15 +88,15 @@ pub enum DynSolValue {
 
     #[cfg(feature = "seismic")]
     /// A seismic shielded address. Always 32 bytes
-    Saddress(U256),
+    Saddress(SAddress),
     #[cfg(feature = "seismic")]
     /// A seismic shielded signed integer. Always 32 bytes
     /// The second parameter is the number of bits, not bytes.
-    Sint(U256, usize),
+    Sint(SI256, usize),
     #[cfg(feature = "seismic")]
     /// A seismic shielded unsigned integer. Always 32 bytes
     /// The second parameter is the number of bits, not bytes.
-    Suint(U256, usize),
+    Suint(SU256, usize),
 
     /// A named struct, treated as a tuple with a name parameter.
     #[cfg(feature = "eip712")]
@@ -112,6 +114,14 @@ impl From<Address> for DynSolValue {
     #[inline]
     fn from(value: Address) -> Self {
         Self::Address(value)
+    }
+}
+
+#[cfg(feature = "seismic")]
+impl From<SAddress> for DynSolValue {
+    #[inline]
+    fn from(value: SAddress) -> Self {
+        Self::Saddress(value)
     }
 }
 

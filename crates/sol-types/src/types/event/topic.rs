@@ -2,9 +2,6 @@ use crate::{abi::token::WordToken, sol_data::*, SolType};
 use alloc::vec::Vec;
 use alloy_primitives::keccak256;
 
-#[cfg(feature = "seismic")]
-use crate::types::data_type_seismic::{Saddress, Sint, Suint, SupportedSint};
-
 /// A Solidity event topic.
 ///
 /// These types implement a special encoding used only in Solidity indexed event
