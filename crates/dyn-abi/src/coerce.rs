@@ -1,9 +1,8 @@
 use crate::{dynamic::ty::as_tuple, DynSolType, DynSolValue, Result};
 use alloc::vec::Vec;
-use alloy_primitives::{
-    aliases::{SInt, SUInt},
-    Address, Function, SAddress, Sign, I256, U256,
-};
+#[cfg(feature = "seismic")]
+use alloy_primitives::aliases::{SAddress, SInt, SUInt};
+use alloy_primitives::{Address, Function, Sign, I256, U256};
 use alloy_sol_types::Word;
 use core::fmt;
 use hex::FromHexError;
