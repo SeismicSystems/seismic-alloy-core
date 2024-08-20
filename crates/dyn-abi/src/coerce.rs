@@ -1,6 +1,9 @@
 use crate::{dynamic::ty::as_tuple, DynSolType, DynSolValue, Result};
 use alloc::vec::Vec;
-use alloy_primitives::{Address, Function, Sign, I256, U256};
+use alloy_primitives::{
+    aliases::{SInt, SUInt},
+    Address, Function, SAddress, Sign, I256, U256,
+};
 use alloy_sol_types::Word;
 use core::fmt;
 use hex::FromHexError;
@@ -122,17 +125,17 @@ impl<'i> Parser<Input<'i>, DynSolValue, ContextError> for ValueParser<'_> {
                 self.in_list(')', |this| this.tuple(tys).parse_next(input).map(DynSolValue::Tuple))
             }
             #[cfg(feature = "seismic")]
-            DynSolType::Saddress => {
-                uint(32).parse_next(input).map(|commitment| DynSolValue::Saddress(commitment))
-            }
+            DynSolType::Saddress => uint(32)
+                .parse_next(input)
+                .map(|commitment| DynSolValue::Saddress(SAddress(commitment))),
             #[cfg(feature = "seismic")]
-            DynSolType::Sint(size) => {
-                uint(32).parse_next(input).map(|commitment| DynSolValue::Sint(commitment, *size))
-            }
+            DynSolType::Sint(size) => uint(32)
+                .parse_next(input)
+                .map(|commitment| DynSolValue::Sint(SInt(commitment), *size)),
             #[cfg(feature = "seismic")]
-            DynSolType::Suint(size) => {
-                uint(32).parse_next(input).map(|commitment| DynSolValue::Suint(commitment, *size))
-            }
+            DynSolType::Suint(size) => uint(32)
+                .parse_next(input)
+                .map(|commitment| DynSolValue::Suint(SUInt(commitment), *size)),
         })
         .parse_next(input)
     }

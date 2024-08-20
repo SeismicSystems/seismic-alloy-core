@@ -62,19 +62,50 @@ int_aliases! {
 }
 
 #[cfg(feature = "seismic")]
+#[doc = "seismic unsigned integer type][Sint], where the preimage is a signed integer"]
+#[derive(
+    // Standard derives
+    Copy,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Debug,
+)]
+pub struct SUInt<const BITS: usize>(pub U256);
+
+#[cfg(feature = "seismic")]
+#[doc = "seismic unsigned integer type][Suint], where the preimage is an unsigned integer"]
+#[derive(
+    // Standard derives
+    Copy,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Debug,
+)]
+pub struct SInt<const BITS: usize>(pub U256);
+
+#[cfg(feature = "seismic")]
 macro_rules! sint_aliases {
     ($($unsigned:ident, $signed:ident<$BITS:literal>),* $(,)?) => {$(
         #[doc = concat!($BITS, "-bit [seismic unsigned integer type][Suint], where the preimage is an unsigned integer with ", $BITS, " bits.")]
-        pub type $unsigned = Uint<256, 4>;
+        pub type $unsigned = SUInt<$BITS>;
 
         #[doc = concat!($BITS, "-bit [seismic signed integer type][Sint], where the preimage is a signed integer with ", $BITS, " bits.")]
-        pub type $signed = Uint<256, 4>;
+        pub type $signed = SInt<$BITS>;
     )*};
 }
 
 #[cfg(feature = "seismic")]
+#[derive(Copy, Clone, Debug, PartialEq)]
 /// Seismic-shielded address type. Preimage is an address
-pub type SAddress = Uint<256, 4>;
+pub struct SAddress(pub U256);
 
 #[cfg(feature = "seismic")]
 sint_aliases! {

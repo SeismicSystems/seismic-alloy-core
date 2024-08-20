@@ -1229,21 +1229,21 @@ mod seismic {
         #[inline]
         fn stv_to_tokens(&self) -> WordToken {
             <IntBitCount<256> as crate::types::data_type::SupportedInt>::tokenize_uint(
-                *self.borrow(),
+                self.borrow().0,
             )
         }
 
         #[inline]
         fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
             <IntBitCount<256> as crate::types::data_type::SupportedInt>::encode_packed_to_uint(
-                *self.borrow(),
+                self.borrow().0,
                 out,
             );
         }
 
         #[inline]
         fn stv_eip712_data_word(&self) -> Word {
-            SolTypeValue::<Suint<256>>::stv_to_tokens(self).0
+            SolTypeValue::<Suint<256>>::stv_to_tokens(&SUInt(self.borrow().0)).0
         }
     }
 
@@ -1263,7 +1263,7 @@ mod seismic {
         #[inline]
         fn detokenize(token: Self::Token<'_>) -> Self::RustType {
             let s = &token.0[0..];
-            Self::RustType::from_be_bytes::<32>(s.try_into().unwrap())
+            RustSAddress(U256::from_be_bytes::<32>(s.try_into().unwrap()))
         }
     }
 
@@ -1369,10 +1369,9 @@ mod seismic {
         ($($(#[$attr:meta])* type $name:ident;)*) => {$(
             $(#[$attr])*
             type $name: Sized + Copy + PartialOrd + Ord + Eq + Hash
-                + Not + BitAnd + BitOr + BitXor
-                + Add + Sub + Mul + Div + Rem
-                + AddAssign + SubAssign + MulAssign + DivAssign + RemAssign
-                + Debug + Display + LowerHex + UpperHex + Octal + Binary;
+                + Debug;
+                //  + Display;
+                //  + LowerHex + UpperHex;
         )*};
     }
 
@@ -1443,24 +1442,25 @@ mod seismic {
         (@big_int $ity:ident $n:literal) => {
             #[inline]
             fn tokenize_int(int: $ity) -> WordToken {
-                <IntBitCount<$n> as SupportedSint>::tokenize_uint(int)
+                <IntBitCount<$n> as SupportedSint>::tokenize_uint(SUInt(int.0))
             }
 
             #[inline]
             fn detokenize_int(token: WordToken) -> $ity {
-                <IntBitCount<$n> as SupportedSint>::detokenize_uint(token)
+                let suint = <IntBitCount<$n> as SupportedSint>::detokenize_uint(token);
+                SInt(suint.0)
             }
 
             #[inline]
             fn encode_packed_to_int(int: $ity, out: &mut Vec<u8>) {
-                <IntBitCount<$n> as SupportedSint>::encode_packed_to_uint(int, out);
+                <IntBitCount<$n> as SupportedSint>::encode_packed_to_uint(SUInt(int.0), out);
             }
         };
         (@big_uint $uty:ident) => {
             #[inline]
             fn tokenize_uint(uint: $uty) -> WordToken {
                 let mut word = Word::ZERO;
-                word[..].copy_from_slice(&uint.to_be_bytes::<32>()[..]);
+                word[..].copy_from_slice(&uint.0.to_be_bytes::<32>()[..]);
                 WordToken(word)
             }
 
@@ -1468,12 +1468,13 @@ mod seismic {
             fn detokenize_uint(token: WordToken) -> $uty {
                 // zero out bits to ignore
                 let s = &token.0[..];
-                <$uty>::from_be_bytes::<32>(s.try_into().unwrap())
+                let u256 = U256::from_be_bytes::<32>(s.try_into().unwrap());
+                SUInt(u256)
             }
 
             #[inline]
             fn encode_packed_to_uint(uint: $uty, out: &mut Vec<u8>) {
-                out.extend_from_slice(&uint.to_be_bytes::<32>()[..]);
+                out.extend_from_slice(&uint.0.to_be_bytes::<32>()[..]);
             }
         };
     }

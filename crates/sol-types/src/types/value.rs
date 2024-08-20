@@ -268,6 +268,76 @@ impl_sol_value! {
     ['a, T: ?Sized + SolValue] &'a mut T => T::SolType [where &'a mut T: SolTypeValue<T::SolType>];
 }
 
+#[cfg(feature = "seismic")]
+impl_sol_value! {
+    [] SAddress => sol_data::Saddress [];
+    []     SU8 => sol_data::Suint<8> [];
+    []     SU16 => sol_data::Suint<16> [];
+    []     SU24 => sol_data::Suint<24> [];
+    []     SU32 => sol_data::Suint<32> [];
+    []     SU40 => sol_data::Suint<40> [];
+    []     SU48 => sol_data::Suint<48> [];
+    []     SU56 => sol_data::Suint<56> [];
+    []     SU64 => sol_data::Suint<64> [];
+    []     SU72 => sol_data::Suint<72> [];
+    []     SU80 => sol_data::Suint<80> [];
+    []     SU88 => sol_data::Suint<88> [];
+    []     SU96 => sol_data::Suint<96> [];
+    []     SU104 => sol_data::Suint<104> [];
+    []     SU112 => sol_data::Suint<112> [];
+    []     SU120 => sol_data::Suint<120> [];
+    []     SU128 => sol_data::Suint<128> [];
+    []     SU136 => sol_data::Suint<136> [];
+    []     SU144 => sol_data::Suint<144> [];
+    []     SU152 => sol_data::Suint<152> [];
+    []     SU160 => sol_data::Suint<160> [];
+    []     SU168 => sol_data::Suint<168> [];
+    []     SU176 => sol_data::Suint<176> [];
+    []     SU184 => sol_data::Suint<184> [];
+    []     SU192 => sol_data::Suint<192> [];
+    []     SU200 => sol_data::Suint<200> [];
+    []     SU208 => sol_data::Suint<208> [];
+    []     SU216 => sol_data::Suint<216> [];
+    []     SU224 => sol_data::Suint<224> [];
+    []     SU232 => sol_data::Suint<232> [];
+    []     SU240 => sol_data::Suint<240> [];
+    []     SU248 => sol_data::Suint<248> [];
+    []     SU256 => sol_data::Suint<256> [];
+
+    []     SI8 => sol_data::Sint<8> [];
+    []     SI16 => sol_data::Sint<16> [];
+    []     SI24 => sol_data::Sint<24> [];
+    []     SI32 => sol_data::Sint<32> [];
+    []     SI40 => sol_data::Sint<40> [];
+    []     SI48 => sol_data::Sint<48> [];
+    []     SI56 => sol_data::Sint<56> [];
+    []     SI64 => sol_data::Sint<64> [];
+    []     SI72 => sol_data::Sint<72> [];
+    []     SI80 => sol_data::Sint<80> [];
+    []     SI88 => sol_data::Sint<88> [];
+    []     SI96 => sol_data::Sint<96> [];
+    []     SI104 => sol_data::Sint<104> [];
+    []     SI112 => sol_data::Sint<112> [];
+    []     SI120 => sol_data::Sint<120> [];
+    []     SI128 => sol_data::Sint<128> [];
+    []     SI136 => sol_data::Sint<136> [];
+    []     SI144 => sol_data::Sint<144> [];
+    []     SI152 => sol_data::Sint<152> [];
+    []     SI160 => sol_data::Sint<160> [];
+    []     SI168 => sol_data::Sint<168> [];
+    []     SI176 => sol_data::Sint<176> [];
+    []     SI184 => sol_data::Sint<184> [];
+    []     SI192 => sol_data::Sint<192> [];
+    []     SI200 => sol_data::Sint<200> [];
+    []     SI208 => sol_data::Sint<208> [];
+    []     SI216 => sol_data::Sint<216> [];
+    []     SI224 => sol_data::Sint<224> [];
+    []     SI232 => sol_data::Sint<232> [];
+    []     SI240 => sol_data::Sint<240> [];
+    []     SI248 => sol_data::Sint<248> [];
+    []     SI256 => sol_data::Sint<256> [];
+}
+
 macro_rules! tuple_impls {
     ($count:literal $($ty:ident),+) => {
         impl<$($ty: SolValue,)+> SolValue for ($($ty,)+) {

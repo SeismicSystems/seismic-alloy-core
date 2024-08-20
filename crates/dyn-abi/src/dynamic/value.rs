@@ -1,7 +1,10 @@
 use super::ty::as_tuple;
 use crate::{DynSolType, DynToken, Word};
 use alloc::{borrow::Cow, boxed::Box, string::String, vec::Vec};
-use alloy_primitives::{Address, Function, I256, U256};
+use alloy_primitives::{
+    aliases::{SInt, SUInt},
+    Address, Function, I256, U256,
+};
 #[cfg(feature = "seismic")]
 use alloy_primitives::{SAddress, SI256, SU256};
 use alloy_sol_types::{abi::Encoder, utils::words_for_len};
@@ -114,14 +117,6 @@ impl From<Address> for DynSolValue {
     #[inline]
     fn from(value: Address) -> Self {
         Self::Address(value)
-    }
-}
-
-#[cfg(feature = "seismic")]
-impl From<SAddress> for DynSolValue {
-    #[inline]
-    fn from(value: SAddress) -> Self {
-        Self::Saddress(value)
     }
 }
 
@@ -771,7 +766,9 @@ impl DynSolValue {
                 }
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress(commitment) | Self::Sint(commitment, _) | Self::Suint(commitment, _) => {
+            Self::Saddress(SAddress(commitment))
+            | Self::Sint(SInt(commitment), _)
+            | Self::Suint(SUInt(commitment), _) => {
                 buf.extend_from_slice(&commitment.to_be_bytes::<32>())
             }
         }
@@ -811,9 +808,9 @@ impl DynSolValue {
             Self::Array(t) => DynToken::from_dyn_seq(t),
             as_fixed_seq!(t) => DynToken::from_fixed_seq(t),
             #[cfg(feature = "seismic")]
-            Self::Saddress(commitment) | Self::Sint(commitment, _) | Self::Suint(commitment, _) => {
-                commitment.to_be_bytes::<32>().into()
-            }
+            Self::Saddress(SAddress(commitment))
+            | Self::Sint(SInt(commitment), _)
+            | Self::Suint(SUInt(commitment), _) => commitment.to_be_bytes::<32>().into(),
         }
     }
 

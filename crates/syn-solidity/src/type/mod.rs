@@ -358,6 +358,15 @@ impl Type {
     /// Returns whether this type is ABI-encoded as a single EVM word (32
     /// bytes).
     pub const fn is_one_word(&self) -> bool {
+        #[cfg(feature = "seismic")]
+        {
+            let is_seismic_one_word =
+                matches!(self, Self::Saddress(_) | Self::Sint(..) | Self::Suint(..));
+            if is_seismic_one_word {
+                return true;
+            }
+        }
+
         matches!(
             self,
             Self::Bool(_)
