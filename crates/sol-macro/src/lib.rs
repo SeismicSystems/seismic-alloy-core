@@ -237,9 +237,7 @@ use syn::parse_macro_input;
 #[proc_macro]
 #[proc_macro_error]
 pub fn sol(input: TokenStream) -> TokenStream {
-    // println!("Token stream:\n\n{:#?}", input);
     let input = parse_macro_input!(input as alloy_sol_macro_input::SolInput);
-    // println!("Sol input:\n\n{:#?}", input);
     SolMacroExpander.expand(&input).unwrap_or_else(syn::Error::into_compile_error).into()
 }
 
@@ -264,8 +262,6 @@ impl SolInputExpander for SolMacroExpander {
             quote! { const _: &'static [u8] = ::core::include_bytes!(#p); }
         });
 
-        // println!("Kind:\n\n{:#?}", kind);
-
         let tokens = match kind {
             SolInputKind::Sol(mut file) => {
                 // Attributes have already been added to the inner contract generated in
@@ -273,7 +269,6 @@ impl SolInputExpander for SolMacroExpander {
                 if !is_json {
                     file.attrs.extend(attrs);
                 }
-                // println!("Calling expand sol");
                 crate::expand::expand(file)
             }
             SolInputKind::Type(ty) => {
@@ -287,7 +282,6 @@ impl SolInputExpander for SolMacroExpander {
 
                 let mut crates = crate::expand::ExternCrates::default();
                 crates.fill(&sol_attrs);
-                println!("Calling expand type");
                 Ok(crate::expand::expand_type(&ty, &crates))
             }
             #[cfg(feature = "json")]

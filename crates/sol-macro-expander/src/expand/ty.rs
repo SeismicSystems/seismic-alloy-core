@@ -21,8 +21,6 @@ pub fn expand_type(ty: &Type, crates: &ExternCrates) -> TokenStream {
 /// nicer code for documentation and IDE/LSP support when the type is not
 /// ambiguous.
 pub fn expand_rust_type(ty: &Type, crates: &ExternCrates) -> TokenStream {
-    // println!("expand_rust_type {:?}", ty);
-    // println!("expand_rust_type {:?}", crates);
     let mut tokens = TokenStream::new();
     rec_expand_rust_type(ty, crates, &mut tokens);
     tokens
@@ -69,9 +67,6 @@ pub fn rec_expand_type(ty: &Type, crates: &ExternCrates, tokens: &mut TokenStrea
             let size = size.map_or(256, NonZeroU16::get);
             assert!(size <= 256 && size % 8 == 0);
             let size = Literal::u16_unsuffixed(size);
-
-            println!("Seismic type: {} {} {:?}", name, size, span);
-
             quote_spanned! {span=> #alloy_sol_types::sol_data::#name<#size> }
         }
 

@@ -61,8 +61,9 @@ arbitrary = [
 k256 = ["alloy-primitives/k256"]
 eip712 = ["alloy-sol-types?/eip712-serde", "alloy-dyn-abi?/eip712"]
 seismic = [
+    "alloy-primitives/seismic",
     "alloy-dyn-abi?/seismic",
     "alloy-sol-types?/seismic",
-    "alloy-primitives/seismic",
+    "alloy-json-abi?/seismic",
 ]
 unstable-doc = ["alloy-primitives/unstable-doc"]
