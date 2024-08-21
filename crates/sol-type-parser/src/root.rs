@@ -107,6 +107,8 @@ impl<'a> RootType<'a> {
     pub fn try_basic_solidity(self) -> Result<()> {
         match self.0 {
             "address" | "bool" | "string" | "bytes" | "uint" | "int" | "function" => Ok(()),
+            #[cfg(feature = "seismic")]
+            "saddress" | "sint" | "suint" => Ok(()),
             name => {
                 if let Some(sz) = name.strip_prefix("bytes") {
                     if let Ok(sz) = sz.parse::<usize>() {
