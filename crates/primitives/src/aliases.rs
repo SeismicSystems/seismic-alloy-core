@@ -116,7 +116,7 @@ impl arbitrary::Arbitrary<'_> for SAddress {
 }
 
 #[cfg(all(feature = "seismic", feature = "arbitrary"))]
-impl<const N: usize> arbitrary::Arbitrary<'_> for SUInt<N> {
+impl<const BITS: usize> arbitrary::Arbitrary<'_> for SUInt<BITS> {
     fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
         let arbitrary_u256 = u.arbitrary::<U256>()?;
         Ok(SUInt(arbitrary_u256))
@@ -124,7 +124,7 @@ impl<const N: usize> arbitrary::Arbitrary<'_> for SUInt<N> {
 }
 
 #[cfg(all(feature = "seismic", feature = "arbitrary"))]
-impl<const N: usize> arbitrary::Arbitrary<'_> for SInt<N> {
+impl<const BITS: usize> arbitrary::Arbitrary<'_> for SInt<BITS> {
     fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
         let arbitrary_u256 = u.arbitrary::<U256>()?;
         Ok(SInt(arbitrary_u256))
