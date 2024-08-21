@@ -107,6 +107,30 @@ macro_rules! sint_aliases {
 /// Seismic-shielded address type. Preimage is an address
 pub struct SAddress(pub U256);
 
+#[cfg(all(feature = "seismic", feature = "arbitrary"))]
+impl arbitrary::Arbitrary<'_> for SAddress {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        let arbitrary_u256 = u.arbitrary::<U256>()?;
+        Ok(SAddress(arbitrary_u256))
+    }
+}
+
+#[cfg(all(feature = "seismic", feature = "arbitrary"))]
+impl<const N: usize> arbitrary::Arbitrary<'_> for SUInt<N> {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        let arbitrary_u256 = u.arbitrary::<U256>()?;
+        Ok(SUInt(arbitrary_u256))
+    }
+}
+
+#[cfg(all(feature = "seismic", feature = "arbitrary"))]
+impl<const N: usize> arbitrary::Arbitrary<'_> for SInt<N> {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        let arbitrary_u256 = u.arbitrary::<U256>()?;
+        Ok(SInt(arbitrary_u256))
+    }
+}
+
 #[cfg(feature = "seismic")]
 sint_aliases! {
    SU8,   SI8<  8 >,
