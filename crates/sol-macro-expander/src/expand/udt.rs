@@ -31,6 +31,8 @@ pub(super) fn expand(cx: &ExpCtxt<'_>, udt: &ItemUdt) -> Result<TokenStream> {
 
     let alloy_sol_types = &cx.crates.sol_types;
 
+    println!("Expanding UDT:\n\n{:#?}", udt);
+
     let tokens = quote! {
         #(#attrs)*
         #[allow(non_camel_case_types, non_snake_case)]

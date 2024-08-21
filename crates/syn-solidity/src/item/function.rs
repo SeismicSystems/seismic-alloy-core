@@ -87,6 +87,7 @@ impl Parse for ItemFunction {
             let content;
             (Some(parenthesized!(content in input)), content.parse()?)
         };
+        // println!("parameters: {parameters:?}");
 
         let attributes = input.parse()?;
         let returns = input.call(Returns::parse_opt)?;
