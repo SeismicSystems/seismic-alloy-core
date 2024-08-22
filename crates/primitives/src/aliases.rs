@@ -1,6 +1,7 @@
 //! Type aliases for common primitive types.
 
 use crate::{FixedBytes, Signed, Uint};
+
 pub use ruint::aliases::{U0, U1, U1024, U2048, U320, U384, U4096, U448};
 
 macro_rules! int_aliases {

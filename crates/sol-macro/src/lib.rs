@@ -155,7 +155,7 @@ use syn::parse_macro_input;
 /// ```ignore
 #[doc = include_str!("../doctests/structs.rs")]
 /// ```
-///
+/// 
 /// ### UDVT and type aliases
 ///
 /// User defined value types (UDVT) generate a tuple struct with the type as
@@ -164,7 +164,7 @@ use syn::parse_macro_input;
 /// ```ignore
 #[doc = include_str!("../doctests/types.rs")]
 /// ```
-///
+/// 
 /// ### State variables
 ///
 /// Public and external state variables will generate a getter function just like in Solidity.
@@ -187,7 +187,7 @@ use syn::parse_macro_input;
 /// ```ignore
 #[doc = include_str!("../doctests/function_like.rs")]
 /// ```
-///
+/// 
 /// ### Events
 ///
 /// Events generate a struct that implements `SolEvent`.
@@ -199,7 +199,7 @@ use syn::parse_macro_input;
 /// ```ignore
 #[doc = include_str!("../doctests/events.rs")]
 /// ```
-///
+/// 
 /// ### Contracts/interfaces
 ///
 /// Contracts generate a module with the same name, which contains all the items.
@@ -212,7 +212,7 @@ use syn::parse_macro_input;
 /// ```ignore
 #[doc = include_str!("../doctests/contracts.rs")]
 /// ```
-///
+/// 
 /// ## JSON ABI
 ///
 /// Contracts can also be generated from ABI JSON strings and files, similar to
@@ -238,6 +238,7 @@ use syn::parse_macro_input;
 #[proc_macro_error]
 pub fn sol(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as alloy_sol_macro_input::SolInput);
+
     SolMacroExpander.expand(&input).unwrap_or_else(syn::Error::into_compile_error).into()
 }
 
@@ -269,6 +270,7 @@ impl SolInputExpander for SolMacroExpander {
                 if !is_json {
                     file.attrs.extend(attrs);
                 }
+
                 crate::expand::expand(file)
             }
             SolInputKind::Type(ty) => {
@@ -287,8 +289,6 @@ impl SolInputExpander for SolMacroExpander {
             #[cfg(feature = "json")]
             SolInputKind::Json(_, _) => unreachable!("input already normalized"),
         }?;
-
-        // println!("Token stream: {:#?}", tokens);
 
         Ok(quote! {
             #include

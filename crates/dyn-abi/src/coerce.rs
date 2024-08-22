@@ -109,18 +109,6 @@ impl<'i> Parser<Input<'i>, DynSolValue, ContextError> for ValueParser<'_> {
                 fixed_bytes(size).parse_next(input).map(|word| DynSolValue::FixedBytes(word, size))
             }
             DynSolType::Address => address(input).map(DynSolValue::Address),
-            #[cfg(feature = "seismic")]
-            DynSolType::Saddress => uint(32)
-                .parse_next(input)
-                .map(|commitment| DynSolValue::Saddress(SAddress(commitment))),
-            #[cfg(feature = "seismic")]
-            DynSolType::Sint(size) => uint(32)
-                .parse_next(input)
-                .map(|commitment| DynSolValue::Sint(SInt(commitment), *size)),
-            #[cfg(feature = "seismic")]
-            DynSolType::Suint(size) => uint(32)
-                .parse_next(input)
-                .map(|commitment| DynSolValue::Suint(SUInt(commitment), *size)),
             DynSolType::Function => function(input).map(DynSolValue::Function),
             DynSolType::Bytes => bytes(input).map(DynSolValue::Bytes),
             DynSolType::String => {
@@ -135,6 +123,18 @@ impl<'i> Parser<Input<'i>, DynSolValue, ContextError> for ValueParser<'_> {
             as_tuple!(DynSolType tys) => {
                 self.in_list(')', |this| this.tuple(tys).parse_next(input).map(DynSolValue::Tuple))
             }
+            #[cfg(feature = "seismic")]
+            DynSolType::Saddress => uint(32)
+                .parse_next(input)
+                .map(|commitment| DynSolValue::Saddress(SAddress(commitment))),
+            #[cfg(feature = "seismic")]
+            DynSolType::Sint(size) => uint(32)
+                .parse_next(input)
+                .map(|commitment| DynSolValue::Sint(SInt(commitment), *size)),
+            #[cfg(feature = "seismic")]
+            DynSolType::Suint(size) => uint(32)
+                .parse_next(input)
+                .map(|commitment| DynSolValue::Suint(SUInt(commitment), *size)),
         })
         .parse_next(input)
     }

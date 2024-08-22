@@ -44,7 +44,6 @@ pub(super) fn expand(cx: &ExpCtxt<'_>, function: &ItemFunction) -> Result<TokenS
     }
 
     let (sol_attrs, mut call_attrs) = function.split_attrs()?;
-
     let mut return_attrs = call_attrs.clone();
     cx.derives(&mut call_attrs, parameters, true);
     if !returns.is_empty() {
@@ -57,7 +56,6 @@ pub(super) fn expand(cx: &ExpCtxt<'_>, function: &ItemFunction) -> Result<TokenS
     let return_name = cx.return_name(function);
 
     let call_fields = expand_fields(parameters, cx);
-
     let return_fields = expand_fields(returns, cx);
 
     let call_tuple = expand_tuple_types(parameters.types(), cx).0;
@@ -158,7 +156,6 @@ pub(super) fn expand(cx: &ExpCtxt<'_>, function: &ItemFunction) -> Result<TokenS
             #abi
         };
     };
-    // println!("computes tokens: {}", tokens);
     Ok(tokens)
 }
 

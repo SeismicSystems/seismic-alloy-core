@@ -102,9 +102,6 @@ impl<const BITS: usize, const LIMBS: usize> fmt::UpperHex for Signed<BITS, LIMBS
     }
 }
 
-// #[cfg(feature = "seismic")]
-// impl fmt::UpperHex for SU
-
 impl<const BITS: usize, const LIMBS: usize> Signed<BITS, LIMBS> {
     /// Mask for the highest limb.
     pub(crate) const MASK: u64 = ruint::mask(BITS);
