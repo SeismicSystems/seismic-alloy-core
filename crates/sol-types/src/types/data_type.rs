@@ -1361,10 +1361,7 @@ mod seismic {
     macro_rules! declare_sint_types {
         ($($(#[$attr:meta])* type $name:ident;)*) => {$(
             $(#[$attr])*
-            type $name: Sized + Copy + PartialOrd + Ord + Eq + Hash
-                + Debug;
-                //  + Display;
-                //  + LowerHex + UpperHex;
+            type $name: Sized + Copy + PartialOrd + Ord + Eq + Hash + Debug;
         )*};
     }
 
@@ -1457,7 +1454,6 @@ mod seismic {
 
             #[inline]
             fn detokenize_uint(token: WordToken) -> $uty {
-                // zero out bits to ignore
                 let s = &token.0[..];
                 let u256 = U256::from_be_bytes::<32>(s.try_into().unwrap());
                 SUInt(u256)

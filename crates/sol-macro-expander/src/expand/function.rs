@@ -24,7 +24,6 @@ use syn::Result;
 /// }
 /// ```
 pub(super) fn expand(cx: &ExpCtxt<'_>, function: &ItemFunction) -> Result<TokenStream> {
-    // println!("function: {:#?}", function);
     let ItemFunction { parameters, returns, name, kind, .. } = function;
 
     if matches!(kind, FunctionKind::Constructor(_)) {
