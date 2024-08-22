@@ -34,6 +34,7 @@ std = [
     "serde_json?/std",
 ]
 serde_json = ["dep:serde_json"]
+seismic = ["alloy-primitives/seismic", "alloy-sol-type-parser/seismic"]
 
 [[bench]]
 name = "json_abi"

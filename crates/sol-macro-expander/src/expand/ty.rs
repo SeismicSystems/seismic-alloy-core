@@ -55,6 +55,26 @@ pub fn rec_expand_type(ty: &Type, crates: &ExternCrates, tokens: &mut TokenStrea
             quote_spanned! {span=> #alloy_sol_types::sol_data::#name<#size> }
         }
 
+        #[cfg(feature = "seismic")]
+        Type::Sint(span, size) | Type::Suint(span, size) => {
+            let name = match ty {
+                Type::Sint(..) => "Sint",
+                Type::Suint(..) => "Suint",
+                _ => unreachable!(),
+            };
+            let name = Ident::new(name, span);
+
+            let size = size.map_or(256, NonZeroU16::get);
+            assert!(size <= 256 && size % 8 == 0);
+            let size = Literal::u16_unsuffixed(size);
+            quote_spanned! {span=> #alloy_sol_types::sol_data::#name<#size> }
+        }
+
+        #[cfg(feature = "seismic")]
+        Type::Saddress(span) => {
+            quote_spanned! {span=> #alloy_sol_types::sol_data::Saddress }
+        }
+
         Type::Tuple(ref tuple) => {
             return tuple.paren_token.surround(tokens, |tokens| {
                 for pair in tuple.types.pairs() {
@@ -119,6 +139,21 @@ pub fn rec_expand_rust_type(ty: &Type, crates: &ExternCrates, tokens: &mut Token
             let name = Ident::new(&format!("{prefix}{size}"), span);
             quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::#name }
         }
+        #[cfg(feature = "seismic")]
+        Type::Sint(span, size) | Type::Suint(span, size) => {
+            let size = size.map_or(256, NonZeroU16::get);
+            let prefix = match ty {
+                Type::Sint(..) => "SI",
+                Type::Suint(..) => "SU",
+                _ => unreachable!(),
+            };
+            let name = Ident::new(&format!("{prefix}{size}"), span);
+            quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::#name }
+        }
+        #[cfg(feature = "seismic")]
+        Type::Saddress(span) => {
+            quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::SAddress }
+        }
 
         Type::Tuple(ref tuple) => {
             return tuple.paren_token.surround(tokens, |tokens| {
@@ -176,6 +211,9 @@ pub(super) fn type_base_data_size(cx: &ExpCtxt<'_>, ty: &Type) -> usize {
         | Type::Uint(..)
         | Type::FixedBytes(..)
         | Type::Function(_) => 32,
+
+        #[cfg(feature = "seismic")]
+        Type::Sint(..) | Type::Suint(..) | Type::Saddress(_) => 32,
 
         // dynamic types: 1 offset word, 1 length word
         Type::String(_) | Type::Bytes(_) | Type::Array(TypeArray { size: None, .. }) => 64,

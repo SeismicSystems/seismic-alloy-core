@@ -91,6 +91,27 @@ where
     word_impl!();
 }
 
+#[cfg(feature = "seismic")]
+impl EventTopic for Saddress {
+    word_impl!();
+}
+
+#[cfg(feature = "seismic")]
+impl<const BITS: usize> EventTopic for Sint<BITS>
+where
+    IntBitCount<BITS>: SupportedSint,
+{
+    word_impl!();
+}
+
+#[cfg(feature = "seismic")]
+impl<const BITS: usize> EventTopic for Suint<BITS>
+where
+    IntBitCount<BITS>: SupportedSint,
+{
+    word_impl!();
+}
+
 impl<const N: usize> EventTopic for FixedBytes<N>
 where
     ByteCount<N>: SupportedFixedBytes,

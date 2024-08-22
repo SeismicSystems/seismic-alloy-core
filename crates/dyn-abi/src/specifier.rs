@@ -61,6 +61,12 @@ impl Specifier<DynSolType> for RootType<'_> {
             "bytes" => Ok(DynSolType::Bytes),
             "uint" => Ok(DynSolType::Uint(256)),
             "int" => Ok(DynSolType::Int(256)),
+            #[cfg(feature = "seismic")]
+            "saddress" => Ok(DynSolType::Saddress),
+            #[cfg(feature = "seismic")]
+            "sint" => Ok(DynSolType::Sint(256)),
+            #[cfg(feature = "seismic")]
+            "suint" => Ok(DynSolType::Suint(256)),
             name => {
                 if let Some(sz) = name.strip_prefix("bytes") {
                     if let Ok(sz) = sz.parse() {

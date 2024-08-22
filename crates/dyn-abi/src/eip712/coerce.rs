@@ -3,6 +3,8 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
+#[cfg(feature = "seismic")]
+use alloy_primitives::aliases::{SAddress, SInt, SUInt};
 use alloy_primitives::{Address, Function, I256, U256};
 
 impl DynSolType {
@@ -51,6 +53,12 @@ impl DynSolType {
             Self::Function => function(value).map(DynSolValue::Function),
             Self::String => string(value).map(DynSolValue::String),
             Self::Bytes => bytes(value).map(DynSolValue::Bytes),
+            #[cfg(feature = "seismic")]
+            Self::Saddress => uint(32, value).map(|x| DynSolValue::Saddress(SAddress(x))),
+            #[cfg(feature = "seismic")]
+            Self::Sint(n) => uint(*n, value).map(|x| DynSolValue::Sint(SInt(x), *n)),
+            #[cfg(feature = "seismic")]
+            Self::Suint(n) => uint(*n, value).map(|x| DynSolValue::Suint(SUInt(x), *n)),
             _ => unreachable!(),
         }
     }

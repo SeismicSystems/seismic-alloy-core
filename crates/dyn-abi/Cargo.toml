@@ -71,7 +71,12 @@ arbitrary = [
     "dep:derive_arbitrary",
     "dep:proptest",
 ]
-seismic = ["alloy-sol-type-parser/seismic"]
+seismic = [
+    "alloy-primitives/seismic",
+    "alloy-json-abi/seismic",
+    "alloy-sol-types/seismic",
+    "alloy-sol-type-parser/seismic",
+]
 
 # Debug winnow parsers; intentionally doesn't enable `winnow/debug`
 debug = ["std", "alloy-sol-type-parser/debug"]

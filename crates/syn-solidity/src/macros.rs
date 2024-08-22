@@ -281,6 +281,8 @@ macro_rules! make_visitor {
                         | Type::String(_)
                         | Type::Bytes(_)
                         | Type::FixedBytes(..) => {},
+                        #[cfg(feature = "seismic")]
+                        Type::Sint(..) | Type::Suint(..) | Type::Saddress(_) => {},
                         Type::Array(TypeArray { ty, .. }) => v.visit_type(ty),
                         Type::Tuple(TypeTuple { types, .. }) => {
                             for ty in types {

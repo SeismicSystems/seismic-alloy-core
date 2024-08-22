@@ -540,6 +540,10 @@ impl DynSolType {
             | Self::FixedBytes(_)
             | Self::Int(_)
             | Self::Uint(_) => self.detokenize(DynToken::Word(topic)).unwrap(),
+            #[cfg(feature = "seismic")]
+            Self::Saddress | Self::Sint(_) | Self::Suint(_) => {
+                self.detokenize(DynToken::Word(topic)).unwrap()
+            }
             _ => DynSolValue::FixedBytes(topic, 32),
         }
     }
