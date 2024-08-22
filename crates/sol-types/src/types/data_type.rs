@@ -1221,11 +1221,7 @@ mod seismic {
     #[derive(Clone, Copy, Debug)]
     pub struct Saddress;
 
-    impl<T: Borrow<RustSAddress>> SolTypeValue<Saddress> for T
-    // where
-    //     T: Borrow<<IntBitCount<256> as SupportedSint>::Suint>,
-    //     IntBitCount<256>: SupportedSint,
-    {
+    impl<T: Borrow<RustSAddress>> SolTypeValue<Saddress> for T {
         #[inline]
         fn stv_to_tokens(&self) -> WordToken {
             <IntBitCount<256> as crate::types::data_type::SupportedInt>::tokenize_uint(
@@ -1362,9 +1358,6 @@ mod seismic {
         }
     }
 
-    // Declares types with the same traits
-    // TODO: Add more traits
-    // TODO: Integrate `num_traits` (needs `ruint`)
     macro_rules! declare_sint_types {
         ($($(#[$attr:meta])* type $name:ident;)*) => {$(
             $(#[$attr])*
@@ -1398,12 +1391,10 @@ mod seismic {
         /// The name of the `Uint` type: `uint<N>`
         const SUINT_NAME: &'static str;
 
-        /// The number of bits in the integer: `BITS`
-        ///
-        /// Note that this is not equal to `Self::Int::BITS`.
+        /// The number of bits in the preimage: `BITS`
         const BITS: usize;
 
-        /// The number of bytes in the integer: `BITS / 8`
+        /// The number of bytes in the preimage: `BITS / 8`
         const BYTES: usize = Self::BITS / 8;
 
         /// Tokenizes a signed integer.
