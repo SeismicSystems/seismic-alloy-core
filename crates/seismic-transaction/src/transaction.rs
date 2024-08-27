@@ -168,7 +168,8 @@ impl SeismicTransactionBase {
     /// # Parameters
     /// - `signature`: The signature to be included in the encoded transaction.
     /// - `out`: The buffer where the encoded transaction will be written.
-    /// - `with_header`: A boolean flag indicating whether to include the RLP header in the encoding.
+    /// - `with_header`: A boolean flag indicating whether to include the RLP header in the
+    ///   encoding.
     ///
     /// If `with_header` is `true`, the encoded transaction will include the RLP header.
     /// If `with_header` is `false`, the encoded transaction will not include the RLP header.

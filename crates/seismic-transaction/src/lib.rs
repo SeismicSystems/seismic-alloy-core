@@ -8,4 +8,3 @@ pub mod transaction;
 
 /// Module for type definitions and related functionalities.
 pub mod types;
-

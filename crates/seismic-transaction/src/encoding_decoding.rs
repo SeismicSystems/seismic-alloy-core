@@ -34,7 +34,8 @@ pub fn encode_2718_len(tx: &Signed<SeismicTransaction>) -> usize {
 /// - `buf`: A mutable reference to the buffer containing the RLP-encoded signed SeismicTransaction.
 ///
 /// # Returns
-/// A Result containing the decoded Signed<SeismicTransaction> or an alloy_rlp::Error if decoding fails.
+/// A Result containing the decoded Signed<SeismicTransaction> or an alloy_rlp::Error if decoding
+/// fails.
 #[allow(dead_code)]
 pub fn decode_signed_seismic_tx(
     buf: &mut &[u8],
@@ -62,10 +63,12 @@ pub fn decode_signed_seismic_tx(
 /// Decodes the fields of a signed SeismicTransaction from the provided buffer.
 ///
 /// # Parameters
-/// - `buf`: A mutable reference to the buffer containing the RLP-encoded fields of the signed SeismicTransaction.
+/// - `buf`: A mutable reference to the buffer containing the RLP-encoded fields of the signed
+///   SeismicTransaction.
 ///
 /// # Returns
-/// A Result containing the decoded Signed<SeismicTransaction> or an alloy_rlp::Error if decoding fails.
+/// A Result containing the decoded Signed<SeismicTransaction> or an alloy_rlp::Error if decoding
+/// fails.
 #[allow(dead_code)]
 pub fn decode_signed_seismic_fields(
     buf: &mut &[u8],
