@@ -5,22 +5,36 @@ use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256}
 use alloy_rlp::{BufMut, Decodable, Encodable, Header};
 use serde::{Deserialize, Serialize};
 
+/// Represents the base structure of a Seismic Transaction.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SeismicTransactionBase {
+    /// The chain ID of the transaction.
     pub chain_id: ChainId,
+    /// The nonce of the transaction.
     pub nonce: u64,
+    /// The recipient of the transaction.
     pub to: TxKind,
+    /// The gas limit for the transaction.
     pub gas_limit: u128,
+    /// The maximum fee per gas for the transaction.
     pub max_fee_per_gas: u128,
+    /// The maximum priority fee per gas for the transaction.
     pub max_priority_fee_per_gas: u128,
+    /// The value being transferred in the transaction.
     pub value: U256,
+    /// The access list for the transaction.
     pub access_list: AccessList,
+    /// The input data for the transaction.
     pub input: Bytes,
 }
 
+/// A trait representing a Seismic Transaction.
 pub trait SeismicTx: Sized {
+    /// Returns a reference to the base of the Seismic Transaction.
     fn base(&self) -> &SeismicTransactionBase;
+    /// Returns a mutable reference to the base of the Seismic Transaction.
     fn base_mut(&mut self) -> &mut SeismicTransactionBase;
+    /// Returns the transaction type.
     fn tx_type() -> u8 {
         0x64
     }
@@ -74,14 +88,19 @@ macro_rules! impl_seismic_tx {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// Represents a request for a seismic transaction.
 pub struct SeismicTransactionRequest {
+    /// The base transaction data.
     #[serde(flatten)]
     pub base: SeismicTransactionBase,
+    /// A vector containing secret data associated with the transaction.
     pub secret_data: Vec<SecretData>,
 }
 
+/// Represents a seismic transaction.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SeismicTransaction {
+    /// The base transaction data.
     #[serde(flatten)]
     pub base: SeismicTransactionBase,
 }
@@ -144,6 +163,15 @@ impl SeismicTransactionBase {
         signature.write_rlp_vrs(out);
     }
 
+    /// Encodes the transaction with the provided signature into the desired buffer.
+    ///
+    /// # Parameters
+    /// - `signature`: The signature to be included in the encoded transaction.
+    /// - `out`: The buffer where the encoded transaction will be written.
+    /// - `with_header`: A boolean flag indicating whether to include the RLP header in the encoding.
+    ///
+    /// If `with_header` is `true`, the encoded transaction will include the RLP header.
+    /// If `with_header` is `false`, the encoded transaction will not include the RLP header.
     pub fn encode_with_signature(
         &self,
         signature: &Signature,
@@ -186,6 +214,13 @@ impl SeismicTransactionBase {
 }
 
 impl SeismicTransactionRequest {
+    /// Computes the hash of the transaction request.
+    ///
+    /// This function encodes the base transaction fields using RLP encoding,
+    /// then computes the Keccak-256 hash of the encoded data.
+    ///
+    /// # Returns
+    /// A `B256` hash representing the Keccak-256 hash of the RLP encoded transaction fields.
     pub fn hash(&self) -> B256 {
         B256::from_slice(keccak256(alloy_rlp::encode(&self.base)).as_slice())
     }

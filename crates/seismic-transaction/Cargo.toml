@@ -8,19 +8,23 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 exclude.workspace = true
+
+[dependencies]
+# Seismic
+lazy_static = "1.4"
 seismic-chips.workspace = true
 seismic-db.workspace = true
 seismic-inspector.workspace = true
 seismic-preimages.workspace = true
 seismic-types.workspace = true
 seismic-dispatcher.workspace = true
-
-alloy-primitives = true
-
-[dependencies]
-# Seismic
-lazy_static = "1.4"
-
+alloy-eips.workspace = true
+alloy-primitives = { version = "0.7.7", default-features = false, features = ["serde", "getrandom"] }
+alloy-serde.workspace = true
+alloy-consensus.workspace = true
+alloy-rlp.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true
