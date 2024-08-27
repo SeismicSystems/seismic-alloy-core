@@ -1,0 +1,26 @@
+[package]
+name = "seismic-transaction"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+exclude.workspace = true
+seismic-chips.workspace = true
+seismic-db.workspace = true
+seismic-inspector.workspace = true
+seismic-preimages.workspace = true
+seismic-types.workspace = true
+seismic-dispatcher.workspace = true
+
+alloy-primitives = true
+
+[dependencies]
+# Seismic
+lazy_static = "1.4"
+
+
+[lints]
+workspace = true
