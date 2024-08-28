@@ -25,6 +25,7 @@ alloy-consensus.workspace = true
 alloy-rlp.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+reth-rpc-types.workspace = true
 
 [lints]
 workspace = true
