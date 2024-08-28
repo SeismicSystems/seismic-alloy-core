@@ -354,6 +354,21 @@ impl DynSolType {
                 })
             }
 
+            #[cfg(feature = "seismic")]
+            (Self::Saddress, DynToken::Word(word)) => {
+                Ok(DynSolValue::Saddress(sol_data::Saddress::detokenize(word.into())))
+            }
+
+            #[cfg(feature = "seismic")]
+            (Self::Sint(size), DynToken::Word(word)) => {
+                Ok(DynSolValue::Sint(sol_data::Sint::<256>::detokenize(word.into()), *size))
+            }
+
+            #[cfg(feature = "seismic")]
+            (Self::Suint(size), DynToken::Word(word)) => {
+                Ok(DynSolValue::Suint(sol_data::Suint::<256>::detokenize(word.into()), *size))
+            }
+
             _ => Err(crate::Error::custom("mismatched types on dynamic detokenization")),
         }
     }
