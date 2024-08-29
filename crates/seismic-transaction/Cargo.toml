@@ -1,0 +1,32 @@
+[package]
+name = "seismic-transaction"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+exclude.workspace = true
+
+[dependencies]
+# Seismic
+lazy_static = "1.4"
+seismic-chips.workspace = true
+seismic-db.workspace = true
+seismic-inspector.workspace = true
+seismic-preimages.workspace = true
+seismic-types.workspace = true
+seismic-dispatcher.workspace = true
+alloy-eips.workspace = true
+
+alloy-primitives = { workspace = true, default-features = false, features = ["serde", "getrandom"] }
+alloy-serde.workspace = true
+alloy-consensus.workspace = true
+alloy-rlp.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+reth-rpc-types.workspace = true
+
+[lints]
+workspace = true
