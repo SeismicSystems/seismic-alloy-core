@@ -19,7 +19,8 @@ seismic-preimages.workspace = true
 seismic-types.workspace = true
 seismic-dispatcher.workspace = true
 alloy-eips.workspace = true
-alloy-primitives = { version = "0.7.7", default-features = false, features = ["serde", "getrandom"] }
+
+alloy-primitives = { workspace = true, default-features = false, features = ["serde", "getrandom"] }
 alloy-serde.workspace = true
 alloy-consensus.workspace = true
 alloy-rlp.workspace = true

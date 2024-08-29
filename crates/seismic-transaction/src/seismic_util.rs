@@ -1,5 +1,4 @@
 use alloy_primitives::{B256, U256};
-use reth_rpc_types::BlockError;
 use crate::types::SecretData;
 use seismic_preimages::{InputPreImage, PreImage};
 use seismic_types::{primitive::PrimitiveBytes, Secret};
@@ -17,11 +16,13 @@ pub enum SeismicError {
     FailedToCommitPreimage,
 }
 
+/// create a commitment from a u256 preimage
 pub fn get_commitment(value: U256) -> B256 {
     let secret = Secret::new(value);
     secret.commit_b256()
 }
 
+/// store preimages and their commitments to the secrets store
 pub fn process_secret_data(
     secret_data: Vec<SecretData>,
     input: &[u8],
