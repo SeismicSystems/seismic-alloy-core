@@ -115,6 +115,3 @@ ruint-macro = { version = "1", default-features = false }
 winnow = { version = "0.6", default-features = false, features = ["alloc"] }
 
 reth-rpc-types = { git = "https://github.com/paradigmxyz/reth", rev = "fe43f575" }
-
-[patch.crates-io]
-alloy-primitives = { path = "crates/primitives" }
