@@ -4,6 +4,7 @@ use alloy_eips::eip2930::AccessList;
 use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header};
 use serde::{Deserialize, Serialize};
+use alloy_eips::eip7702::SignedAuthorization;
 
 /// Represents the base structure of a Seismic Transaction.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -72,6 +73,37 @@ macro_rules! impl_seismic_tx {
             }
             fn input(&self) -> &[u8] {
                 &self.base().input
+            }
+
+            fn max_fee_per_gas(&self) -> u128 {
+                self.base().max_fee_per_gas
+            }
+
+            fn max_priority_fee_per_gas(&self) -> Option<u128> {
+                Some(self.base().max_priority_fee_per_gas)
+            }
+            fn max_fee_per_blob_gas(&self) -> Option<u128> {
+                None
+            }
+
+            fn priority_fee_or_price(&self) -> u128 {
+                0
+            }
+
+            fn ty(&self) -> u8 {
+                0x64
+            }
+
+            fn access_list(&self) -> Option<&AccessList> {
+                Some(&self.base().access_list)
+            }
+            
+            fn blob_versioned_hashes(&self) -> Option<&[B256]> {
+                None
+            }
+
+            fn authorization_list(&self) -> Option<&[SignedAuthorization]> {
+                None
             }
         }
 
