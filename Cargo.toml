@@ -117,7 +117,3 @@ alloy-sol-macro-expander = { path = "crates/sol-macro-expander" }
 alloy-sol-type-parser = { path = "crates/sol-type-parser" }
 alloy-sol-types = { path = "crates/sol-types" }
 syn-solidity = { path = "crates/syn-solidity" }
-
-# revm = { path = "../seismic-revm/crates/revm" }
-# revm-primitives = { path = "../seismic-revm/crates/primitives" }
-# reth-rpc-types = { path = "../seismic-reth/crates/rpc/rpc-types" }
