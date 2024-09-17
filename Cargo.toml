@@ -50,10 +50,10 @@ alloy-sol-type-parser = { version = "0.8.1", path = "crates/sol-type-parser", de
 alloy-sol-types = { version = "0.8.1", path = "crates/sol-types", default-features = false }
 syn-solidity = { version = "0.8.1", path = "crates/syn-solidity", default-features = false }
 
-alloy-rpc-types = { version = "0.2.1", default-features = false }
-alloy-serde = { version = "0.2.1", default-features = false }
-alloy-consensus = { version = "0.2.1", default-features = false }
-alloy-eips = { version = "0.2.1", default-features = false, features = ["serde"] }
+alloy-rpc-types = { version = "0.3.5", default-features = false }
+alloy-serde = { version = "0.3.5", default-features = false }
+alloy-consensus = { version = "0.3.5", default-features = false }
+alloy-eips = { version = "0.3.5", default-features = false, features = ["serde"] }
 
 # serde
 serde = { version = "1.0.198", features = ["derive"] }
@@ -61,12 +61,8 @@ serde_json = "1.0.116"
 
 # seismic
 lazy_static = "1.4"
-seismic-chips = { path = "../mantle/crates/chips" }
-seismic-db = { path = "../mantle/crates/db" }
-seismic-inspector = { path = "../mantle/crates/inspector" }
 seismic-preimages = { path = "../mantle/crates/preimages" }
 seismic-types = { path = "../mantle/crates/types", features = ["zero-salt"]}
-seismic-dispatcher = { path = "../mantle/crates/dispatcher" }
 
 # macros
 proc-macro-error2 = "2.0.0"
@@ -115,3 +111,9 @@ reth-rpc-types = { git = "https://github.com/paradigmxyz/reth", rev = "fe43f575"
 
 [patch.crates-io]
 alloy-primitives = { path = "crates/primitives" }
+alloy-sol-macro = { path = "crates/sol-macro" }
+alloy-sol-macro-input = { path = "crates/sol-macro-input" }
+alloy-sol-macro-expander = { path = "crates/sol-macro-expander" }
+alloy-sol-type-parser = { path = "crates/sol-type-parser" }
+alloy-sol-types = { path = "crates/sol-types" }
+syn-solidity = { path = "crates/syn-solidity" }

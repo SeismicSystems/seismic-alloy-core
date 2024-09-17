@@ -12,12 +12,8 @@ exclude.workspace = true
 [dependencies]
 # Seismic
 lazy_static = "1.4"
-seismic-chips.workspace = true
-seismic-db.workspace = true
-seismic-inspector.workspace = true
 seismic-preimages.workspace = true
 seismic-types.workspace = true
-seismic-dispatcher.workspace = true
 alloy-eips.workspace = true
 
 alloy-primitives = { workspace = true, default-features = false, features = ["serde", "getrandom"] }

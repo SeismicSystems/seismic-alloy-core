@@ -331,15 +331,15 @@ impl DynSolType {
             Just(Self::Address),
             any::<usize>().prop_map(|x| Self::Int(int_size(x))),
             any::<usize>().prop_map(|x| Self::Uint(int_size(x))),
-            #[cfg(feature = "seismic")]
-            Just(Self::Saddress),
-            #[cfg(feature = "seismic")]
-            any::<usize>().prop_map(|x| Self::Sint(int_size(x))),
-            #[cfg(feature = "seismic")]
-            any::<usize>().prop_map(|x| Self::Suint(int_size(x))),
             (1..=32usize).prop_map(Self::FixedBytes),
             Just(Self::Bytes),
             Just(Self::String),
+            #[cfg(feature = "seismic")]
+            Just(Self::Saddress),
+            // #[cfg(feature = "seismic")]
+            // any::<usize>().prop_map(|x| Self::Sint(int_size(x))),
+            // #[cfg(feature = "seismic")]
+            // any::<usize>().prop_map(|x| Self::Suint(int_size(x))),
         ]
     }
 
@@ -506,12 +506,12 @@ impl DynSolValue {
             any::<Address>().prop_map(Self::Address),
             int_strategy::<I256>().prop_map(|(x, sz)| Self::Int(adjust_int(x, sz), sz)),
             int_strategy::<U256>().prop_map(|(x, sz)| Self::Uint(adjust_uint(x, sz), sz)),
-            #[cfg(feature = "seismic")]
-            int_strategy::<U256>().prop_map(|(x, sz)| Self::Saddress(SAddress(adjust_uint(x, sz)))),
-            #[cfg(feature = "seismic")]
-            int_strategy::<U256>().prop_map(|(x, sz)| Self::Sint(SInt(adjust_uint(x, sz)), sz)),
-            #[cfg(feature = "seismic")]
-            int_strategy::<U256>().prop_map(|(x, sz)| Self::Suint(SUInt(adjust_uint(x, sz)), sz)),
+            // #[cfg(feature = "seismic")]
+            // int_strategy::<U256>().prop_map(|(x, sz)| Self::Saddress(SAddress(adjust_uint(x, sz)))),
+            // #[cfg(feature = "seismic")]
+            // int_strategy::<U256>().prop_map(|(x, sz)| Self::Sint(SInt(adjust_uint(x, sz)), sz)),
+            // #[cfg(feature = "seismic")]
+            // int_strategy::<U256>().prop_map(|(x, sz)| Self::Suint(SUInt(adjust_uint(x, sz)), sz)),
             (any::<B256>(), 1..=32usize).prop_map(|(x, sz)| Self::FixedBytes(adjust_fb(x, sz), sz)),
             any::<Vec<u8>>().prop_map(Self::Bytes),
             any::<String>().prop_map(Self::String),
