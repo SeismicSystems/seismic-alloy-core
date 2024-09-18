@@ -5,7 +5,7 @@ use reth_rpc_types::transaction::{
     EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest,
     LegacyTransactionRequest,
 };
-use seismic_preimages::PreImageValue;
+use seismic_types::preimage::value::PreImageValue;
 use serde::{Deserialize, Serialize};
 
 /// Represents secret data associated with a transaction.

@@ -1,7 +1,6 @@
 use alloy_primitives::{B256, U256};
 use crate::types::SecretData;
-use seismic_preimages::{InputPreImage, PreImage};
-use seismic_types::{primitive::PrimitiveBytes, Secret};
+use seismic_types::{primitive::PrimitiveBytes, Secret, preimage::input::InputPreImage, preimage::preimage::PreImage};
 
 /// Custom SeismicError enum
 #[derive(Debug, Copy, Clone)]

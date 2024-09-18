@@ -12,11 +12,10 @@ exclude.workspace = true
 [dependencies]
 # Seismic
 lazy_static = "1.4"
-seismic-preimages.workspace = true
 seismic-types.workspace = true
 alloy-eips.workspace = true
 
-alloy-primitives = { workspace = true, default-features = false, features = ["serde", "getrandom"] }
+alloy-primitives = { workspace = true, default-features = false, features = ["serde", "getrandom", "seismic"] }
 alloy-serde.workspace = true
 alloy-consensus.workspace = true
 alloy-rlp.workspace = true
