@@ -106,13 +106,13 @@ macro_rules! sint_aliases {
 #[cfg(feature = "seismic")]
 #[derive(Copy, Clone, Debug, PartialEq)]
 /// Seismic-shielded address type. Preimage is an address
-pub struct SAddress(pub U256);
+pub struct SAddress(pub crate::Address);
 
 #[cfg(all(feature = "seismic", feature = "arbitrary"))]
 impl arbitrary::Arbitrary<'_> for SAddress {
     fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
-        let arbitrary_u256 = u.arbitrary::<U256>()?;
-        Ok(SAddress(arbitrary_u256))
+        let arbitrary_addr = u.arbitrary::<crate::Address>()?;
+        Ok(SAddress(arbitrary_addr))
     }
 }
 
