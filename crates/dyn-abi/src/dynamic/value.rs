@@ -349,7 +349,11 @@ impl DynSolValue {
                 tuple.iter().map(Self::sol_type_name_capacity).sum::<Option<usize>>().map(|x| x + 8)
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) => Some(8),
+            Self::Saddress(_) => Some(8),
+            #[cfg(feature = "seismic")]
+            Self::Sint(_, _) => Some(8),
+            #[cfg(feature = "seismic")]
+            Self::Suint(_, _) => Some(8),
         }
     }
 
@@ -766,10 +770,18 @@ impl DynSolValue {
                 }
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress(SAddress(commitment))
-            | Self::Sint(SInt(commitment), _)
-            | Self::Suint(SUInt(commitment), _) => {
-                buf.extend_from_slice(&commitment.to_be_bytes::<32>())
+            Self::Saddress(SAddress(address)) => buf.extend_from_slice(&address.as_slice()),
+            #[cfg(feature = "seismic")]
+            Self::Sint(SInt(num), size) => {
+                let byte_size = *size / 8;
+                let start = 32usize.saturating_sub(byte_size);
+                buf.extend_from_slice(&num.to_be_bytes::<32>()[start..]);
+            }
+            #[cfg(feature = "seismic")]
+            Self::Suint(SUInt(num), size) => {
+                let byte_size = *size / 8;
+                let start = 32usize.saturating_sub(byte_size);
+                buf.extend_from_slice(&num.to_be_bytes::<32>()[start..]);
             }
         }
     }
@@ -790,7 +802,11 @@ impl DynSolValue {
             }
             as_tuple!(Self inner) => inner.iter().map(Self::abi_packed_encoded_size).sum(),
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) => 32,
+            Self::Saddress(_) => 20,
+            #[cfg(feature = "seismic")]
+            Self::Sint(SInt(_), size) => (size / 8).min(32),
+            #[cfg(feature = "seismic")]
+            Self::Suint(SUInt(_), size) => (size / 8).min(32),
         }
     }
 
@@ -808,9 +824,11 @@ impl DynSolValue {
             Self::Array(t) => DynToken::from_dyn_seq(t),
             as_fixed_seq!(t) => DynToken::from_fixed_seq(t),
             #[cfg(feature = "seismic")]
-            Self::Saddress(SAddress(commitment))
-            | Self::Sint(SInt(commitment), _)
-            | Self::Suint(SUInt(commitment), _) => commitment.to_be_bytes::<32>().into(),
+            Self::Saddress(SAddress(a)) => a.into_word().into(),
+            #[cfg(feature = "seismic")]
+            Self::Sint(SInt(int), _) => int.to_be_bytes::<32>().into(),
+            #[cfg(feature = "seismic")]
+            Self::Suint(SUInt(uint), _) => uint.to_be_bytes::<32>().into(),
         }
     }
 

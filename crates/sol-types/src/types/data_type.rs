@@ -1202,6 +1202,7 @@ impl NameBuffer {
 #[cfg(feature = "seismic")]
 mod seismic {
     use super::*;
+    use alloy_primitives::{Signed as RustSigned, Uint as RustUint};
 
     /// Saddress - `saddress`
     #[derive(Clone, Copy, Debug)]
@@ -1210,22 +1211,19 @@ mod seismic {
     impl<T: Borrow<RustSAddress>> SolTypeValue<Saddress> for T {
         #[inline]
         fn stv_to_tokens(&self) -> WordToken {
-            <IntBitCount<256> as crate::types::data_type::SupportedInt>::tokenize_uint(
-                self.borrow().0,
-            )
+            WordToken(RustAddress::new(self.borrow().0.into()).into_word())
         }
 
         #[inline]
         fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
-            <IntBitCount<256> as crate::types::data_type::SupportedInt>::encode_packed_to_uint(
-                self.borrow().0,
-                out,
-            );
+            let address: RustAddress = self.borrow().0;
+            let fixed_bytes_20 = address.0;
+            out.extend_from_slice(&fixed_bytes_20.0);
         }
 
         #[inline]
         fn stv_eip712_data_word(&self) -> Word {
-            SolTypeValue::<Suint<256>>::stv_to_tokens(&SUInt(self.borrow().0)).0
+            SolTypeValue::<Address>::stv_to_tokens(&self.borrow().0).0
         }
     }
 
@@ -1238,14 +1236,13 @@ mod seismic {
         const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
 
         #[inline]
-        fn valid_token(_token: &Self::Token<'_>) -> bool {
-            return true;
+        fn valid_token(token: &Self::Token<'_>) -> bool {
+            utils::check_zeroes(&token.0[..12])
         }
 
         #[inline]
         fn detokenize(token: Self::Token<'_>) -> Self::RustType {
-            let s = &token.0[0..];
-            RustSAddress(U256::from_be_bytes::<32>(s.try_into().unwrap()))
+            RustSAddress(RustAddress::from_word(token.0))
         }
     }
 
@@ -1396,107 +1393,110 @@ mod seismic {
     }
 
     macro_rules! supported_sint {
-        ($($n:literal => $i:ident, $u:ident;)+) => {$(
-            impl SupportedSint for IntBitCount<$n> {
+        ($($bits:literal => $i:ident, $u:ident, $limbs:literal;)+) => {$(
+            impl SupportedSint for IntBitCount<$bits> {
                 type Sint = $i;
                 type Suint = $u;
 
-                const SINT_NAME: &'static str = concat!("sint", $n);
-                const SUINT_NAME: &'static str = concat!("suint", $n);
+                const SINT_NAME: &'static str = concat!("sint", $bits);
+                const SUINT_NAME: &'static str = concat!("suint", $bits);
 
-                const BITS: usize = $n;
+                const BITS: usize = $bits;
 
-                sint_impls2!($i $n);
-                suint_impls2!($u);
+                sint_impls2!($i $bits $limbs);
+                suint_impls2!($u $bits $limbs);
             }
         )+};
     }
 
     macro_rules! sint_impls {
-        (@big_int $ity:ident $n:literal) => {
+        (@big_int $ity:ident $bits:literal $limbs:literal) => {
             #[inline]
             fn tokenize_int(int: $ity) -> WordToken {
-                <IntBitCount<$n> as SupportedSint>::tokenize_uint(SUInt(int.0))
+                let mut word = Word::ZERO;
+                word[..].copy_from_slice(&int.0.to_be_bytes::<$bits>()[..]);
+                WordToken(word)
             }
 
             #[inline]
             fn detokenize_int(token: WordToken) -> $ity {
-                let suint = <IntBitCount<$n> as SupportedSint>::detokenize_uint(token);
-                SInt(suint.0)
+                let s = &token.0[..];
+                let signed = RustSigned::<$bits, $limbs>::from_be_bytes::<$bits>(s.try_into().unwrap());
+                SInt(signed)
             }
 
             #[inline]
             fn encode_packed_to_int(int: $ity, out: &mut Vec<u8>) {
-                <IntBitCount<$n> as SupportedSint>::encode_packed_to_uint(SUInt(int.0), out);
+                out.extend_from_slice(&int.0.to_be_bytes::<$bits>()[..]);
             }
         };
-        (@big_uint $uty:ident) => {
+        (@big_uint $uty:ident $bits:literal $limbs:literal) => {
             #[inline]
             fn tokenize_uint(uint: $uty) -> WordToken {
                 let mut word = Word::ZERO;
-                word[..].copy_from_slice(&uint.0.to_be_bytes::<32>()[..]);
+                word[..].copy_from_slice(&uint.0.to_be_bytes::<$bits>()[..]);
                 WordToken(word)
             }
 
             #[inline]
             fn detokenize_uint(token: WordToken) -> $uty {
                 let s = &token.0[..];
-                let u256 = U256::from_be_bytes::<32>(s.try_into().unwrap());
-                SUInt(u256)
+                let unsigned = RustUint::<$bits, $limbs>::from_be_bytes::<$bits>(s.try_into().unwrap());
+                SUInt(unsigned)
             }
 
             #[inline]
             fn encode_packed_to_uint(uint: $uty, out: &mut Vec<u8>) {
-                out.extend_from_slice(&uint.0.to_be_bytes::<32>()[..]);
+                out.extend_from_slice(&uint.0.to_be_bytes::<$bits>()[..]);
             }
         };
     }
 
     macro_rules! sint_impls2 {
-        ($t:ident $n:literal) => {
-            sint_impls! { @big_int $t $n }
+        ($t:ident $bits:literal $limbs:literal) => {
+            sint_impls! { @big_int $t $bits $limbs }
         };
     }
 
     macro_rules! suint_impls2 {
-        ($t:ident) => {
-            sint_impls! { @big_uint $t }
+        ($t:ident $bits:literal $limbs:literal) => {
+            sint_impls! { @big_uint $t $bits $limbs }
         };
     }
 
     supported_sint!(
-          8 =>  SI8,    SU8;
-         16 =>  SI16,  SU16;
-         24 =>  SI24,  SU24;
-         32 =>  SI32,  SU32;
-         40 =>  SI40,  SU40;
-         48 =>  SI48,  SU48;
-         56 =>  SI56,  SU56;
-         64 =>  SI64,  SU64;
-         72 =>  SI72,  SU72;
-         80 =>  SI80,  SU80;
-         88 =>  SI88,  SU88;
-         96 =>  SI96,  SU96;
-        104 => SI104, SU104;
-        112 => SI112, SU112;
-        120 => SI120, SU120;
-        128 => SI128, SU128;
-        136 => SI136, SU136;
-        144 => SI144, SU144;
-        152 => SI152, SU152;
-        160 => SI160, SU160;
-        168 => SI168, SU168;
-        176 => SI176, SU176;
-        184 => SI184, SU184;
-        192 => SI192, SU192;
-        200 => SI200, SU200;
-        208 => SI208, SU208;
-        216 => SI216, SU216;
-        224 => SI224, SU224;
-        232 => SI232, SU232;
-        240 => SI240, SU240;
-        248 => SI248, SU248;
-        256 => SI256, SU256;
+        8 => SI8, SU8, 1;
+        16 => SI16, SU16, 1;
+        24 => SI24, SU24, 1;
+        32 => SI32, SU32, 1;
+        40 => SI40, SU40, 1;
+        48 => SI48, SU48, 1;
+        56 => SI56, SU56, 1;
+        64 => SI64, SU64, 1;
+        72 => SI72, SU72, 2;
+        80 => SI80, SU80, 2;
+        88 => SI88, SU88, 2;
+        96 => SI96, SU96, 2;
+        104 => SI104, SU104, 2;
+        112 => SI112, SU112, 2;
+        120 => SI120, SU120, 2;
+        128 => SI128, SU128, 2;
+        136 => SI136, SU136, 3;
+        144 => SI144, SU144, 3;
+        152 => SI152, SU152, 3;
+        160 => SI160, SU160, 3;
+        168 => SI168, SU168, 3;
+        176 => SI176, SU176, 3;
+        184 => SI184, SU184, 3;
+        192 => SI192, SU192, 3;
+        200 => SI200, SU200, 4;
+        208 => SI208, SU208, 4;
+        216 => SI216, SU216, 4;
+        224 => SI224, SU224, 4;
+        232 => SI232, SU232, 4;
+        240 => SI240, SU240, 4;
+        248 => SI248, SU248, 4;
+        256 => SI256, SU256, 4;
     );
 }
 
