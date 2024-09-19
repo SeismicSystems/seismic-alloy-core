@@ -1211,17 +1211,19 @@ mod seismic {
     impl<T: Borrow<RustSAddress>> SolTypeValue<Saddress> for T {
         #[inline]
         fn stv_to_tokens(&self) -> WordToken {
-            RustAddress::stv_to_tokens(self.0.borrow())
+            WordToken(RustAddress::new(self.borrow().0.into()).into_word())
         }
 
         #[inline]
         fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
-            out.extend_from_slice(self.0.borrow());
+            let address: RustAddress = self.borrow().0;
+            let fixed_bytes_20 = address.0;
+            out.extend_from_slice(&fixed_bytes_20.0);
         }
 
         #[inline]
         fn stv_eip712_data_word(&self) -> Word {
-            SolTypeValue::<SAddress>::stv_to_tokens(self.0.borrow()).0
+            SolTypeValue::<Address>::stv_to_tokens(&self.borrow().0).0
         }
     }
 
