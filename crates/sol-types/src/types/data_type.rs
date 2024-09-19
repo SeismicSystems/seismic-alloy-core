@@ -13,7 +13,6 @@ use alloc::{string::String as RustString, vec::Vec};
 use alloy_primitives::{
     aliases::*, keccak256, Address as RustAddress, Bytes as RustBytes,
     FixedBytes as RustFixedBytes, Function as RustFunction, I256, U256,
-    Signed as RustSigned, Uint as RustUint
 };
 
 #[cfg(feature = "seismic")]
@@ -1203,6 +1202,7 @@ impl NameBuffer {
 #[cfg(feature = "seismic")]
 mod seismic {
     use super::*;
+    use alloy_primitives::{Signed as RustSigned, Uint as RustUint};
 
     /// Saddress - `saddress`
     #[derive(Clone, Copy, Debug)]
