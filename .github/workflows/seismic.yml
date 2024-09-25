@@ -46,6 +46,9 @@ jobs:
           name: id_ed25519_mantle
           # They already insert the known_hosts entry for github.com
           known_hosts: unnecessary
+        config: |                                         # will be appended to existing .ssh/config
+          Host github.com
+            IdentityFile /home/runner/.ssh/id_ed25519_mantle
       - run: RUSTFLAGS="-D warnings" cargo check
 
   cargo-test:
@@ -64,4 +67,7 @@ jobs:
           key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
           name: id_ed25519_mantle
           known_hosts: unnecessary
+        config: |                                         # will be appended to existing .ssh/config
+          Host github.com
+            IdentityFile /home/runner/.ssh/id_ed25519_mantle
       - run: cargo test
