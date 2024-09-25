@@ -1,10 +1,10 @@
-name: Rust CI
+name: Seismic CI
 
 on:
   push:
-    branches: [ seismic use-mantle-git-commit ]
+    branches: [ use-mantle-git-commit ]
   pull_request:
-    branches: [ seismic use-mantle-git-commit ]
+    branches: [ seismic ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
