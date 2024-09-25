@@ -37,6 +37,7 @@ jobs:
         uses: shimataro/ssh-key-action@v2.7.0
         with:
           key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
+          name: id_ed25519_mantle
       - run: RUSTFLAGS="-D warnings" cargo check
 
   cargo-test:
@@ -54,4 +55,5 @@ jobs:
         uses: shimataro/ssh-key-action@v2.7.0
         with:
           key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
+          name: id_ed25519_mantle
       - run: cargo test
