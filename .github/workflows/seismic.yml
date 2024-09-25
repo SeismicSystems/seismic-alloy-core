@@ -47,7 +47,7 @@ jobs:
       #     # They already insert the known_hosts entry for github.com
       #     known_hosts: unnecessary
       #     config: |                                         # will be appended to existing .ssh/config
-      #       Host github.com
+      #       Host github.com 
       #         IdentityFile /home/runner/.ssh/id_ed25519_mantle
       - name: Install Mantle SSH Key
         uses: webfactory/ssh-agent@v0.9.0
