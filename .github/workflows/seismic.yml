@@ -44,7 +44,8 @@ jobs:
         with:
           key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
           name: id_ed25519_mantle
-          known_hosts: github.com
+          # They already insert the known_hosts entry for github.com
+          known_hosts: ' '
       - run: RUSTFLAGS="-D warnings" cargo check
 
   cargo-test:
@@ -62,5 +63,5 @@ jobs:
         with:
           key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
           name: id_ed25519_mantle
-          known_hosts: github.com
+          known_hosts: ' '
       - run: cargo test
