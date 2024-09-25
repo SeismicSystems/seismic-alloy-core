@@ -14,6 +14,16 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  install-ssh-keys:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Mantle SSH Key
+        uses: shimataro/ssh-key-action@v2.7.0
+        with:
+          key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
+          name: id_ed25519_mantle
+          known_hosts: github.com
+
   cargo-fmt:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -25,6 +35,7 @@ jobs:
       - run: cargo fmt --all --check
 
   cargo-check-warnings:
+    needs: install-ssh-keys
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -33,15 +44,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
-      - name: Install Mantle SSH Key
-        uses: shimataro/ssh-key-action@v2.7.0
-        with:
-          key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
-          name: id_ed25519_mantle
-          known_hosts: github.com
       - run: RUSTFLAGS="-D warnings" cargo check
 
   cargo-test:
+    needs: install-ssh-keys
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -50,10 +56,4 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
-      - name: Install Mantle SSH Key
-        uses: shimataro/ssh-key-action@v2.7.0
-        with:
-          key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
-          name: id_ed25519_mantle
-          known_hosts: github.com
       - run: cargo test
