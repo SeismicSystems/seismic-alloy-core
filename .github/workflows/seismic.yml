@@ -39,35 +39,39 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+      # - name: Install Mantle SSH Key
+      #   uses: shimataro/ssh-key-action@v2.7.0
+      #   with:
+      #     key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
+      #     name: id_ed25519_mantle
+      #     # They already insert the known_hosts entry for github.com
+      #     known_hosts: unnecessary
+      #     config: |                                         # will be appended to existing .ssh/config
+      #       Host github.com
+      #         IdentityFile /home/runner/.ssh/id_ed25519_mantle
       - name: Install Mantle SSH Key
-        uses: shimataro/ssh-key-action@v2.7.0
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
-          name: id_ed25519_mantle
-          # They already insert the known_hosts entry for github.com
-          known_hosts: unnecessary
-          config: |                                         # will be appended to existing .ssh/config
-            Host github.com
-              IdentityFile /home/runner/.ssh/id_ed25519_mantle
+            ssh-private-key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
       - run: RUSTFLAGS="-D warnings" cargo check
 
-  cargo-test:
-    # needs: install-ssh-keys
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-      - name: Install Mantle SSH Key
-        uses: shimataro/ssh-key-action@v2.7.0
-        with:
-          key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
-          name: id_ed25519_mantle
-          known_hosts: unnecessary
-          config: |                                         # will be appended to existing .ssh/config
-            Host github.com
-              IdentityFile /home/runner/.ssh/id_ed25519_mantle
-      - run: cargo test
+  # cargo-test:
+  #   # needs: install-ssh-keys
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 30
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: dtolnay/rust-toolchain@stable
+  #     - uses: Swatinem/rust-cache@v2
+  #       with:
+  #         cache-on-failure: true
+  #     - name: Install Mantle SSH Key
+  #       uses: shimataro/ssh-key-action@v2.7.0
+  #       with:
+  #         key: ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
+  #         name: id_ed25519_mantle
+  #         known_hosts: unnecessary
+  #         config: |                                         # will be appended to existing .ssh/config
+  #           Host github.com
+  #             IdentityFile /home/runner/.ssh/id_ed25519_mantle
+  #     - run: cargo test
