@@ -14,9 +14,8 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
 
-
 jobs:
-  cargo-fmt:
+  code-formatting:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -26,36 +25,22 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all --check
 
-  # Define the common steps using YAML anchors
-  # The '&setup-steps' defines an anchor named 'setup-steps' that can be referenced later
-  _setup: &setup-steps
-    - uses: actions/checkout@v4
-    - uses: dtolnay/rust-toolchain@stable
-    - uses: Swatinem/rust-cache@v2
-      with:
-        cache-on-failure: true
-    - name: Install SSH Keys
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: |
-          ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
-          ${{ secrets.ACTIONS_SFORGESTD_SSH_ED25519 }}
-
-  cargo-check-warnings:
+  cargo:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      # Reference the shared steps using '*setup-steps'
-      <<: *setup-steps
-      - name: Cargo Check with Warnings
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: Install SSH Keys
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+            ssh-private-key: |
+              ${{ secrets.ACTIONS_MANTLE_SSH_ED25519 }}
+              ${{ secrets.ACTIONS_SFORGESTD_SSH_ED25519 }}
+      - name: cargo check warnings
         run: RUSTFLAGS="-D warnings" cargo check
-
-  cargo-test:
-    needs: cargo-check-warnings
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      # Reference the shared steps again
-      <<: *setup-steps
-      - name: Cargo Test
+      - name: cargo test
         run: cargo test
