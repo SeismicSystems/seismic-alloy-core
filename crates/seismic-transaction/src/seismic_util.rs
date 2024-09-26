@@ -1,13 +1,17 @@
-use alloy_primitives::{B256, U256};
 use crate::types::SecretData;
-use seismic_types::{primitive::PrimitiveBytes, Secret, preimage::input::InputPreImage, preimage::preimage::PreImage};
+use alloy_primitives::{B256, U256};
+use seismic_types::{
+    preimage::{input::InputPreImage, preimage::PreImage},
+    primitive::PrimitiveBytes,
+    Secret,
+};
 
 /// Custom SeismicError enum
 #[derive(Debug, Copy, Clone)]
 pub enum SeismicError {
     /// Error parsing preimage  
     ParsePreimageError,
-    /// Error calculating commitment 
+    /// Error calculating commitment
     CommitmentCalculationError,
     /// Error verifying commitment
     InvalidCommitmentError,
@@ -22,10 +26,7 @@ pub fn get_commitment(value: U256) -> B256 {
 }
 
 /// store preimages and their commitments to the secrets store
-pub fn process_secret_data(
-    secret_data: Vec<SecretData>,
-    input: &[u8],
-) -> Result<(), SeismicError> {
+pub fn process_secret_data(secret_data: Vec<SecretData>, input: &[u8]) -> Result<(), SeismicError> {
     let input_pre_images = create_input_pre_images(&secret_data);
 
     let preimages = parse_preimages(&input_pre_images)?;
@@ -53,14 +54,9 @@ fn create_input_pre_images(secrets: &[SecretData]) -> Vec<InputPreImage> {
 fn parse_preimages(input_pre_images: &[InputPreImage]) -> Result<Vec<PreImage>, SeismicError> {
     input_pre_images
         .iter()
-        .map(|preimage| {
-            preimage
-                .parse()
-                .map_err(|_| SeismicError::ParsePreimageError)
-        })
+        .map(|preimage| preimage.parse().map_err(|_| SeismicError::ParsePreimageError))
         .collect()
 }
-
 
 fn create_secrets(preimages: &[PreImage]) -> Vec<Secret> {
     preimages
@@ -103,7 +99,7 @@ fn extract_input_commitments(
             if end <= input.len() {
                 Ok(B256::from_slice(&input[start..end]))
             } else {
-            Err(SeismicError::CommitmentCalculationError)
+                Err(SeismicError::CommitmentCalculationError)
             }
         })
         .collect()
@@ -111,8 +107,8 @@ fn extract_input_commitments(
 
 fn verify_commitments(calculated: &[B256], input: &[B256]) -> Result<(), SeismicError> {
     if calculated != input {
-        Err(SeismicError::InvalidCommitmentError)   }
-    else {
+        Err(SeismicError::InvalidCommitmentError)
+    } else {
         Ok(())
     }
 }

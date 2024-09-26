@@ -1,10 +1,9 @@
 use crate::types::SecretData;
 use alloy_consensus::{SignableTransaction, Signed, Transaction};
-use alloy_eips::eip2930::AccessList;
+use alloy_eips::{eip2930::AccessList, eip7702::SignedAuthorization};
 use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header};
 use serde::{Deserialize, Serialize};
-use alloy_eips::eip7702::SignedAuthorization;
 
 /// Represents the base structure of a Seismic Transaction.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -97,7 +96,7 @@ macro_rules! impl_seismic_tx {
             fn access_list(&self) -> Option<&AccessList> {
                 Some(&self.base().access_list)
             }
-            
+
             fn blob_versioned_hashes(&self) -> Option<&[B256]> {
                 None
             }

@@ -61,7 +61,7 @@ serde_json = "1.0.116"
 
 # seismic
 lazy_static = "1.4"
-seismic-types = { path = "../mantle/crates/types", features = ["zero-salt"]}
+seismic-types = { git = "ssh://git@github.com/SeismicSystems/mantle.git", rev = "90277e21", features = ["zero-salt"] }
 
 # macros
 proc-macro-error2 = "2.0.0"

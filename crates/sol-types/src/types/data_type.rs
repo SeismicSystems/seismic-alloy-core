@@ -1421,7 +1421,8 @@ mod seismic {
             #[inline]
             fn detokenize_int(token: WordToken) -> $ity {
                 let s = &token.0[..];
-                let signed = RustSigned::<$bits, $limbs>::from_be_bytes::<$bits>(s.try_into().unwrap());
+                let signed =
+                    RustSigned::<$bits, $limbs>::from_be_bytes::<$bits>(s.try_into().unwrap());
                 SInt(signed)
             }
 
@@ -1441,7 +1442,8 @@ mod seismic {
             #[inline]
             fn detokenize_uint(token: WordToken) -> $uty {
                 let s = &token.0[..];
-                let unsigned = RustUint::<$bits, $limbs>::from_be_bytes::<$bits>(s.try_into().unwrap());
+                let unsigned =
+                    RustUint::<$bits, $limbs>::from_be_bytes::<$bits>(s.try_into().unwrap());
                 SUInt(unsigned)
             }
 
