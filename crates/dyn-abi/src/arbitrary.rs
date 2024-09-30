@@ -11,12 +11,12 @@
 
 use crate::{DynSolType, DynSolValue};
 #[cfg(feature = "seismic")]
-use alloy_primitives::aliases::{SAddress, SInt, SUInt};
+use alloy_primitives::aliases::{SInt, SUInt};
 use alloy_primitives::{Address, Function, B256, I256, U256};
 use arbitrary::{size_hint, Unstructured};
 use core::ops::RangeInclusive;
 use proptest::{
-    collection::{hash_set as hash_set_strategy, vec as vec_strategy, VecStrategy},
+    collection::{vec as vec_strategy, VecStrategy},
     prelude::*,
     strategy::{Flatten, Map, Recursive, TupleUnion, WA},
 };
@@ -478,16 +478,16 @@ impl DynSolValue {
                     .sboxed()
             }
             #[cfg(feature = "seismic")]
-            &DynSolType::Saddress => any::<U256>()
-                .prop_map(move |x| Self::Saddress(SAddress(adjust_uint(x, 32))))
+            &DynSolType::Saddress => any::<Address>()
+                .prop_map(Self::Address)
                 .sboxed(),
             #[cfg(feature = "seismic")]
-            &DynSolType::Sint(bytes) => any::<U256>()
-                .prop_map(move |x| Self::Sint(SInt(adjust_uint(x, 32)), bytes))
+            &DynSolType::Sint(sz) => any::<I256>()
+                .prop_map(move |x| Self::Sint(SInt(adjust_int(x, sz)), sz))
                 .sboxed(),
             #[cfg(feature = "seismic")]
-            &DynSolType::Suint(bytes) => any::<U256>()
-                .prop_map(move |x| Self::Suint(SUInt(adjust_uint(x, 32)), bytes))
+            &DynSolType::Suint(sz) => any::<U256>()
+                .prop_map(move |x| Self::Suint(SUInt(adjust_uint(x, sz)), sz))
                 .sboxed(),
         }
     }
