@@ -522,7 +522,7 @@ impl DynSolValue {
             any::<String>().prop_map(Self::String),
         ]
     }
-    
+
     #[cfg(feature = "seismic")]
     #[inline]
     fn leaf() -> impl Strategy<Value = Self> {
@@ -530,7 +530,7 @@ impl DynSolValue {
             any::<bool>().prop_map(Self::Bool),
             any::<Address>().prop_map(Self::Address),
             int_strategy::<I256>().prop_map(|(x, sz)| Self::Int(adjust_int(x, sz), sz)),
-            int_strategy::<U256>().prop_map(|(x, sz)| Self::Uint(adjust_uint(x, sz), sz)),            
+            int_strategy::<U256>().prop_map(|(x, sz)| Self::Uint(adjust_uint(x, sz), sz)),
             any::<Address>().prop_map(|x| Self::Saddress(SAddress(x))),
             int_strategy::<I256>().prop_map(|(x, sz)| Self::Sint(SInt(adjust_int(x, sz)), sz)),
             int_strategy::<U256>().prop_map(|(x, sz)| Self::Suint(SUInt(adjust_uint(x, sz)), sz)),
