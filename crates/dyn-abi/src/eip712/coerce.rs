@@ -54,9 +54,9 @@ impl DynSolType {
             Self::String => string(value).map(DynSolValue::String),
             Self::Bytes => bytes(value).map(DynSolValue::Bytes),
             #[cfg(feature = "seismic")]
-            Self::Saddress => uint(32, value).map(|x| DynSolValue::Saddress(SAddress(x))),
+            Self::Saddress => address(value).map(|x| DynSolValue::Saddress(SAddress(x))),
             #[cfg(feature = "seismic")]
-            Self::Sint(n) => uint(*n, value).map(|x| DynSolValue::Sint(SInt(x), *n)),
+            Self::Sint(n) => int(*n, value).map(|x| DynSolValue::Sint(SInt(x), *n)),
             #[cfg(feature = "seismic")]
             Self::Suint(n) => uint(*n, value).map(|x| DynSolValue::Suint(SUInt(x), *n)),
             _ => unreachable!(),
