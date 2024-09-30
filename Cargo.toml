@@ -106,7 +106,7 @@ ruint = { version = "1.12.3", default-features = false, features = ["alloc"] }
 ruint-macro = { version = "1", default-features = false }
 winnow = { version = "0.6", default-features = false, features = ["alloc"] }
 
-reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", branch = "seismic"}
+reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", branch = "ameya/seismic-tx"}
 
 [patch.crates-io]
 alloy-primitives = { path = "crates/primitives" }
@@ -116,4 +116,4 @@ alloy-sol-macro-expander = { path = "crates/sol-macro-expander" }
 alloy-sol-type-parser = { path = "crates/sol-type-parser" }
 alloy-sol-types = { path = "crates/sol-types" }
 syn-solidity = { path = "crates/syn-solidity" }
-reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", branch = "seismic"}
+reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", branch = "ameya/seismic-tx"}
