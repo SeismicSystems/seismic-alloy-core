@@ -416,7 +416,7 @@ impl DynSolValue {
         match self {
             Self::Address(a) => Some(*a),
             #[cfg(feature = "seismic")]
-            Self::SAddress(a) => Some(a.0),
+            Self::Saddress(a) => Some(a.0),
             _ => None,
         }
     }
@@ -454,7 +454,7 @@ impl DynSolValue {
         match self {
             Self::Int(w, size) => Some((*w, *size)),
             #[cfg(feature = "seismic")]
-            Self::SInt(w, size) => Some((w.0, *size)),
+            Self::Sint(w, size) => Some((w.0, *size)),
             _ => None,
         }
     }
@@ -465,7 +465,7 @@ impl DynSolValue {
         match self {
             Self::Uint(u, size) => Some((*u, *size)),
             #[cfg(feature = "seismic")]
-            Self::SUint(u, size) => Some((u.0, *size)),
+            Self::Suint(u, size) => Some((u.0, *size)),
             _ => None,
         }
     }
