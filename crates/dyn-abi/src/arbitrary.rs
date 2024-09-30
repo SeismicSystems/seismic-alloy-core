@@ -16,7 +16,7 @@ use alloy_primitives::{Address, Function, B256, I256, U256};
 use arbitrary::{size_hint, Unstructured};
 use core::ops::RangeInclusive;
 use proptest::{
-    collection::{hash_set as hash_set_strategy, vec as vec_strategy, VecStrategy},
+    collection::{vec as vec_strategy, VecStrategy},
     prelude::*,
     strategy::{Flatten, Map, Recursive, TupleUnion, WA},
 };
@@ -324,6 +324,7 @@ impl DynSolType {
         DynSolValue::type_strategy(self)
     }
 
+    #[cfg(not(feature = "seismic"))]
     #[inline]
     fn leaf() -> impl Strategy<Value = Self> {
         prop_oneof![
@@ -334,12 +335,23 @@ impl DynSolType {
             (1..=32usize).prop_map(Self::FixedBytes),
             Just(Self::Bytes),
             Just(Self::String),
-            #[cfg(feature = "seismic")]
+        ]
+    }
+
+    #[cfg(feature = "seismic")]
+    #[inline]
+    fn leaf() -> impl Strategy<Value = Self> {
+        prop_oneof![
+            Just(Self::Bool),
+            Just(Self::Address),
+            any::<usize>().prop_map(|x| Self::Int(int_size(x))),
+            any::<usize>().prop_map(|x| Self::Uint(int_size(x))),
+            (1..=32usize).prop_map(Self::FixedBytes),
+            Just(Self::Bytes),
+            Just(Self::String),
             Just(Self::Saddress),
-            // #[cfg(feature = "seismic")]
-            // any::<usize>().prop_map(|x| Self::Sint(int_size(x))),
-            // #[cfg(feature = "seismic")]
-            // any::<usize>().prop_map(|x| Self::Suint(int_size(x))),
+            any::<usize>().prop_map(|x| Self::Sint(int_size(x))),
+            any::<usize>().prop_map(|x| Self::Suint(int_size(x))),
         ]
     }
 
@@ -478,17 +490,15 @@ impl DynSolValue {
                     .sboxed()
             }
             #[cfg(feature = "seismic")]
-            &DynSolType::Saddress => any::<U256>()
-                .prop_map(move |x| Self::Saddress(SAddress(adjust_uint(x, 32))))
-                .sboxed(),
+            &DynSolType::Saddress => any::<Address>().prop_map(Self::Address).sboxed(),
             #[cfg(feature = "seismic")]
-            &DynSolType::Sint(bytes) => any::<U256>()
-                .prop_map(move |x| Self::Sint(SInt(adjust_uint(x, 32)), bytes))
-                .sboxed(),
+            &DynSolType::Sint(sz) => {
+                any::<I256>().prop_map(move |x| Self::Sint(SInt(adjust_int(x, sz)), sz)).sboxed()
+            }
             #[cfg(feature = "seismic")]
-            &DynSolType::Suint(bytes) => any::<U256>()
-                .prop_map(move |x| Self::Suint(SUInt(adjust_uint(x, 32)), bytes))
-                .sboxed(),
+            &DynSolType::Suint(sz) => {
+                any::<U256>().prop_map(move |x| Self::Suint(SUInt(adjust_uint(x, sz)), sz)).sboxed()
+            }
         }
     }
 
@@ -499,6 +509,7 @@ impl DynSolValue {
         Self::type_strategy(&self.as_type().unwrap())
     }
 
+    #[cfg(not(feature = "seismic"))]
     #[inline]
     fn leaf() -> impl Strategy<Value = Self> {
         prop_oneof![
@@ -506,13 +517,23 @@ impl DynSolValue {
             any::<Address>().prop_map(Self::Address),
             int_strategy::<I256>().prop_map(|(x, sz)| Self::Int(adjust_int(x, sz), sz)),
             int_strategy::<U256>().prop_map(|(x, sz)| Self::Uint(adjust_uint(x, sz), sz)),
-            // #[cfg(feature = "seismic")]
-            // int_strategy::<U256>().prop_map(|(x, sz)| Self::Saddress(SAddress(adjust_uint(x,
-            // sz)))), #[cfg(feature = "seismic")]
-            // int_strategy::<U256>().prop_map(|(x, sz)| Self::Sint(SInt(adjust_uint(x, sz)), sz)),
-            // #[cfg(feature = "seismic")]
-            // int_strategy::<U256>().prop_map(|(x, sz)| Self::Suint(SUInt(adjust_uint(x, sz)),
-            // sz)),
+            (any::<B256>(), 1..=32usize).prop_map(|(x, sz)| Self::FixedBytes(adjust_fb(x, sz), sz)),
+            any::<Vec<u8>>().prop_map(Self::Bytes),
+            any::<String>().prop_map(Self::String),
+        ]
+    }
+
+    #[cfg(feature = "seismic")]
+    #[inline]
+    fn leaf() -> impl Strategy<Value = Self> {
+        prop_oneof![
+            any::<bool>().prop_map(Self::Bool),
+            any::<Address>().prop_map(Self::Address),
+            int_strategy::<I256>().prop_map(|(x, sz)| Self::Int(adjust_int(x, sz), sz)),
+            int_strategy::<U256>().prop_map(|(x, sz)| Self::Uint(adjust_uint(x, sz), sz)),
+            any::<Address>().prop_map(|x| Self::Saddress(SAddress(x))),
+            int_strategy::<I256>().prop_map(|(x, sz)| Self::Sint(SInt(adjust_int(x, sz)), sz)),
+            int_strategy::<U256>().prop_map(|(x, sz)| Self::Suint(SUInt(adjust_uint(x, sz)), sz)),
             (any::<B256>(), 1..=32usize).prop_map(|(x, sz)| Self::FixedBytes(adjust_fb(x, sz), sz)),
             any::<Vec<u8>>().prop_map(Self::Bytes),
             any::<String>().prop_map(Self::String),
