@@ -16,7 +16,7 @@ use alloy_primitives::{Address, Function, B256, I256, U256};
 use arbitrary::{size_hint, Unstructured};
 use core::ops::RangeInclusive;
 use proptest::{
-    collection::{vec as vec_strategy, VecStrategy},
+    collection::{hash_set as hash_set_strategy, vec as vec_strategy, VecStrategy},
     prelude::*,
     strategy::{Flatten, Map, Recursive, TupleUnion, WA},
 };

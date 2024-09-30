@@ -43,11 +43,11 @@ jobs:
       - name: cargo build without flags
         run: cargo build
       - name: cargo build with foundry flags
-        run: cargo build --features arbitrary --features seismic
+        run: cargo build --features arbitrary --features arbitrary,eip712,seismic
       - name: cargo check warnings without flags
         run: RUSTFLAGS="-D warnings" cargo check
       - name: cargo check warnings with foundry flags
-        run: RUSTFLAGS="-D warnings" cargo check --features arbitrary --features seismic
+        run: RUSTFLAGS="-D warnings" cargo check --features arbitrary,eip712,seismic
       - name: cargo test
         run: cargo test
       # TODO: christian: get this to work
