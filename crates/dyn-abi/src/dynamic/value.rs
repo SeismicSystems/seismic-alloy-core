@@ -404,7 +404,9 @@ impl DynSolValue {
             Self::Function(f) => Some(f.into_word()),
             #[cfg(feature = "seismic")]
             Self::Saddress(a) => Some(a.0.into_word()),
+            #[cfg(feature = "seismic")]
             Self::Sint(i, _) => Some(i.0.into()),
+            #[cfg(feature = "seismic")]
             Self::Suint(u, _) => Some(u.0.into()),
             _ => None,
         }
