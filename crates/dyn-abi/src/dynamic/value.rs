@@ -375,6 +375,18 @@ impl DynSolValue {
     /// Trust if this value is encoded as a single word. False otherwise.
     #[inline]
     pub const fn is_word(&self) -> bool {
+        #[cfg(feature = "seismic")]
+        {
+            let is_sword = matches!(
+                self,
+                Self::Saddress(_)
+                | Self::Sint(..)
+                | Self::Suint(..)
+            );
+            if is_sword {
+                return true;
+            }
+        }
         matches!(
             self,
             Self::Bool(_)
@@ -395,6 +407,10 @@ impl DynSolValue {
             Self::FixedBytes(w, _) => Some(w),
             Self::Address(a) => Some(a.into_word()),
             Self::Function(f) => Some(f.into_word()),
+            #[cfg(feature = "seismic")]
+            Self::Saddress(a) => Some(a.0.into_word()),
+            Self::Sint(i, _) => Some(i.0.into()),
+            Self::Suint(u, _) => Some(u.0.into()),
             _ => None,
         }
     }
@@ -404,6 +420,8 @@ impl DynSolValue {
     pub const fn as_address(&self) -> Option<Address> {
         match self {
             Self::Address(a) => Some(*a),
+            #[cfg(feature = "seismic")]
+            Self::Saddress(a) => Some(a.0),
             _ => None,
         }
     }
@@ -440,6 +458,8 @@ impl DynSolValue {
     pub const fn as_int(&self) -> Option<(I256, usize)> {
         match self {
             Self::Int(w, size) => Some((*w, *size)),
+            #[cfg(feature = "seismic")]
+            Self::Sint(w, size) => Some((w.0, *size)),
             _ => None,
         }
     }
@@ -449,6 +469,8 @@ impl DynSolValue {
     pub const fn as_uint(&self) -> Option<(U256, usize)> {
         match self {
             Self::Uint(u, size) => Some((*u, *size)),
+            #[cfg(feature = "seismic")]
+            Self::Suint(u, size) => Some((u.0, *size)),
             _ => None,
         }
     }
