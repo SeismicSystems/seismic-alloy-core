@@ -377,12 +377,7 @@ impl DynSolValue {
     pub const fn is_word(&self) -> bool {
         #[cfg(feature = "seismic")]
         {
-            let is_sword = matches!(
-                self,
-                Self::Saddress(_)
-                | Self::Sint(..)
-                | Self::Suint(..)
-            );
+            let is_sword = matches!(self, Self::Saddress(_) | Self::Sint(..) | Self::Suint(..));
             if is_sword {
                 return true;
             }
@@ -421,7 +416,7 @@ impl DynSolValue {
         match self {
             Self::Address(a) => Some(*a),
             #[cfg(feature = "seismic")]
-            Self::Saddress(a) => Some(a.0),
+            Self::SAddress(a) => Some(a.0),
             _ => None,
         }
     }
@@ -459,7 +454,7 @@ impl DynSolValue {
         match self {
             Self::Int(w, size) => Some((*w, *size)),
             #[cfg(feature = "seismic")]
-            Self::Sint(w, size) => Some((w.0, *size)),
+            Self::SInt(w, size) => Some((w.0, *size)),
             _ => None,
         }
     }
@@ -470,7 +465,7 @@ impl DynSolValue {
         match self {
             Self::Uint(u, size) => Some((*u, *size)),
             #[cfg(feature = "seismic")]
-            Self::Suint(u, size) => Some((u.0, *size)),
+            Self::SUint(u, size) => Some((u.0, *size)),
             _ => None,
         }
     }
