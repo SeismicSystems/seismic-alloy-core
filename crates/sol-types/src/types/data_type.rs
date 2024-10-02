@@ -1414,7 +1414,7 @@ mod seismic {
             #[inline]
             fn tokenize_int(int: $ity) -> WordToken {
                 let mut word = Word::ZERO;
-                word[..].copy_from_slice(&int.0.to_be_bytes::<$bits>()[..]);
+                word[..].copy_from_slice(&int.0.to_be_bytes::<{$bits / 8}>()[..]);
                 WordToken(word)
             }
 
@@ -1422,20 +1422,20 @@ mod seismic {
             fn detokenize_int(token: WordToken) -> $ity {
                 let s = &token.0[..];
                 let signed =
-                    RustSigned::<$bits, $limbs>::from_be_bytes::<$bits>(s.try_into().unwrap());
+                    RustSigned::<$bits, $limbs>::from_be_bytes::<{$bits / 8}>(s.try_into().unwrap());
                 SInt(signed)
             }
 
             #[inline]
             fn encode_packed_to_int(int: $ity, out: &mut Vec<u8>) {
-                out.extend_from_slice(&int.0.to_be_bytes::<$bits>()[..]);
+                out.extend_from_slice(&int.0.to_be_bytes::<{$bits / 8}>()[..]);
             }
         };
         (@big_uint $uty:ident $bits:literal $limbs:literal) => {
             #[inline]
             fn tokenize_uint(uint: $uty) -> WordToken {
                 let mut word = Word::ZERO;
-                word[..].copy_from_slice(&uint.0.to_be_bytes::<$bits>()[..]);
+                word[..].copy_from_slice(&uint.0.to_be_bytes::<{$bits / 8}>()[..]);
                 WordToken(word)
             }
 
@@ -1443,13 +1443,13 @@ mod seismic {
             fn detokenize_uint(token: WordToken) -> $uty {
                 let s = &token.0[..];
                 let unsigned =
-                    RustUint::<$bits, $limbs>::from_be_bytes::<$bits>(s.try_into().unwrap());
+                    RustUint::<$bits, $limbs>::from_be_bytes::<{$bits / 8}>(s.try_into().unwrap());
                 SUInt(unsigned)
             }
 
             #[inline]
             fn encode_packed_to_uint(uint: $uty, out: &mut Vec<u8>) {
-                out.extend_from_slice(&uint.0.to_be_bytes::<$bits>()[..]);
+                out.extend_from_slice(&uint.0.to_be_bytes::<{$bits / 8}>()[..]);
             }
         };
     }
