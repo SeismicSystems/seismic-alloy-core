@@ -40,92 +40,105 @@ pub trait SeismicTx: Sized {
     }
 }
 
-macro_rules! impl_seismic_tx {
-    ($type:ty) => {
-        impl SeismicTx for $type {
-            fn base(&self) -> &SeismicTransactionBase {
-                &self.base
-            }
-            fn base_mut(&mut self) -> &mut SeismicTransactionBase {
-                &mut self.base
-            }
-        }
+impl Transaction for SeismicTransactionRequest {
+    fn chain_id(&self) -> Option<ChainId> {
+        Some(ChainId::from(self.chain_id))
+    }
+    fn nonce(&self) -> u64 {
+        self.nonce
+    }
+    fn gas_limit(&self) -> u128 {
+        self.gas_limit.try_into().unwrap_or(u128::MAX)
+    }
+    fn gas_price(&self) -> Option<u128> {
+        Some(self.gas_price.try_into().unwrap_or(u128::MAX))
+    }
+    fn to(&self) -> TxKind {
+        self.kind
+    }
+    fn value(&self) -> U256 {
+        self.value
+    }
+    fn input(&self) -> &[u8] {
+        &self.encrypted_input
+    }
 
-        impl Transaction for $type {
-            fn chain_id(&self) -> Option<ChainId> {
-                Some(self.base().chain_id)
-            }
-            fn nonce(&self) -> u64 {
-                self.base().nonce
-            }
-            fn gas_limit(&self) -> u128 {
-                self.base().gas_limit
-            }
-            fn gas_price(&self) -> Option<u128> {
-                None
-            }
-            fn to(&self) -> TxKind {
-                self.base().to
-            }
-            fn value(&self) -> U256 {
-                self.base().value
-            }
-            fn input(&self) -> &[u8] {
-                &self.base().input
-            }
+    fn max_fee_per_gas(&self) -> u128 {
+        self.gas_price.try_into().unwrap_or(u128::MAX)
+    }
 
-            fn max_fee_per_gas(&self) -> u128 {
-                self.base().max_fee_per_gas
-            }
+    fn max_priority_fee_per_gas(&self) -> Option<u128> {
+        Some(self.gas_price.try_into().unwrap_or(u128::MAX))
+    }
+    fn max_fee_per_blob_gas(&self) -> Option<u128> {
+        None
+    }
 
-            fn max_priority_fee_per_gas(&self) -> Option<u128> {
-                Some(self.base().max_priority_fee_per_gas)
-            }
-            fn max_fee_per_blob_gas(&self) -> Option<u128> {
-                None
-            }
+    fn priority_fee_or_price(&self) -> u128 {
+        self.gas_price.try_into().unwrap_or(u128::MAX)
+    }
 
-            fn priority_fee_or_price(&self) -> u128 {
-                0
-            }
+    fn ty(&self) -> u8 {
+        0x64
+    }
 
-            fn ty(&self) -> u8 {
-                0x64
-            }
+    fn access_list(&self) -> Option<&AccessList> {
+        None
+    }
 
-            fn access_list(&self) -> Option<&AccessList> {
-                Some(&self.base().access_list)
-            }
+    fn blob_versioned_hashes(&self) -> Option<&[B256]> {
+        None
+    }
 
-            fn blob_versioned_hashes(&self) -> Option<&[B256]> {
-                None
-            }
+    fn authorization_list(&self) -> Option<&[SignedAuthorization]> {
+        None
+    }
+}
 
-            fn authorization_list(&self) -> Option<&[SignedAuthorization]> {
-                None
-            }
-        }
+impl Encodable for SeismicTransactionRequest {
+    fn encode(&self, out: &mut dyn BufMut) {
+        self.nonce.encode(out);
+        self.gas_price.encode(out);
+        self.gas_limit.encode(out);
+        self.kind.encode(out);
+        self.value.encode(out);
+        self.encrypted_input.encode(out);
+        self.chain_id.encode(out);
+    }
 
-        impl Encodable for $type {
-            fn encode(&self, out: &mut dyn BufMut) {
-                self.base().encode(out)
-            }
-
-            fn length(&self) -> usize {
-                self.base().length()
-            }
-        }
-    };
+    fn length(&self) -> usize {
+        self.nonce.length() +
+        self.gas_price.length() +
+        self.gas_limit.length() +
+        self.kind.length() +
+        self.value.length() +
+        self.encrypted_input.length() +
+        self.chain_id.length()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 /// Represents a request for a seismic transaction.
 pub struct SeismicTransactionRequest {
-    /// The base transaction data.
-    #[serde(flatten)]
-    pub base: SeismicTransactionBase,
-    /// A vector containing secret data associated with the transaction.
-    pub secret_data: Vec<SecretData>,
+    /// The nonce of the transaction
+    pub nonce: u64,
+    /// The gas price for the transaction
+    pub gas_price: U256,
+    /// The gas limit for the transaction
+    pub gas_limit: U256,
+    /// The kind of transaction (e.g., Call, Create)
+    pub kind: TxKind,
+    /// The value of the transaction
+    pub value: U256,
+    /// The encrypted data for the transaction
+    pub encrypted_input: Vec<u8>,
+    /// The optional chain ID for the transaction
+    pub chain_id: u64,
+    // /// The base transaction data.
+    // #[serde(flatten)]
+    // pub base: SeismicTransactionBase,
+    // /// A vector containing secret data associated with the transaction.
+    // pub secret_data: Vec<SecretData>,
 }
 
 /// Represents a seismic transaction.
@@ -133,37 +146,34 @@ pub struct SeismicTransactionRequest {
 pub struct SeismicTransaction {
     /// The base transaction data.
     #[serde(flatten)]
-    pub base: SeismicTransactionBase,
+    pub tx: SeismicTransactionRequest,
 }
 
-impl_seismic_tx!(SeismicTransactionRequest);
-impl_seismic_tx!(SeismicTransaction);
 
-impl Encodable for SeismicTransactionBase {
-    fn encode(&self, out: &mut dyn BufMut) {
-        let payload_length = self.fields_len();
-        Header { list: true, payload_length }.encode(out);
-        self.encode_fields(out);
-    }
+// impl Encodable for SeismicTransactionBase {
+//     fn encode(&self, out: &mut dyn BufMut) {
+//         let payload_length = self.fields_len();
+//         Header { list: true, payload_length }.encode(out);
+//         self.encode_fields(out);
+//     }
 
-    fn length(&self) -> usize {
-        let payload_length = self.fields_len();
-        Header { list: true, payload_length }.length() + payload_length
-    }
-}
+//     fn length(&self) -> usize {
+//         let payload_length = self.fields_len();
+//         Header { list: true, payload_length }.length() + payload_length
+//     }
+// }
 
-impl SeismicTransactionBase {
+impl SeismicTransactionRequest {
     /// Encodes only the transaction's fields into the desired buffer, without a RLP header.
     pub(crate) fn encode_fields(&self, out: &mut dyn alloy_rlp::BufMut) {
         self.chain_id.encode(out);
         self.nonce.encode(out);
-        self.max_priority_fee_per_gas.encode(out);
-        self.max_fee_per_gas.encode(out);
+        self.gas_price.encode(out);
         self.gas_limit.encode(out);
-        self.to.encode(out);
+        self.kind.encode(out);
         self.value.encode(out);
-        self.input.0.encode(out);
-        self.access_list.encode(out);
+        self.encrypted_input.encode(out);
+        self.chain_id.encode(out);
     }
 
     /// Calculates the length of the RLP-encoded transaction's fields
@@ -173,13 +183,11 @@ impl SeismicTransactionBase {
     pub(crate) fn fields_len(&self) -> usize {
         self.chain_id.length()
             + self.nonce.length()
-            + self.to.length()
+            + self.gas_price.length()
             + self.gas_limit.length()
-            + self.max_fee_per_gas.length()
-            + self.max_priority_fee_per_gas.length()
+            + self.kind.length()
             + self.value.length()
-            + self.access_list.length()
-            + self.input.length()
+            + self.encrypted_input.length()
     }
 
     /// Encodes the transaction from RLP bytes, including the signature. This __does not__ encode a
@@ -254,32 +262,31 @@ impl SeismicTransactionRequest {
     /// # Returns
     /// A `B256` hash representing the Keccak-256 hash of the RLP encoded transaction fields.
     pub fn hash(&self) -> B256 {
-        B256::from_slice(keccak256(alloy_rlp::encode(&self.base)).as_slice())
+        B256::from_slice(&keccak256(alloy_rlp::encode(&self))[..])
     }
 
     /// Converts the transaction request into a signed transaction object
     /// without signing the secret data field so as to not leak the secret data.
     pub fn into_signed_without_secrets(self, signature: Signature) -> Signed<SeismicTransaction> {
-        let mut buf = Vec::with_capacity(self.base.encoded_len_with_signature(&signature, false));
-        self.base.encode_with_signature(&signature, &mut buf, false);
+        let mut buf = Vec::with_capacity(self.encoded_len_with_signature(&signature, false));
+        self.encode_with_signature(&signature, &mut buf, false);
         let hash = keccak256(&buf);
-        let seismic_tx_without_secrets = SeismicTransaction { base: self.base };
-        Signed::new_unchecked(seismic_tx_without_secrets, signature.with_parity_bool(), hash)
+        Signed::new_unchecked(SeismicTransaction { tx: self }, signature.with_parity_bool(), hash)
     }
 }
 
 impl SignableTransaction<Signature> for SeismicTransactionRequest {
     fn set_chain_id(&mut self, chain_id: ChainId) {
-        self.base_mut().chain_id = chain_id;
+        self.chain_id = chain_id;
     }
 
     fn encode_for_signing(&self, out: &mut dyn alloy_rlp::BufMut) {
-        out.put_u8(Self::tx_type());
-        self.base().encode(out)
+        out.put_u8(self.chain_id as u8);
+        self.encode(out)
     }
 
     fn payload_len_for_signature(&self) -> usize {
-        1 + self.base().length()
+        1 + self.length()
     }
 
     fn into_signed(self, _signature: Signature) -> Signed<Self> {
@@ -290,16 +297,14 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
 impl SeismicTransaction {
     pub(crate) fn decode_fields(buf: &mut &[u8]) -> alloy_rlp::Result<Self> {
         Ok(Self {
-            base: SeismicTransactionBase {
+            tx: SeismicTransactionRequest {
                 chain_id: Decodable::decode(buf)?,
                 nonce: Decodable::decode(buf)?,
-                max_priority_fee_per_gas: Decodable::decode(buf)?,
-                max_fee_per_gas: Decodable::decode(buf)?,
+                gas_price: Decodable::decode(buf)?,
                 gas_limit: Decodable::decode(buf)?,
-                to: Decodable::decode(buf)?,
+                kind: Decodable::decode(buf)?,
                 value: Decodable::decode(buf)?,
-                input: Decodable::decode(buf)?,
-                access_list: Decodable::decode(buf)?,
+                encrypted_input: Decodable::decode(buf)?,
             },
         })
     }
@@ -307,26 +312,75 @@ impl SeismicTransaction {
 
 impl SignableTransaction<Signature> for SeismicTransaction {
     fn set_chain_id(&mut self, chain_id: ChainId) {
-        self.base_mut().chain_id = chain_id;
+        self.tx.chain_id = chain_id;
     }
 
     fn encode_for_signing(&self, out: &mut dyn alloy_rlp::BufMut) {
-        out.put_u8(Self::tx_type());
-        self.base().encode(out)
+        out.put_u8(self.tx.chain_id as u8);
+        self.tx.encode(out)
     }
 
     fn payload_len_for_signature(&self) -> usize {
-        1 + self.base().length()
+        1 + self.tx.length()
     }
 
     fn into_signed(self, signature: Signature) -> Signed<Self> {
-        let mut buf = Vec::with_capacity(self.base.encoded_len_with_signature(&signature, false));
-        self.base.encode_with_signature(&signature, &mut buf, false);
+        let mut buf = Vec::with_capacity(self.tx.encoded_len_with_signature(&signature, false));
+        self.tx.encode_with_signature(&signature, &mut buf, false);
         let hash = keccak256(&buf);
 
         // Drop any v chain id value to ensure the signature format is correct at the time of
         // combination for an EIP-1559 transaction. V should indicate the y-parity of the
         // signature.
         Signed::new_unchecked(self, signature.with_parity_bool(), hash)
+    }
+}
+
+
+impl Transaction for SeismicTransaction {
+    fn chain_id(&self) -> Option<ChainId> {
+        Some(ChainId::from(self.tx.chain_id))
+    }
+    fn nonce(&self) -> u64 {
+        self.tx.nonce
+    }
+    fn gas_limit(&self) -> u128 {
+        self.tx.gas_limit.try_into().unwrap_or(u128::MAX)
+    }
+    fn gas_price(&self) -> Option<u128> {
+        Some(self.tx.gas_price.try_into().unwrap_or(u128::MAX))
+    }
+    fn to(&self) -> TxKind {
+        self.tx.kind
+    }
+    fn value(&self) -> U256 {
+        self.tx.value
+    }
+    fn input(&self) -> &[u8] {
+        &self.tx.encrypted_input
+    }
+    fn max_fee_per_gas(&self) -> u128 {
+        self.tx.gas_price.try_into().unwrap_or(u128::MAX)
+    }
+    fn max_priority_fee_per_gas(&self) -> Option<u128> {
+        Some(self.tx.gas_price.try_into().unwrap_or(u128::MAX))
+    }
+    fn max_fee_per_blob_gas(&self) -> Option<u128> {
+        None
+    }
+    fn priority_fee_or_price(&self) -> u128 {
+        self.tx.gas_price.try_into().unwrap_or(u128::MAX)
+    }
+    fn ty(&self) -> u8 {
+        0x64
+    }
+    fn access_list(&self) -> Option<&AccessList> {
+        None
+    }
+    fn blob_versioned_hashes(&self) -> Option<&[B256]> {
+        None
+    }
+    fn authorization_list(&self) -> Option<&[SignedAuthorization]> {
+        None
     }
 }
