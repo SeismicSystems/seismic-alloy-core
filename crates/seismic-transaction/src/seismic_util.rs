@@ -1,114 +1,56 @@
-use crate::types::SecretData;
-use alloy_primitives::{B256, U256};
-use seismic_types::{
-    preimage::{input::InputPreImage, preimage::PreImage},
-    primitive::PrimitiveBytes,
-    Secret,
+use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
+use aes_gcm::{
+    aead::{generic_array::GenericArray, Aead, AeadCore, KeyInit, OsRng as AesRng},
+    Aes256Gcm, Key,
 };
+use alloy_rlp::{Decodable, Encodable, Error};
+use once_cell::sync::Lazy;
+use paste::paste;
 
-/// Custom SeismicError enum
-#[derive(Debug, Copy, Clone)]
-pub enum SeismicError {
-    /// Error parsing preimage  
-    ParsePreimageError,
-    /// Error calculating commitment
-    CommitmentCalculationError,
-    /// Error verifying commitment
-    InvalidCommitmentError,
-    /// Failed to commit preimage
-    FailedToCommitPreimage,
+// #[cfg(any(test, feature = "reth-codec"))]
+// use reth_codecs::Compact;
+
+#[cfg(not(feature = "std"))]
+// use alloc::vec::Vec;
+use serde::{Deserialize, Serialize};
+
+// Static variable that will hold the generated key, initialized lazily
+static AES_KEY: Lazy<Key<Aes256Gcm>> = Lazy::new(|| {
+    let rng = AesRng::default();
+    let key: Key<Aes256Gcm> = Aes256Gcm::generate_key(rng);
+    return key;
+});
+
+fn nonce_to_generic_array(nonce: u64) -> GenericArray<u8, <Aes256Gcm as AeadCore>::NonceSize> {
+    let mut nonce_bytes = nonce.to_be_bytes().to_vec();
+    let crypto_nonce_size = GenericArray::<u8, <Aes256Gcm as AeadCore>::NonceSize>::default().len();
+    nonce_bytes.resize(crypto_nonce_size, 0); // pad for crypto
+    GenericArray::clone_from_slice(&nonce_bytes)
 }
 
-/// create a commitment from a u256 preimage
-pub fn get_commitment(value: U256) -> B256 {
-    let secret = Secret::new(value);
-    secret.commit_b256()
+pub trait Encryptable: Encodable + Decodable {}
+impl<T: Encodable + Decodable> Encryptable for T {}
+
+pub fn decrypt<T>(ciphertext: &Vec<u8>, nonce: u64) -> alloy_rlp::Result<T>
+where
+    T: Encryptable,
+{
+    let cipher = Aes256Gcm::new(&AES_KEY);
+    let nonce = nonce_to_generic_array(nonce);
+    let buf = cipher
+        .decrypt(&nonce, ciphertext.as_ref())
+        .map_err(|_err| Error::Custom("Failed to decrypt seismic transaction"))?;
+    T::decode(&mut &buf[..])
 }
 
-/// store preimages and their commitments to the secrets store
-pub fn process_secret_data(secret_data: Vec<SecretData>, input: &[u8]) -> Result<(), SeismicError> {
-    let input_pre_images = create_input_pre_images(&secret_data);
-
-    let preimages = parse_preimages(&input_pre_images)?;
-
-    let calculated_secrets = create_secrets(&preimages);
-
-    let calculated_commitments = calculate_commitments(&calculated_secrets);
-    let input_commitments = extract_input_commitments(&secret_data, input)?;
-
-    verify_commitments(&calculated_commitments, &input_commitments)?;
-
-    Ok(())
-}
-
-fn create_input_pre_images(secrets: &[SecretData]) -> Vec<InputPreImage> {
-    secrets
-        .iter()
-        .map(|secret| InputPreImage {
-            value: secret.preimage.clone(),
-            type_: secret.preimage_type.clone(),
-        })
-        .collect()
-}
-
-fn parse_preimages(input_pre_images: &[InputPreImage]) -> Result<Vec<PreImage>, SeismicError> {
-    input_pre_images
-        .iter()
-        .map(|preimage| preimage.parse().map_err(|_| SeismicError::ParsePreimageError))
-        .collect()
-}
-
-fn create_secrets(preimages: &[PreImage]) -> Vec<Secret> {
-    preimages
-        .iter()
-        .map(|pre_image| {
-            Secret::from_bytes(match pre_image {
-                PreImage::Bool(v) => v.to_bytes_vec(),
-                PreImage::U8(v) => v.to_bytes_vec(),
-                PreImage::U16(v) => v.to_bytes_vec(),
-                PreImage::U32(v) => v.to_bytes_vec(),
-                PreImage::U64(v) => v.to_bytes_vec(),
-                PreImage::U128(v) => v.to_bytes_vec(),
-                PreImage::U256(v) => v.to_bytes_vec(),
-                PreImage::I8(v) => v.to_bytes_vec(),
-                PreImage::I16(v) => v.to_bytes_vec(),
-                PreImage::I32(v) => v.to_bytes_vec(),
-                PreImage::I64(v) => v.to_bytes_vec(),
-                PreImage::I128(v) => v.to_bytes_vec(),
-                PreImage::I256(v) => v.to_bytes_vec(),
-                PreImage::Address(v) => v.to_bytes_vec(),
-            })
-        })
-        .collect()
-}
-
-fn calculate_commitments(secrets: &[Secret]) -> Vec<B256> {
-    secrets.iter().map(|secret| secret.commit_b256()).collect()
-}
-
-fn extract_input_commitments(
-    secret_data: &[SecretData],
-    input: &[u8],
-) -> Result<Vec<B256>, SeismicError> {
-    secret_data
-        .iter()
-        .map(|secret| {
-            let index = secret.index as usize;
-            let start = index;
-            let end = start + 32;
-            if end <= input.len() {
-                Ok(B256::from_slice(&input[start..end]))
-            } else {
-                Err(SeismicError::CommitmentCalculationError)
-            }
-        })
-        .collect()
-}
-
-fn verify_commitments(calculated: &[B256], input: &[B256]) -> Result<(), SeismicError> {
-    if calculated != input {
-        Err(SeismicError::InvalidCommitmentError)
-    } else {
-        Ok(())
-    }
+pub fn encrypt<T: Encryptable>(plaintext: &T, nonce: u64) -> Result<Vec<u8>, Error> {
+    let cipher = Aes256Gcm::new(&AES_KEY);
+    let nonce = nonce_to_generic_array(nonce);
+    let mut buf = Vec::new();
+    plaintext.encode(&mut buf);
+    // Returns an error if the buffer has insufficient capacity to store the
+    // resulting ciphertext message.
+    cipher
+        .encrypt(&nonce, buf.as_ref())
+        .map_err(|_err| Error::Custom("Failed to encrypt seismic transaction"))
 }
