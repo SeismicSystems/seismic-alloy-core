@@ -1,19 +1,25 @@
-use reth_rpc_types::transaction::{LegacyTransactionRequest, EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest};
-use alloy_primitives::{U256, TxKind};
-use serde::{Serialize, Deserialize};
-use crate::seismic_util::decrypt;
-use std::mem;
-use std::{fmt::Debug, hash::Hash};
-use alloy_rlp::{Decodable, Encodable, bytes};
-use crate::seismic_util::Encryptable; 
+use crate::{
+    seismic_util::{decrypt, Encryptable},
+    transaction::SeismicTransactionRequest,
+};
+use alloy_primitives::{TxKind, U256};
+use alloy_rlp::{bytes, Decodable, Encodable};
+use reth_rpc_types::transaction::{
+    EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest,
+    LegacyTransactionRequest,
+};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::{fmt::Debug, hash::Hash, mem};
 
-
-pub struct PlainValue<T: Encryptable + Debug + Clone + PartialEq + Eq> {
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub struct PlainValue<T> {
     pub should_encrypt: bool,
     pub value: T,
 }
 
-impl<T: Encryptable + Debug + Clone + PartialEq + Eq> Encodable for PlainValue<T> {
+impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de>>
+    Encodable for PlainValue<T>
+{
     fn encode(&self, out: &mut dyn bytes::BufMut) {
         self.value.encode(out);
         self.should_encrypt.encode(out);
@@ -24,32 +30,37 @@ impl<T: Encryptable + Debug + Clone + PartialEq + Eq> Encodable for PlainValue<T
     }
 }
 
-impl<T: Encryptable + Debug + Clone + PartialEq + Eq> Decodable for PlainValue<T> {
+impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de>>
+    Decodable for PlainValue<T>
+{
     fn decode(buf: &mut &[u8]) -> alloy_rlp::Result<Self> {
         let value = T::decode(buf)?;
         let should_encrypt = bool::decode(buf)?;
-        Ok(PlainValue {
-            value,
-            should_encrypt,
-        })
+        Ok(PlainValue { value, should_encrypt })
     }
 }
 
-impl<T: Encryptable + Debug + Clone + PartialEq + Eq> PlainValue<T> {
+impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de>>
+    PlainValue<T>
+{
     #[inline]
     pub fn size(&self) -> usize {
         mem::size_of::<T>() + mem::size_of::<bool>()
     }
-    }
-pub struct TxSeismicElement<T: Encryptable+Debug+Clone+PartialEq+Eq> {
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub struct TxSeismicElement<T> {
     /// decrypted value is served as a cache for fast access of the encrypted value
     pub plainvalue: Option<PlainValue<T>>,
     /// encrypted value is assumed to not be changed during the lifetime of the struct
     /// this is already encoded for communication
-    pub cyphertext: Vec<u8>, 
+    pub ciphertext: Vec<u8>,
 }
- 
-impl<T: Encryptable+Debug+Clone+PartialEq+Eq> TxSeismicElement<T> {
+
+impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de>>
+    TxSeismicElement<T>
+{
     pub fn decrypt(&mut self, ciphertext: &Vec<u8>, nonce: u64) -> Result<(), alloy_rlp::Error> {
         if self.plainvalue.is_none() {
             let fresh_plainvalue = decrypt::<PlainValue<T>>(ciphertext, nonce)?;
@@ -59,7 +70,9 @@ impl<T: Encryptable+Debug+Clone+PartialEq+Eq> TxSeismicElement<T> {
     }
 }
 
-impl<T: Encryptable+Debug+Clone+PartialEq+Eq> Encodable for TxSeismicElement<T> {
+impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de>>
+    Encodable for TxSeismicElement<T>
+{
     fn encode(&self, out: &mut dyn bytes::BufMut) {
         // cypher text is assumed to not be changed during the lifetime of the struct
         // encryption is already encoded
@@ -67,50 +80,31 @@ impl<T: Encryptable+Debug+Clone+PartialEq+Eq> Encodable for TxSeismicElement<T> 
             if !plainvalue.should_encrypt {
                 plainvalue.value.encode(out);
             } else {
-                out.put_slice(&self.cyphertext);
+                out.put_slice(&self.ciphertext);
             }
         } else {
-            out.put_slice(&self.cyphertext);
+            out.put_slice(&self.ciphertext);
         }
     }
 
     fn length(&self) -> usize {
-        self.cyphertext.length()
+        self.ciphertext.length()
     }
 }
 
-impl<T: Encryptable+Debug+Clone+PartialEq+Eq> Decodable for TxSeismicElement<T> {
+impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de>>
+    Decodable for TxSeismicElement<T>
+{
     fn decode(buf: &mut &[u8]) -> alloy_rlp::Result<Self> {
-        let cyphertext = buf.to_vec();
-        Ok(TxSeismicElement {
-            plainvalue: None,
-            cyphertext,
-        })
+        let ciphertext = buf.to_vec();
+        Ok(TxSeismicElement { plainvalue: None, ciphertext })
     }
 }
 
-type SeismicInput<T: Encryptable+Debug+Clone+PartialEq+Eq> = TxSeismicElement<T>;
+pub type SeismicInput<
+    T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de> + Debug,
+> = TxSeismicElement<T>;
 
-
-/// Represents an Seismic transaction request
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SeismicTransactionRequest<T: Encryptable+Debug+Clone+PartialEq+Eq> 
-where TxSeismicElement<T>: Encryptable + Debug + Clone + PartialEq + Eq {
-    /// The nonce of the transaction
-    pub nonce: u64,
-    /// The gas price for the transaction
-    pub gas_price: U256,
-    /// The gas limit for the transaction
-    pub gas_limit: U256,
-    /// The kind of transaction (e.g., Call, Create)
-    pub kind: TxKind,
-    /// The value of the transaction
-    pub value: U256,
-    /// The encrypted data for the transaction
-    pub input: SeismicInput<T>,
-    /// The optional chain ID for the transaction
-    pub chain_id: u64,
-}
 /// Container type for various Seismic transaction requests.
 ///
 /// Its variants correspond to specific allowed transactions:

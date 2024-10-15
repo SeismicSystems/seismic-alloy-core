@@ -1,46 +1,24 @@
-use crate::types::SecretData;
+use crate::{seismic_util::Encryptable, types::SeismicInput};
 use alloy_consensus::{SignableTransaction, Signed, Transaction};
 use alloy_eips::{eip2930::AccessList, eip7702::SignedAuthorization};
-use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
+use alloy_primitives::{keccak256, ChainId, Signature, TxKind, B256, U256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header};
 use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 
-/// Represents the base structure of a Seismic Transaction.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct SeismicTransactionBase {
-    /// The chain ID of the transaction.
-    pub chain_id: ChainId,
-    /// The nonce of the transaction.
-    pub nonce: u64,
-    /// The recipient of the transaction.
-    pub to: TxKind,
-    /// The gas limit for the transaction.
-    pub gas_limit: u128,
-    /// The maximum fee per gas for the transaction.
-    pub max_fee_per_gas: u128,
-    /// The maximum priority fee per gas for the transaction.
-    pub max_priority_fee_per_gas: u128,
-    /// The value being transferred in the transaction.
-    pub value: U256,
-    /// The access list for the transaction.
-    pub access_list: AccessList,
-    /// The input data for the transaction.
-    pub input: Bytes,
-}
-
-/// A trait representing a Seismic Transaction.
-pub trait SeismicTx: Sized {
-    /// Returns a reference to the base of the Seismic Transaction.
-    fn base(&self) -> &SeismicTransactionBase;
-    /// Returns a mutable reference to the base of the Seismic Transaction.
-    fn base_mut(&mut self) -> &mut SeismicTransactionBase;
-    /// Returns the transaction type.
-    fn tx_type() -> u8 {
-        0x64
-    }
-}
-
-impl Transaction for SeismicTransactionRequest {
+impl<T> Transaction for SeismicTransactionRequest<T>
+where
+    T: Encryptable
+        + Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + Send
+        + Sync
+        + 'static
+        + Serialize
+        + for<'de> Deserialize<'de>,
+{
     fn chain_id(&self) -> Option<ChainId> {
         Some(ChainId::from(self.chain_id))
     }
@@ -79,7 +57,7 @@ impl Transaction for SeismicTransactionRequest {
     }
 
     fn ty(&self) -> u8 {
-        0x64
+        0x64 // subject to change
     }
 
     fn access_list(&self) -> Option<&AccessList> {
@@ -95,7 +73,19 @@ impl Transaction for SeismicTransactionRequest {
     }
 }
 
-impl Encodable for SeismicTransactionRequest {
+impl<T> Encodable for SeismicTransactionRequest<T>
+where
+    T: Encryptable
+        + Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + Send
+        + Sync
+        + 'static
+        + Serialize
+        + for<'de> Deserialize<'de>,
+{
     fn encode(&self, out: &mut dyn BufMut) {
         self.nonce.encode(out);
         self.gas_price.encode(out);
@@ -104,22 +94,24 @@ impl Encodable for SeismicTransactionRequest {
         self.value.encode(out);
         self.encrypted_input.encode(out);
         self.chain_id.encode(out);
+        self.input.encode(out);
     }
 
     fn length(&self) -> usize {
-        self.nonce.length() +
-        self.gas_price.length() +
-        self.gas_limit.length() +
-        self.kind.length() +
-        self.value.length() +
-        self.encrypted_input.length() +
-        self.chain_id.length()
+        self.nonce.length()
+            + self.gas_price.length()
+            + self.gas_limit.length()
+            + self.kind.length()
+            + self.value.length()
+            + self.encrypted_input.length()
+            + self.chain_id.length()
+            + self.input.length()
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 /// Represents a request for a seismic transaction.
-pub struct SeismicTransactionRequest {
+pub struct SeismicTransactionRequest<T> {
     /// The nonce of the transaction
     pub nonce: u64,
     /// The gas price for the transaction
@@ -134,21 +126,17 @@ pub struct SeismicTransactionRequest {
     pub encrypted_input: Vec<u8>,
     /// The optional chain ID for the transaction
     pub chain_id: u64,
-    // /// The base transaction data.
-    // #[serde(flatten)]
-    // pub base: SeismicTransactionBase,
-    // /// A vector containing secret data associated with the transaction.
-    // pub secret_data: Vec<SecretData>,
+    // The input data for the transaction
+    pub input: SeismicInput<T>,
 }
 
 /// Represents a seismic transaction.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct SeismicTransaction {
+pub struct SeismicTransaction<T> {
     /// The base transaction data.
     #[serde(flatten)]
-    pub tx: SeismicTransactionRequest,
+    pub tx: SeismicTransactionRequest<T>,
 }
-
 
 // impl Encodable for SeismicTransactionBase {
 //     fn encode(&self, out: &mut dyn BufMut) {
@@ -163,7 +151,19 @@ pub struct SeismicTransaction {
 //     }
 // }
 
-impl SeismicTransactionRequest {
+impl<T> SeismicTransactionRequest<T>
+where
+    T: Encryptable
+        + Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + Send
+        + Sync
+        + 'static
+        + Serialize
+        + for<'de> Deserialize<'de>,
+{
     /// Encodes only the transaction's fields into the desired buffer, without a RLP header.
     pub(crate) fn encode_fields(&self, out: &mut dyn alloy_rlp::BufMut) {
         self.chain_id.encode(out);
@@ -253,7 +253,19 @@ impl SeismicTransactionRequest {
     }
 }
 
-impl SeismicTransactionRequest {
+impl<T> SeismicTransactionRequest<T>
+where
+    T: Encryptable
+        + Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + Send
+        + Sync
+        + 'static
+        + Serialize
+        + for<'de> Deserialize<'de>,
+{
     /// Computes the hash of the transaction request.
     ///
     /// This function encodes the base transaction fields using RLP encoding,
@@ -267,7 +279,10 @@ impl SeismicTransactionRequest {
 
     /// Converts the transaction request into a signed transaction object
     /// without signing the secret data field so as to not leak the secret data.
-    pub fn into_signed_without_secrets(self, signature: Signature) -> Signed<SeismicTransaction> {
+    pub fn into_signed_without_secrets(
+        self,
+        signature: Signature,
+    ) -> Signed<SeismicTransaction<T>> {
         let mut buf = Vec::with_capacity(self.encoded_len_with_signature(&signature, false));
         self.encode_with_signature(&signature, &mut buf, false);
         let hash = keccak256(&buf);
@@ -275,7 +290,19 @@ impl SeismicTransactionRequest {
     }
 }
 
-impl SignableTransaction<Signature> for SeismicTransactionRequest {
+impl<T> SignableTransaction<Signature> for SeismicTransactionRequest<T>
+where
+    T: Encryptable
+        + Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + Send
+        + Sync
+        + 'static
+        + Serialize
+        + for<'de> Deserialize<'de>,
+{
     fn set_chain_id(&mut self, chain_id: ChainId) {
         self.chain_id = chain_id;
     }
@@ -294,10 +321,22 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
     }
 }
 
-impl SeismicTransaction {
+impl<T> SeismicTransaction<T>
+where
+    T: Encryptable
+        + Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + Send
+        + Sync
+        + 'static
+        + Serialize
+        + for<'de> Deserialize<'de>,
+{
     pub(crate) fn decode_fields(buf: &mut &[u8]) -> alloy_rlp::Result<Self> {
         Ok(Self {
-            tx: SeismicTransactionRequest {
+            tx: SeismicTransactionRequest::<T> {
                 chain_id: Decodable::decode(buf)?,
                 nonce: Decodable::decode(buf)?,
                 gas_price: Decodable::decode(buf)?,
@@ -305,12 +344,25 @@ impl SeismicTransaction {
                 kind: Decodable::decode(buf)?,
                 value: Decodable::decode(buf)?,
                 encrypted_input: Decodable::decode(buf)?,
+                input: Decodable::decode(buf)?,
             },
         })
     }
 }
 
-impl SignableTransaction<Signature> for SeismicTransaction {
+impl<T> SignableTransaction<Signature> for SeismicTransaction<T>
+where
+    T: Encryptable
+        + Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + Send
+        + Sync
+        + 'static
+        + Serialize
+        + for<'de> Deserialize<'de>,
+{
     fn set_chain_id(&mut self, chain_id: ChainId) {
         self.tx.chain_id = chain_id;
     }
@@ -336,8 +388,19 @@ impl SignableTransaction<Signature> for SeismicTransaction {
     }
 }
 
-
-impl Transaction for SeismicTransaction {
+impl<T> Transaction for SeismicTransaction<T>
+where
+    T: Encryptable
+        + Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + Send
+        + Sync
+        + 'static
+        + Serialize
+        + for<'de> Deserialize<'de>,
+{
     fn chain_id(&self) -> Option<ChainId> {
         Some(ChainId::from(self.tx.chain_id))
     }

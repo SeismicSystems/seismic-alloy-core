@@ -1,8 +1,8 @@
-use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
 use aes_gcm::{
     aead::{generic_array::GenericArray, Aead, AeadCore, KeyInit, OsRng as AesRng},
     Aes256Gcm, Key,
 };
+use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
 use alloy_rlp::{Decodable, Encodable, Error};
 use once_cell::sync::Lazy;
 use paste::paste;
@@ -28,6 +28,7 @@ fn nonce_to_generic_array(nonce: u64) -> GenericArray<u8, <Aes256Gcm as AeadCore
     GenericArray::clone_from_slice(&nonce_bytes)
 }
 
+/// Trait for types that can be encrypted and decrypted
 pub trait Encryptable: Encodable + Decodable {}
 impl<T: Encodable + Decodable> Encryptable for T {}
 
