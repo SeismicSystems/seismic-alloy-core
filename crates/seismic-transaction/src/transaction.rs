@@ -38,7 +38,7 @@ where
         self.value
     }
     fn input(&self) -> &[u8] {
-        &self.encrypted_input
+        unimplemented!()
     }
 
     fn max_fee_per_gas(&self) -> u128 {
@@ -92,7 +92,6 @@ where
         self.gas_limit.encode(out);
         self.kind.encode(out);
         self.value.encode(out);
-        self.encrypted_input.encode(out);
         self.chain_id.encode(out);
         self.input.encode(out);
     }
@@ -103,9 +102,8 @@ where
             + self.gas_limit.length()
             + self.kind.length()
             + self.value.length()
-            + self.encrypted_input.length()
-            + self.chain_id.length()
             + self.input.length()
+            + self.chain_id.length()
     }
 }
 
@@ -122,8 +120,6 @@ pub struct SeismicTransactionRequest<T> {
     pub kind: TxKind,
     /// The value of the transaction
     pub value: U256,
-    /// The encrypted data for the transaction
-    pub encrypted_input: Vec<u8>,
     /// The optional chain ID for the transaction
     pub chain_id: u64,
     // The input data for the transaction
@@ -172,8 +168,7 @@ where
         self.gas_limit.encode(out);
         self.kind.encode(out);
         self.value.encode(out);
-        self.encrypted_input.encode(out);
-        self.chain_id.encode(out);
+        self.input.encode(out);
     }
 
     /// Calculates the length of the RLP-encoded transaction's fields
@@ -187,7 +182,7 @@ where
             + self.gas_limit.length()
             + self.kind.length()
             + self.value.length()
-            + self.encrypted_input.length()
+            + self.input.length()
     }
 
     /// Encodes the transaction from RLP bytes, including the signature. This __does not__ encode a
@@ -343,7 +338,6 @@ where
                 gas_limit: Decodable::decode(buf)?,
                 kind: Decodable::decode(buf)?,
                 value: Decodable::decode(buf)?,
-                encrypted_input: Decodable::decode(buf)?,
                 input: Decodable::decode(buf)?,
             },
         })
@@ -420,7 +414,7 @@ where
         self.tx.value
     }
     fn input(&self) -> &[u8] {
-        &self.tx.encrypted_input
+        unimplemented!()
     }
     fn max_fee_per_gas(&self) -> u128 {
         self.tx.gas_price.try_into().unwrap_or(u128::MAX)
