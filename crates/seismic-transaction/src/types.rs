@@ -4,9 +4,12 @@ use crate::{
 };
 use alloy_primitives::{TxKind, U256};
 use alloy_rlp::{bytes, Decodable, Encodable};
-use reth_rpc_types::transaction::{
-    EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest,
-    LegacyTransactionRequest,
+use reth_rpc_types::{
+    transaction::{
+        EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest,
+        LegacyTransactionRequest,
+    },
+    OtherFields,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{fmt::Debug, hash::Hash, mem};
@@ -125,4 +128,20 @@ pub enum SeismicTypedTransactionRequest<T: Encryptable + Debug + Clone + Partial
     EIP4844(EIP4844TransactionRequest),
     /// Represents a Seismic transaction request.
     Seismic(SeismicTransactionRequest<T>),
+}
+
+// Seismic specific transaction field(s)
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SeismicTransactionFields<T> {
+    /// The secret data for the transaction
+    #[serde(rename = "seismicInput")]
+    pub seismic_input: SeismicInput<T>,
+}
+
+impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de>>
+    From<SeismicTransactionFields<T>> for OtherFields
+{
+    fn from(value: SeismicTransactionFields<T>) -> Self {
+        serde_json::to_value(value).unwrap().try_into().unwrap()
+    }
 }
