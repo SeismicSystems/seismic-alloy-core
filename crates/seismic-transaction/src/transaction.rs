@@ -1,7 +1,7 @@
 use crate::{seismic_util::Encryptable, types::SeismicInput};
 use alloy_consensus::{SignableTransaction, Signed, Transaction};
 use alloy_eips::{eip2930::AccessList, eip7702::SignedAuthorization};
-use alloy_primitives::{keccak256, ChainId, Signature, TxKind, B256, U256};
+use alloy_primitives::{keccak256, ChainId, Signature, TxKind, B256, U256, Bytes};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -122,8 +122,10 @@ pub struct SeismicTransactionRequest<T> {
     pub value: U256,
     /// The optional chain ID for the transaction
     pub chain_id: u64,
-    // The input data for the transaction
-    pub input: SeismicInput<T>,
+    /// The (non-Seismic) input data for the transaction
+    pub input: Bytes,
+    /// The input data for the transaction
+    pub seismic_input: SeismicInput<T>,
 }
 
 /// Represents a seismic transaction.
@@ -169,6 +171,7 @@ where
         self.kind.encode(out);
         self.value.encode(out);
         self.input.encode(out);
+        self.seismic_input.encode(out);
     }
 
     /// Calculates the length of the RLP-encoded transaction's fields
@@ -183,6 +186,7 @@ where
             + self.kind.length()
             + self.value.length()
             + self.input.length()
+            + self.seismic_input.length()
     }
 
     /// Encodes the transaction from RLP bytes, including the signature. This __does not__ encode a
@@ -339,6 +343,7 @@ where
                 kind: Decodable::decode(buf)?,
                 value: Decodable::decode(buf)?,
                 input: Decodable::decode(buf)?,
+                seismic_input: Decodable::decode(buf)?,
             },
         })
     }
