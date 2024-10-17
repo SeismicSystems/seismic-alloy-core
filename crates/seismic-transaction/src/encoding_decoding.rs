@@ -2,8 +2,6 @@ use crate::{seismic_util::Encryptable, transaction::SeismicTransaction};
 use alloy_consensus::{SignableTransaction, Signed};
 use alloy_primitives::Signature;
 use alloy_rlp::{Buf, Header, EMPTY_STRING_CODE};
-use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
 
 /// Encodes a signed SeismicTransaction into the provided buffer.
 ///
@@ -11,21 +9,10 @@ use std::fmt::Debug;
 /// - `tx`: A reference to the signed SeismicTransaction to be encoded.
 /// - `out`: A mutable reference to the buffer where the encoded transaction will be written.
 #[allow(dead_code)]
-pub fn encode_2718_seismic_transaction<T>(
-    tx: &Signed<SeismicTransaction<T>>,
+pub fn encode_2718_seismic_transaction(
+    tx: &Signed<SeismicTransaction>,
     out: &mut dyn alloy_rlp::BufMut,
-) where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+) {
     tx.tx().tx.encode_with_signature(tx.signature(), out, false);
 }
 
@@ -37,19 +24,7 @@ pub fn encode_2718_seismic_transaction<T>(
 /// # Returns
 /// The length of the RLP-encoded signed SeismicTransaction.
 #[allow(dead_code)]
-pub fn encode_2718_len<T>(tx: &Signed<SeismicTransaction<T>>) -> usize
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+pub fn encode_2718_len(tx: &Signed<SeismicTransaction>) -> usize {
     tx.tx().tx.encoded_len_with_signature(tx.signature(), false)
 }
 
@@ -62,21 +37,9 @@ where
 /// A Result containing the decoded Signed<SeismicTransaction> or an alloy_rlp::Error if decoding
 /// fails.
 #[allow(dead_code)]
-pub fn decode_signed_seismic_tx<T>(
+pub fn decode_signed_seismic_tx(
     buf: &mut &[u8],
-) -> Result<Signed<SeismicTransaction<T>>, alloy_rlp::Error>
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+) -> Result<Signed<SeismicTransaction>, alloy_rlp::Error> {
     let mut h_decode = *buf;
     let h = Header::decode(&mut h_decode)?;
     *buf = h_decode;
@@ -107,21 +70,9 @@ where
 /// A Result containing the decoded Signed<SeismicTransaction> or an alloy_rlp::Error if decoding
 /// fails.
 #[allow(dead_code)]
-pub fn decode_signed_seismic_fields<T>(
+pub fn decode_signed_seismic_fields(
     buf: &mut &[u8],
-) -> alloy_rlp::Result<Signed<SeismicTransaction<T>>>
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
     let header = Header::decode(buf)?;
     if !header.list {
         return Err(alloy_rlp::Error::UnexpectedString);

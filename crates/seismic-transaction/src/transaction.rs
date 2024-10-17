@@ -1,24 +1,12 @@
 use crate::{seismic_util::Encryptable, types::SeismicInput};
 use alloy_consensus::{SignableTransaction, Signed, Transaction};
 use alloy_eips::{eip2930::AccessList, eip7702::SignedAuthorization};
-use alloy_primitives::{keccak256, ChainId, Signature, TxKind, B256, U256, Bytes};
+use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-impl<T> Transaction for SeismicTransactionRequest<T>
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+impl Transaction for SeismicTransactionRequest {
     fn chain_id(&self) -> Option<ChainId> {
         Some(ChainId::from(self.chain_id))
     }
@@ -38,7 +26,7 @@ where
         self.value
     }
     fn input(&self) -> &[u8] {
-        unimplemented!()
+        &self.seismic_input
     }
 
     fn max_fee_per_gas(&self) -> u128 {
@@ -73,19 +61,7 @@ where
     }
 }
 
-impl<T> Encodable for SeismicTransactionRequest<T>
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+impl Encodable for SeismicTransactionRequest {
     fn encode(&self, out: &mut dyn BufMut) {
         self.nonce.encode(out);
         self.gas_price.encode(out);
@@ -93,7 +69,7 @@ where
         self.kind.encode(out);
         self.value.encode(out);
         self.chain_id.encode(out);
-        self.input.encode(out);
+        self.seismic_input.encode(out);
     }
 
     fn length(&self) -> usize {
@@ -102,14 +78,14 @@ where
             + self.gas_limit.length()
             + self.kind.length()
             + self.value.length()
-            + self.input.length()
             + self.chain_id.length()
+            + self.seismic_input.length()
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 /// Represents a request for a seismic transaction.
-pub struct SeismicTransactionRequest<T> {
+pub struct SeismicTransactionRequest {
     /// The nonce of the transaction
     pub nonce: u64,
     /// The gas price for the transaction
@@ -122,18 +98,23 @@ pub struct SeismicTransactionRequest<T> {
     pub value: U256,
     /// The optional chain ID for the transaction
     pub chain_id: u64,
-    /// The (non-Seismic) input data for the transaction
-    pub input: Bytes,
     /// The input data for the transaction
-    pub seismic_input: SeismicInput<T>,
+    pub seismic_input: Bytes, /* this is encrypted -- all ciphered? */
+                              /*
+                              getValue(suint256 a) returns uint256
+                              ciphertext(0x{selector}{a}) -- in case of at least one private value
+                              getPublic(uint256 a) returns uint256
+                               */
+                              /* /// The input data for the transaction
+                               * pub seismic_input: SeismicInput<T>, */
 }
 
 /// Represents a seismic transaction.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct SeismicTransaction<T> {
+pub struct SeismicTransaction {
     /// The base transaction data.
     #[serde(flatten)]
-    pub tx: SeismicTransactionRequest<T>,
+    pub tx: SeismicTransactionRequest,
 }
 
 // impl Encodable for SeismicTransactionBase {
@@ -149,19 +130,7 @@ pub struct SeismicTransaction<T> {
 //     }
 // }
 
-impl<T> SeismicTransactionRequest<T>
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+impl SeismicTransactionRequest {
     /// Encodes only the transaction's fields into the desired buffer, without a RLP header.
     pub(crate) fn encode_fields(&self, out: &mut dyn alloy_rlp::BufMut) {
         self.chain_id.encode(out);
@@ -170,7 +139,6 @@ where
         self.gas_limit.encode(out);
         self.kind.encode(out);
         self.value.encode(out);
-        self.input.encode(out);
         self.seismic_input.encode(out);
     }
 
@@ -185,7 +153,6 @@ where
             + self.gas_limit.length()
             + self.kind.length()
             + self.value.length()
-            + self.input.length()
             + self.seismic_input.length()
     }
 
@@ -252,19 +219,7 @@ where
     }
 }
 
-impl<T> SeismicTransactionRequest<T>
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+impl SeismicTransactionRequest {
     /// Computes the hash of the transaction request.
     ///
     /// This function encodes the base transaction fields using RLP encoding,
@@ -278,10 +233,7 @@ where
 
     /// Converts the transaction request into a signed transaction object
     /// without signing the secret data field so as to not leak the secret data.
-    pub fn into_signed_without_secrets(
-        self,
-        signature: Signature,
-    ) -> Signed<SeismicTransaction<T>> {
+    pub fn into_signed_without_secrets(self, signature: Signature) -> Signed<SeismicTransaction> {
         let mut buf = Vec::with_capacity(self.encoded_len_with_signature(&signature, false));
         self.encode_with_signature(&signature, &mut buf, false);
         let hash = keccak256(&buf);
@@ -289,19 +241,7 @@ where
     }
 }
 
-impl<T> SignableTransaction<Signature> for SeismicTransactionRequest<T>
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+impl SignableTransaction<Signature> for SeismicTransactionRequest {
     fn set_chain_id(&mut self, chain_id: ChainId) {
         self.chain_id = chain_id;
     }
@@ -320,48 +260,23 @@ where
     }
 }
 
-impl<T> SeismicTransaction<T>
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+impl SeismicTransaction {
     pub(crate) fn decode_fields(buf: &mut &[u8]) -> alloy_rlp::Result<Self> {
         Ok(Self {
-            tx: SeismicTransactionRequest::<T> {
+            tx: SeismicTransactionRequest {
                 chain_id: Decodable::decode(buf)?,
                 nonce: Decodable::decode(buf)?,
                 gas_price: Decodable::decode(buf)?,
                 gas_limit: Decodable::decode(buf)?,
                 kind: Decodable::decode(buf)?,
                 value: Decodable::decode(buf)?,
-                input: Decodable::decode(buf)?,
                 seismic_input: Decodable::decode(buf)?,
             },
         })
     }
 }
 
-impl<T> SignableTransaction<Signature> for SeismicTransaction<T>
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+impl SignableTransaction<Signature> for SeismicTransaction {
     fn set_chain_id(&mut self, chain_id: ChainId) {
         self.tx.chain_id = chain_id;
     }
@@ -387,19 +302,7 @@ where
     }
 }
 
-impl<T> Transaction for SeismicTransaction<T>
-where
-    T: Encryptable
-        + Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + Send
-        + Sync
-        + 'static
-        + Serialize
-        + for<'de> Deserialize<'de>,
-{
+impl Transaction for SeismicTransaction {
     fn chain_id(&self) -> Option<ChainId> {
         Some(ChainId::from(self.tx.chain_id))
     }
@@ -419,7 +322,7 @@ where
         self.tx.value
     }
     fn input(&self) -> &[u8] {
-        unimplemented!()
+        &self.tx.seismic_input
     }
     fn max_fee_per_gas(&self) -> u128 {
         self.tx.gas_price.try_into().unwrap_or(u128::MAX)

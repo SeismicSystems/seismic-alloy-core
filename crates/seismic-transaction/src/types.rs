@@ -2,7 +2,7 @@ use crate::{
     seismic_util::{decrypt, Encryptable},
     transaction::SeismicTransactionRequest,
 };
-use alloy_primitives::{TxKind, U256};
+use alloy_primitives::{Bytes, TxKind, U256};
 use alloy_rlp::{bytes, Decodable, Encodable};
 use reth_rpc_types::{
     transaction::{
@@ -58,7 +58,7 @@ pub struct TxSeismicElement<T> {
     pub plainvalue: Option<PlainValue<T>>,
     /// encrypted value is assumed to not be changed during the lifetime of the struct
     /// this is already encoded for communication
-    pub ciphertext: Vec<u8>,
+    pub ciphertext: Vec<u8>, // maybe option instead of 0 ciphertext for plainvalue?
 }
 
 impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de>>
@@ -117,7 +117,7 @@ pub type SeismicInput<
 /// 4. EIP4844 [`EIP4844TransactionRequest`]
 /// 5. Seismic [`SeismicTransactionRequest`]
 #[derive(Debug)]
-pub enum SeismicTypedTransactionRequest<T: Encryptable + Debug + Clone + PartialEq + Eq> {
+pub enum SeismicTypedTransactionRequest {
     /// Represents a Legacy (pre-EIP2718) transaction request.
     Legacy(LegacyTransactionRequest),
     /// Represents an EIP1559 transaction request.
@@ -127,21 +127,19 @@ pub enum SeismicTypedTransactionRequest<T: Encryptable + Debug + Clone + Partial
     /// Represents an EIP4844 transaction request.
     EIP4844(EIP4844TransactionRequest),
     /// Represents a Seismic transaction request.
-    Seismic(SeismicTransactionRequest<T>),
+    Seismic(SeismicTransactionRequest),
 }
 
 // Seismic specific transaction field(s)
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SeismicTransactionFields<T> {
+pub struct SeismicTransactionFields {
     /// The secret data for the transaction
     #[serde(rename = "seismicInput")]
-    pub seismic_input: SeismicInput<T>,
+    pub seismic_input: Bytes, // ---> decryption ----> Bytes ----> EVM
 }
 
-impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de>>
-    From<SeismicTransactionFields<T>> for OtherFields
-{
-    fn from(value: SeismicTransactionFields<T>) -> Self {
+impl From<SeismicTransactionFields> for OtherFields {
+    fn from(value: SeismicTransactionFields) -> Self {
         serde_json::to_value(value).unwrap().try_into().unwrap()
     }
 }
