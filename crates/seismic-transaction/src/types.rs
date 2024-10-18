@@ -9,8 +9,8 @@ use reth_rpc_types::{
         EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest,
         LegacyTransactionRequest,
     },
-    OtherFields,
 };
+use alloy_serde::OtherFields;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{fmt::Debug, hash::Hash, mem};
 
