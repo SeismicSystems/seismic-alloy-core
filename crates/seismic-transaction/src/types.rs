@@ -4,13 +4,11 @@ use crate::{
 };
 use alloy_primitives::{Bytes, TxKind, U256};
 use alloy_rlp::{bytes, Decodable, Encodable};
-use reth_rpc_types::{
-    transaction::{
-        EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest,
-        LegacyTransactionRequest,
-    },
-};
 use alloy_serde::OtherFields;
+use reth_rpc_types::transaction::{
+    EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest,
+    LegacyTransactionRequest,
+};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{fmt::Debug, hash::Hash, mem};
 

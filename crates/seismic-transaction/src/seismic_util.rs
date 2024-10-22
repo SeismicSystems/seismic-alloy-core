@@ -14,11 +14,15 @@ use paste::paste;
 // use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
-// Static variable that will hold the generated key, initialized lazily
 static AES_KEY: Lazy<Key<Aes256Gcm>> = Lazy::new(|| {
-    let rng = AesRng::default();
-    let key: Key<Aes256Gcm> = Aes256Gcm::generate_key(rng);
-    return key;
+    // Define a fixed byte array for the key
+    let key_bytes: [u8; 32] = [
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00,
+    ];
+    // Create the key from the fixed byte array
+    Key::<Aes256Gcm>::from_slice(&key_bytes).clone()
 });
 
 fn nonce_to_generic_array(nonce: u64) -> GenericArray<u8, <Aes256Gcm as AeadCore>::NonceSize> {
