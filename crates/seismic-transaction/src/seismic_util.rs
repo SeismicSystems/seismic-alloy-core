@@ -23,7 +23,6 @@ static AES_KEY: Lazy<Key<Aes256Gcm>> = Lazy::new(|| {
 fn nonce_to_generic_array(nonce: u64) -> GenericArray<u8, <Aes256Gcm as AeadCore>::NonceSize> {
     let mut nonce_bytes = nonce.to_be_bytes().to_vec();
     let crypto_nonce_size = GenericArray::<u8, <Aes256Gcm as AeadCore>::NonceSize>::default().len();
-    println!("crypto_nonce_size: {}", crypto_nonce_size);
     nonce_bytes.resize(crypto_nonce_size, 0); // pad for crypto
     GenericArray::clone_from_slice(&nonce_bytes)
 }
