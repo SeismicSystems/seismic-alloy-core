@@ -1,3 +1,4 @@
+use crate::transaction::SeismicTransactionRequest;
 use alloy_primitives::Bytes;
 use alloy_serde::OtherFields;
 use reth_rpc_types::transaction::{
@@ -6,7 +7,6 @@ use reth_rpc_types::transaction::{
 };
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use crate::transaction::SeismicTransactionRequest;
 
 /// Container type for various Seismic transaction requests.
 ///
