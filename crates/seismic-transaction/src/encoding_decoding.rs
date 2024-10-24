@@ -13,7 +13,7 @@ pub fn encode_2718_seismic_transaction(
     tx: &Signed<SeismicTransaction>,
     out: &mut dyn alloy_rlp::BufMut,
 ) {
-    tx.tx().base.encode_with_signature(tx.signature(), out, false);
+    tx.tx().tx.encode_with_signature(tx.signature(), out, false);
 }
 
 /// Returns the length of the RLP-encoded signed SeismicTransaction.
@@ -25,7 +25,7 @@ pub fn encode_2718_seismic_transaction(
 /// The length of the RLP-encoded signed SeismicTransaction.
 #[allow(dead_code)]
 pub fn encode_2718_len(tx: &Signed<SeismicTransaction>) -> usize {
-    tx.tx().base.encoded_len_with_signature(tx.signature(), false)
+    tx.tx().tx.encoded_len_with_signature(tx.signature(), false)
 }
 
 /// Decodes a signed SeismicTransaction from the provided buffer.
