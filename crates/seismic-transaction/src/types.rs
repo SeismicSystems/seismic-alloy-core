@@ -108,7 +108,6 @@ impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Dese
     }
 }
 
-
 /// Container type for the decrypted seismic input.
 pub type SeismicInput<T> = TxSeismicElement<T>;
 

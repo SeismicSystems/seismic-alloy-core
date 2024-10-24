@@ -5,8 +5,8 @@ use aes_gcm::{
 use alloy_rlp::{Decodable, Encodable, Error};
 use once_cell::sync::Lazy;
 
-/// The AES-256-GCM key used for encryption and decryption. 
-/// Hardcoded to be 0 for testing purposes for now 
+/// The AES-256-GCM key used for encryption and decryption.
+/// Hardcoded to be 0 for testing purposes for now
 /// (to be used in tandem with seismic-viem)
 static AES_KEY: Lazy<Key<Aes256Gcm>> = Lazy::new(|| {
     // Define a fixed byte array for the key
@@ -61,12 +61,15 @@ pub fn encrypt<T: Encryptable>(plaintext: &T, nonce: u64) -> Result<Vec<u8>, Err
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_primitives::{Bytes, hex::FromHex};
+    use alloy_primitives::{hex::FromHex, Bytes};
 
     #[test]
     fn test_seismic_encrypt_decrypt() {
         // Input data: selector + value (10 in hex)
-        let input = Bytes::from_hex("0x3fb5c1cb000000000000000000000000000000000000000000000000000000000000000a").unwrap();
+        let input = Bytes::from_hex(
+            "0x3fb5c1cb000000000000000000000000000000000000000000000000000000000000000a",
+        )
+        .unwrap();
         let nonce = 1;
 
         // Encrypt the input
