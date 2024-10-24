@@ -98,14 +98,7 @@ pub struct SeismicTransactionRequest {
     /// The optional chain ID for the transaction
     pub chain_id: u64,
     /// The input data for the transaction
-    pub seismic_input: Bytes, /* this is encrypted -- all ciphered? */
-                              /*
-                              getValue(suint256 a) returns uint256
-                              ciphertext(0x{selector}{a}) -- in case of at least one private value
-                              getPublic(uint256 a) returns uint256
-                               */
-                              /* /// The input data for the transaction
-                               * pub seismic_input: SeismicInput<T>, */
+    pub seismic_input: Bytes
 }
 
 /// Represents a seismic transaction.
@@ -116,18 +109,6 @@ pub struct SeismicTransaction {
     pub tx: SeismicTransactionRequest,
 }
 
-// impl Encodable for SeismicTransactionBase {
-//     fn encode(&self, out: &mut dyn BufMut) {
-//         let payload_length = self.fields_len();
-//         Header { list: true, payload_length }.encode(out);
-//         self.encode_fields(out);
-//     }
-
-//     fn length(&self) -> usize {
-//         let payload_length = self.fields_len();
-//         Header { list: true, payload_length }.length() + payload_length
-//     }
-// }
 
 impl SeismicTransactionRequest {
     /// Encodes only the transaction's fields into the desired buffer, without a RLP header.
