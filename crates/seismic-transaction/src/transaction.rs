@@ -98,7 +98,7 @@ pub struct SeismicTransactionRequest {
     /// The optional chain ID for the transaction
     pub chain_id: u64,
     /// The input data for the transaction
-    pub seismic_input: Bytes
+    pub seismic_input: Bytes,
 }
 
 /// Represents a seismic transaction.
@@ -108,7 +108,6 @@ pub struct SeismicTransaction {
     #[serde(flatten)]
     pub tx: SeismicTransactionRequest,
 }
-
 
 impl SeismicTransactionRequest {
     /// Encodes only the transaction's fields into the desired buffer, without a RLP header.
