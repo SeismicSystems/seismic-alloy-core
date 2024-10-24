@@ -2,19 +2,22 @@ use crate::{
     seismic_util::{decrypt, Encryptable},
     transaction::SeismicTransactionRequest,
 };
-use alloy_primitives::{Bytes, TxKind, U256};
+use alloy_primitives::Bytes;
 use alloy_rlp::{bytes, Decodable, Encodable};
 use alloy_serde::OtherFields;
 use reth_rpc_types::transaction::{
     EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest,
     LegacyTransactionRequest,
 };
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::{fmt::Debug, hash::Hash, mem};
 
+/// A struct that contains a value and a boolean indicating whether it should be encrypted.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub struct PlainValue<T> {
+    /// A boolean indicating whether the value should be encrypted.
     pub should_encrypt: bool,
+    /// The value to be encrypted or decrypted.
     pub value: T,
 }
 
@@ -45,12 +48,14 @@ impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Dese
     PlainValue<T>
 {
     #[inline]
+    /// Returns the size of the plain value.
     pub fn size(&self) -> usize {
         mem::size_of::<T>() + mem::size_of::<bool>()
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+/// A struct that contains a decrypted value and an encrypted value.
 pub struct TxSeismicElement<T> {
     /// decrypted value is served as a cache for fast access of the encrypted value
     pub plainvalue: Option<PlainValue<T>>,
@@ -62,6 +67,7 @@ pub struct TxSeismicElement<T> {
 impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de>>
     TxSeismicElement<T>
 {
+    /// Decrypts the ciphertext and stores the decrypted value in `plainvalue`.
     pub fn decrypt(&mut self, ciphertext: &Vec<u8>, nonce: u64) -> Result<(), alloy_rlp::Error> {
         if self.plainvalue.is_none() {
             let fresh_plainvalue = decrypt::<PlainValue<T>>(ciphertext, nonce)?;
@@ -102,9 +108,9 @@ impl<T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Dese
     }
 }
 
-pub type SeismicInput<
-    T: Encryptable + Debug + Clone + PartialEq + Eq + Serialize + for<'de> Deserialize<'de> + Debug,
-> = TxSeismicElement<T>;
+
+/// Container type for the decrypted seismic input.
+pub type SeismicInput<T> = TxSeismicElement<T>;
 
 /// Container type for various Seismic transaction requests.
 ///
@@ -128,7 +134,7 @@ pub enum SeismicTypedTransactionRequest {
     Seismic(SeismicTransactionRequest),
 }
 
-// Seismic specific transaction field(s)
+/// Seismic specific transaction field(s)
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SeismicTransactionFields {
     /// The secret data for the transaction

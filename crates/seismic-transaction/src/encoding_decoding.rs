@@ -1,4 +1,4 @@
-use crate::{seismic_util::Encryptable, transaction::SeismicTransaction};
+use crate::transaction::SeismicTransaction;
 use alloy_consensus::{SignableTransaction, Signed};
 use alloy_primitives::Signature;
 use alloy_rlp::{Buf, Header, EMPTY_STRING_CODE};

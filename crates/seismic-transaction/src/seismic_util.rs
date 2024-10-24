@@ -1,19 +1,13 @@
 use aes_gcm::{
-    aead::{generic_array::GenericArray, Aead, AeadCore, KeyInit, OsRng as AesRng},
+    aead::{generic_array::GenericArray, Aead, AeadCore, KeyInit},
     Aes256Gcm, Key,
 };
-use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
 use alloy_rlp::{Decodable, Encodable, Error};
 use once_cell::sync::Lazy;
-use paste::paste;
 
-// #[cfg(any(test, feature = "reth-codec"))]
-// use reth_codecs::Compact;
-
-#[cfg(not(feature = "std"))]
-// use alloc::vec::Vec;
-use serde::{Deserialize, Serialize};
-
+/// The AES-256-GCM key used for encryption and decryption. 
+/// Hardcoded to be 0 for testing purposes for now 
+/// (to be used in tandem with seismic-viem)
 static AES_KEY: Lazy<Key<Aes256Gcm>> = Lazy::new(|| {
     // Define a fixed byte array for the key
     let key_bytes: [u8; 32] = [
@@ -25,6 +19,7 @@ static AES_KEY: Lazy<Key<Aes256Gcm>> = Lazy::new(|| {
     Key::<Aes256Gcm>::from_slice(&key_bytes).clone()
 });
 
+/// Converts a 64-bit nonce to a generic array of bytes.
 fn nonce_to_generic_array(nonce: u64) -> GenericArray<u8, <Aes256Gcm as AeadCore>::NonceSize> {
     let mut nonce_bytes = nonce.to_be_bytes().to_vec();
     let crypto_nonce_size = GenericArray::<u8, <Aes256Gcm as AeadCore>::NonceSize>::default().len();
@@ -37,6 +32,7 @@ fn nonce_to_generic_array(nonce: u64) -> GenericArray<u8, <Aes256Gcm as AeadCore
 pub trait Encryptable: Encodable + Decodable {}
 impl<T: Encodable + Decodable> Encryptable for T {}
 
+/// Decrypts the given ciphertext using the AES-256-GCM algorithm.
 pub fn decrypt<T>(ciphertext: &Vec<u8>, nonce: u64) -> alloy_rlp::Result<T>
 where
     T: Encryptable,
@@ -49,10 +45,10 @@ where
     T::decode(&mut &buf[..])
 }
 
+/// Encrypts the given plaintext using the AES-256-GCM algorithm.
 pub fn encrypt<T: Encryptable>(plaintext: &T, nonce: u64) -> Result<Vec<u8>, Error> {
     let cipher = Aes256Gcm::new(&AES_KEY);
     let nonce = nonce_to_generic_array(nonce);
-    println!("nonce: {:?}", nonce);
     let mut buf = Vec::new();
     plaintext.encode(&mut buf);
     // Returns an error if the buffer has insufficient capacity to store the
@@ -65,7 +61,7 @@ pub fn encrypt<T: Encryptable>(plaintext: &T, nonce: u64) -> Result<Vec<u8>, Err
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_primitives::{Bytes, hex::{self, FromHex}};
+    use alloy_primitives::{Bytes, hex::FromHex};
 
     #[test]
     fn test_seismic_encrypt_decrypt() {
@@ -78,12 +74,6 @@ mod tests {
 
         // Decrypt the encrypted data
         let decrypted = decrypt::<Bytes>(&encrypted, nonce).expect("Decryption failed");
-
-        println!("Original: 0x{}", hex::encode(&input));
-        println!("Encrypted: 0x{}", hex::encode(&encrypted));
-        println!("Decrypted: 0x{}", hex::encode(&decrypted));
-
-        panic!();
 
         // Assert that the decrypted data matches the original input
         assert_eq!(input, decrypted, "Decrypted data does not match original input");

@@ -1,4 +1,3 @@
-use crate::{seismic_util::Encryptable, types::SeismicInput};
 use alloy_consensus::{SignableTransaction, Signed, Transaction};
 use alloy_eips::{eip2930::AccessList, eip7702::SignedAuthorization};
 use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
