@@ -5,11 +5,15 @@
 )]
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(feature = "nightly", feature(hasher_prefixfree_extras))]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 #[macro_use]
 extern crate alloc;
 
+use paste as _;
+#[cfg(feature = "sha3-keccak")]
+use sha3 as _;
 use tiny_keccak as _;
 
 #[cfg(feature = "postgres")]
@@ -43,9 +47,10 @@ mod common;
 pub use common::TxKind;
 
 mod log;
-pub use log::{IntoLogData, Log, LogData};
-#[cfg(feature = "serde")]
-mod log_serde;
+pub use log::{logs_bloom, IntoLogData, Log, LogData};
+
+#[cfg(feature = "map")]
+pub mod map;
 
 mod sealed;
 pub use sealed::{Sealable, Sealed};
@@ -54,7 +59,9 @@ mod signed;
 pub use signed::{BigIntConversionError, ParseSignedError, Sign, Signed};
 
 mod signature;
-pub use signature::{to_eip155_v, Parity, Signature, SignatureError};
+pub use signature::{
+    normalize_v, to_eip155_v, Parity, PrimitiveSignature, Signature, SignatureError,
+};
 
 pub mod utils;
 pub use utils::{eip191_hash_message, keccak256, Keccak256};

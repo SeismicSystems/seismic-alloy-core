@@ -13,7 +13,7 @@ const SECP256K1N_ORDER: U256 =
     uint!(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141_U256);
 
 /// An Ethereum ECDSA signature.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct Signature {
     v: Parity,
     r: U256,
@@ -301,6 +301,25 @@ impl Signature {
         self.v
     }
 
+    /// Returns the chain ID associated with the V value, if this signature is
+    /// replay-protected by [EIP-155].
+    ///
+    /// [EIP-155]: https://eips.ethereum.org/EIPS/eip-155
+    pub const fn chain_id(&self) -> Option<u64> {
+        self.v.chain_id()
+    }
+
+    /// Returns true if the signature is replay-protected by [EIP-155].
+    ///
+    /// This is true if the V value is 35 or greater. Values less than 35 are
+    /// either not replay protected (27/28), or are invalid.
+    ///
+    /// [EIP-155]: https://eips.ethereum.org/EIPS/eip-155
+    #[inline]
+    pub const fn has_eip155_value(&self) -> bool {
+        self.v().has_eip155_value()
+    }
+
     /// Returns the byte-array representation of this signature.
     ///
     /// The first 32 bytes are the `r` value, the second 32 bytes the `s` value
@@ -440,7 +459,7 @@ impl<'de> serde::Deserialize<'de> for Signature {
             {
                 struct FieldVisitor;
 
-                impl<'de> serde::de::Visitor<'de> for FieldVisitor {
+                impl serde::de::Visitor<'_> for FieldVisitor {
                     type Value = Field;
 
                     fn expecting(
@@ -584,7 +603,9 @@ impl proptest::arbitrary::Arbitrary for Signature {
 #[allow(unused_imports)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
+    use crate::Bytes;
+    use core::str::FromStr;
+    use hex::FromHex;
 
     #[cfg(feature = "rlp")]
     use alloy_rlp::{Decodable, Encodable};
@@ -649,16 +670,13 @@ mod tests {
     #[cfg(feature = "serde")]
     #[test]
     fn deserialize_with_parity() {
-        let raw_signature_with_y_parity = serde_json::json!(
-            {
-            "r":"0xc569c92f176a3be1a6352dd5005bfc751dcb32f57623dd2a23693e64bf4447b0",
-            "s":"0x1a891b566d369e79b7a66eecab1e008831e22daa15f91a0a0cf4f9f28f47ee05",
-            "v":"0x1",
+        let raw_signature_with_y_parity = serde_json::json!({
+            "r": "0xc569c92f176a3be1a6352dd5005bfc751dcb32f57623dd2a23693e64bf4447b0",
+            "s": "0x1a891b566d369e79b7a66eecab1e008831e22daa15f91a0a0cf4f9f28f47ee05",
+            "v": "0x1",
             "yParity": "0x1"
-        }
-        );
+        });
 
-        println!("{raw_signature_with_y_parity}");
         let signature: Signature = serde_json::from_value(raw_signature_with_y_parity).unwrap();
 
         let expected = Signature::from_rs_and_parity(
@@ -781,5 +799,42 @@ mod tests {
 
         // Assert that the length of the Signature matches the expected length
         assert_eq!(sig.length(), 69);
+    }
+
+    #[cfg(feature = "rlp")]
+    #[test]
+    fn test_rlp_vrs_len() {
+        let signature = Signature::test_signature();
+        assert_eq!(67, signature.rlp_vrs_len());
+    }
+
+    #[cfg(feature = "rlp")]
+    #[test]
+    fn test_encode_and_decode() {
+        let signature = Signature::test_signature();
+
+        let mut encoded = Vec::new();
+        signature.encode(&mut encoded);
+        assert_eq!(encoded.len(), signature.length());
+        let decoded = Signature::decode(&mut &*encoded).unwrap();
+        assert_eq!(signature, decoded);
+    }
+
+    #[test]
+    fn test_as_bytes() {
+        let signature = Signature::new(
+            U256::from_str(
+                "18515461264373351373200002665853028612451056578545711640558177340181847433846",
+            )
+            .unwrap(),
+            U256::from_str(
+                "46948507304638947509940763649030358759909902576025900602547168820602576006531",
+            )
+            .unwrap(),
+            Parity::Parity(false),
+        );
+
+        let expected = Bytes::from_hex("0x28ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa63627667cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d831b").unwrap();
+        assert_eq!(signature.as_bytes(), **expected);
     }
 }

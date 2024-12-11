@@ -16,6 +16,12 @@ pub enum Parity {
     Parity(bool),
 }
 
+impl Default for Parity {
+    fn default() -> Self {
+        Self::Parity(false)
+    }
+}
+
 #[cfg(feature = "k256")]
 impl From<k256::ecdsa::RecoveryId> for Parity {
     fn from(value: k256::ecdsa::RecoveryId) -> Self {
@@ -56,7 +62,10 @@ impl TryFrom<u64> for Parity {
 }
 
 impl Parity {
-    /// Get the chain_id of the V value, if any.
+    /// Returns the chain ID associated with the V value, if this signature is
+    /// replay-protected by [EIP-155].
+    ///
+    /// [EIP-155]: https://eips.ethereum.org/EIPS/eip-155
     pub const fn chain_id(&self) -> Option<ChainId> {
         match *self {
             Self::Eip155(mut v @ 35..) => {
@@ -68,6 +77,16 @@ impl Parity {
             }
             _ => None,
         }
+    }
+
+    /// Returns true if the signature is replay-protected by [EIP-155].
+    ///
+    /// This is true if the V value is 35 or greater. Values less than 35 are
+    /// either not replay protected (27/28), or are invalid.
+    ///
+    /// [EIP-155]: https://eips.ethereum.org/EIPS/eip-155
+    pub const fn has_eip155_value(&self) -> bool {
+        self.chain_id().is_some()
     }
 
     /// Return the y-parity as a boolean.
@@ -137,7 +156,7 @@ impl Parity {
     #[cfg(feature = "k256")]
     pub const fn recid(&self) -> k256::ecdsa::RecoveryId {
         let recid_opt = match self {
-            Self::Eip155(v) => Some(crate::signature::utils::normalize_v(*v)),
+            Self::Eip155(v) => Some(crate::signature::utils::normalize_v_to_recid(*v)),
             Self::NonEip155(b) | Self::Parity(b) => k256::ecdsa::RecoveryId::from_byte(*b as u8),
         };
 

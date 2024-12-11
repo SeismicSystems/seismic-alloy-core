@@ -35,7 +35,7 @@ pub struct Param {
     /// instantiate directly. Use Param::new instead.
     #[doc(hidden)]
     pub name: String,
-    /// If the paramaeter is a compound type (a struct or tuple), a list of the
+    /// If the parameter is a compound type (a struct or tuple), a list of the
     /// parameter's components, in order. Empty otherwise
     pub components: Vec<Param>,
     /// The internal type of the parameter. This type represents the type that
@@ -223,7 +223,7 @@ impl Param {
         if self.components.is_empty() {
             s.push_str(&self.ty);
         } else {
-            crate::utils::signature_raw(&self.components, s);
+            crate::utils::params_abi_tuple(&self.components, s);
             // checked during deserialization, but might be invalid from a user
             if let Some(suffix) = self.ty.strip_prefix("tuple") {
                 s.push_str(suffix);
@@ -239,7 +239,7 @@ impl Param {
             s.push_str(&self.ty);
         } else {
             s.push_str("tuple");
-            crate::utils::full_signature_raw(&self.components, s);
+            crate::utils::params_tuple(&self.components, s);
             // checked during deserialization, but might be invalid from a user
             if let Some(suffix) = self.ty.strip_prefix("tuple") {
                 s.push_str(suffix);
@@ -325,7 +325,7 @@ pub struct EventParam {
     /// Whether the parameter is indexed. Indexed parameters have their
     /// value, or the hash of their value, stored in the log topics.
     pub indexed: bool,
-    /// If the paramaeter is a compound type (a struct or tuple), a list of the
+    /// If the parameter is a compound type (a struct or tuple), a list of the
     /// parameter's components, in order. Empty otherwise. Because the
     /// components are not top-level event params, they will not have an
     /// `indexed` field.
@@ -516,7 +516,7 @@ impl EventParam {
         if self.components.is_empty() {
             s.push_str(&self.ty);
         } else {
-            crate::utils::signature_raw(&self.components, s);
+            crate::utils::params_abi_tuple(&self.components, s);
             // checked during deserialization, but might be invalid from a user
             if let Some(suffix) = self.ty.strip_prefix("tuple") {
                 s.push_str(suffix);
@@ -532,7 +532,7 @@ impl EventParam {
             s.push_str(&self.ty);
         } else {
             s.push_str("tuple");
-            crate::utils::full_signature_raw(&self.components, s);
+            crate::utils::params_tuple(&self.components, s);
             // checked during deserialization, but might be invalid from a user
             if let Some(suffix) = self.ty.strip_prefix("tuple") {
                 s.push_str(suffix);
@@ -626,7 +626,7 @@ struct BorrowedParamInner<'a> {
 
 impl BorrowedParamInner<'_> {
     fn validate_fields<E: serde::de::Error>(&self) -> Result<(), E> {
-        validate_identifier!(self.name);
+        validate_identifier(self.name)?;
 
         // any components means type is "tuple" + maybe brackets, so we can skip
         // parsing with TypeSpecifier
@@ -675,8 +675,11 @@ mod tests {
         let param_value = serde_json::from_str::<serde_json::Value>(param).unwrap();
         assert_eq!(serde_json::from_value::<Param>(param_value).unwrap(), expected);
 
-        let reader = std::io::Cursor::new(param);
-        assert_eq!(serde_json::from_reader::<_, Param>(reader).unwrap(), expected);
+        #[cfg(feature = "std")]
+        {
+            let reader = std::io::Cursor::new(param);
+            assert_eq!(serde_json::from_reader::<_, Param>(reader).unwrap(), expected);
+        }
     }
 
     #[test]

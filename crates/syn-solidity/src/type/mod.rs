@@ -379,6 +379,8 @@ impl Type {
     }
 
     /// Returns whether this type is dynamic according to ABI rules.
+    ///
+    /// Note that this does not account for custom types, such as UDVTs.
     pub fn is_abi_dynamic(&self) -> bool {
         match self {
             Self::Bool(_)
@@ -397,7 +399,7 @@ impl Type {
             Self::Tuple(tuple) => tuple.is_abi_dynamic(),
 
             // not applicable
-            Self::Mapping(_) => false,
+            Self::Mapping(_) => true,
         }
     }
 
@@ -405,9 +407,29 @@ impl Type {
     ///
     /// These types' variables are always passed by value.
     ///
+    /// `custom_is_value_type` accounts for custom value types.
+    ///
     /// See the [Solidity docs](https://docs.soliditylang.org/en/latest/types.html#value-types) for more information.
-    pub const fn is_value_type(&self) -> bool {
-        self.is_one_word()
+    pub fn is_value_type(&self, custom_is_value_type: impl Fn(&SolPath) -> bool) -> bool {
+        match self {
+            Self::Custom(custom) => custom_is_value_type(custom),
+            _ => self.is_value_type_simple(),
+        }
+    }
+
+    /// Returns whether this type is a simple value type.
+    ///
+    /// See [`is_value_type`](Self::is_value_type) for more information.
+    pub fn is_value_type_simple(&self) -> bool {
+        matches!(
+            self,
+            Self::Bool(_)
+                | Self::Int(..)
+                | Self::Uint(..)
+                | Self::FixedBytes(..)
+                | Self::Address(..)
+                | Self::Function(_)
+        )
     }
 
     pub const fn is_array(&self) -> bool {
