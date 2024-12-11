@@ -83,4 +83,4 @@ seismic = [
     "alloy-sol-types?/seismic",
     "alloy-json-abi?/seismic",
 ]
-unstable-doc = ["alloy-primitives/unstable-doc"]
+

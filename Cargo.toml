@@ -50,6 +50,11 @@ alloy-sol-type-parser = { version = "0.8.11", path = "crates/sol-type-parser", d
 alloy-sol-types = { version = "0.8.11", path = "crates/sol-types", default-features = false }
 syn-solidity = { version = "0.8.11", path = "crates/syn-solidity", default-features = false }
 
+alloy-rpc-types = { version = "0.3.5", default-features = false }
+alloy-serde = { version = "0.3.5", default-features = false }
+alloy-consensus = { version = "0.3.5", default-features = false }
+alloy-eips = { version = "0.3.5", default-features = false, features = ["serde"] }
+
 # serde
 serde = { version = "1.0.198", features = ["derive", "alloc"] }
 serde_json = { version = "1.0.116", features = ["alloc"] }
