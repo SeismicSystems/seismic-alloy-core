@@ -44,7 +44,7 @@ impl Transaction for SeismicTransactionRequest {
     }
 
     fn ty(&self) -> u8 {
-        0x64 // subject to change
+        0x4A
     }
 
     fn access_list(&self) -> Option<&AccessList> {
@@ -171,8 +171,10 @@ impl SeismicTransactionRequest {
             }
             .encode(out);
         }
+        out.put_u8(self.ty() as u8);
         self.encode_with_signature_fields(signature, out);
     }
+
 
     /// Returns what the encoded length should be, if the transaction were RLP encoded with the
     /// given signature, depending on the value of `with_header`.
@@ -270,8 +272,8 @@ impl SignableTransaction<Signature> for SeismicTransaction {
     }
 
     fn into_signed(self, signature: Signature) -> Signed<Self> {
-        let mut buf = Vec::with_capacity(self.tx.encoded_len_with_signature(&signature, false));
-        self.tx.encode_with_signature(&signature, &mut buf, false);
+        let mut buf = Vec::with_capacity(self.tx.encoded_len_with_signature(&signature, true));
+        self.tx.encode_with_signature(&signature, &mut buf, true);
         let hash = keccak256(&buf);
 
         // Drop any v chain id value to ensure the signature format is correct at the time of
