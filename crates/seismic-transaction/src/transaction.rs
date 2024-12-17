@@ -272,8 +272,8 @@ impl SignableTransaction<Signature> for SeismicTransaction {
     }
 
     fn into_signed(self, signature: Signature) -> Signed<Self> {
-        let mut buf = Vec::with_capacity(self.tx.encoded_len_with_signature(&signature, true));
-        self.tx.encode_with_signature(&signature, &mut buf, true);
+        let mut buf = Vec::with_capacity(self.tx.encoded_len_with_signature(&signature, false));
+        self.tx.encode_with_signature(&signature, &mut buf, false);
         let hash = keccak256(&buf);
 
         // Drop any v chain id value to ensure the signature format is correct at the time of
