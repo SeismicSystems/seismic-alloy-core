@@ -175,7 +175,6 @@ impl SeismicTransactionRequest {
         self.encode_with_signature_fields(signature, out);
     }
 
-
     /// Returns what the encoded length should be, if the transaction were RLP encoded with the
     /// given signature, depending on the value of `with_header`.
     ///
@@ -330,5 +329,34 @@ impl Transaction for SeismicTransaction {
     }
     fn authorization_list(&self) -> Option<&[SignedAuthorization]> {
         None
+    }
+}
+
+mod tests {
+    use crate::transaction::{SeismicTransaction, SeismicTransactionRequest};
+    use alloy_consensus::{SignableTransaction, Signed};
+    use alloy_primitives::{Address, Bytes, Parity, Signature, U256};
+    use std::str::FromStr;
+
+    #[test]
+    fn test_encoding_fields() {
+        let tx = SeismicTransaction {
+            tx: SeismicTransactionRequest {
+                chain_id: 4u64,
+                nonce: 2,
+                gas_price: 1000000000,
+                gas_limit: 100000,
+                kind: Address::from_str("d3e8763675e4c425df46cc3b5c0f6cbdac396046").unwrap().into(),
+                value: U256::from(1000000000000000u64),
+                seismic_input: vec![1, 2, 3].into(),
+            },
+        };
+
+        let mut encoded_tx = Vec::new();
+        tx.tx.encode_fields(&mut encoded_tx);
+        let alloy_encoding = format!("{:0x}", Bytes::from(encoded_tx));
+
+        let reth_encoding = String::from("0x0402843b9aca00830186a094d3e8763675e4c425df46cc3b5c0f6cbdac39604687038d7ea4c6800083010203");
+        assert_eq!(reth_encoding, alloy_encoding);
     }
 }
