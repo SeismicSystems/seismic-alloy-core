@@ -73,30 +73,21 @@ pub fn decode_signed_seismic_tx(
 pub fn decode_signed_seismic_fields(
     buf: &mut &[u8],
 ) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
-    // let header = Header::decode(buf)?;
-    // if !header.list {
-    //     return Err(alloy_rlp::Error::UnexpectedString);
-    // }
-
-    // let original_len = buf.len();
-
     let header = Header::decode(buf)?;
-    let remaining_len = buf.len();
-
-    let transaction_payload_len = header.payload_length;
-
-    if transaction_payload_len > remaining_len {
-        return Err(alloy_rlp::Error::InputTooShort);
+    if !header.list {
+        return Err(alloy_rlp::Error::UnexpectedString);
     }
+
+    let original_len = buf.len();
 
     let tx = SeismicTransaction::decode_fields(buf)?;
     let signature = Signature::decode_rlp_vrs(buf)?;
 
     let signed = tx.into_signed(signature);
-    if buf.len() + header.payload_length != remaining_len {
+    if buf.len() + header.payload_length != original_len {
         return Err(alloy_rlp::Error::ListLengthMismatch {
             expected: header.payload_length,
-            got: remaining_len - buf.len(),
+            got: original_len - buf.len(),
         });
     }
 
