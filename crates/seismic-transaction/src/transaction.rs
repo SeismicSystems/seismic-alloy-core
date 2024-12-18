@@ -88,9 +88,9 @@ pub struct SeismicTransactionRequest {
     /// The nonce of the transaction
     pub nonce: u64,
     /// The gas price for the transaction
-    pub gas_price: U256,
+    pub gas_price: u128,
     /// The gas limit for the transaction
-    pub gas_limit: U256,
+    pub gas_limit: u64,
     /// The kind of transaction (e.g., Call, Create)
     pub kind: TxKind,
     /// The value of the transaction
