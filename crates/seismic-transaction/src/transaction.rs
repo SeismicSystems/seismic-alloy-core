@@ -44,7 +44,7 @@ impl Transaction for SeismicTransactionRequest {
     }
 
     fn ty(&self) -> u8 {
-        0x4A
+        SeismicTransaction::TRANSACTION_TYPE
     }
 
     fn access_list(&self) -> Option<&AccessList> {
