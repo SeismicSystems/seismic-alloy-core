@@ -136,8 +136,8 @@ pub fn decode_enveloped_seismic_tx(data: &mut &[u8]) -> alloy_rlp::Result<Signed
         with_tx_type
     };
 
-    println!("Bytes to keccak: {:0x}", Bytes::from(original_with_txtype_without_header));
-    let hash = keccak256(&original_encoding_without_header[..tx_length]);
+    println!("Bytes to keccak: {:0x}", Bytes::from(original_with_txtype_without_header.clone()));
+    let hash = keccak256(&original_with_txtype_without_header[..tx_length]);
     let signed = Signed::<SeismicTransaction>::new_unchecked(tx, signature, hash);
     Ok(signed)
 }
