@@ -97,11 +97,12 @@ pub fn _decode_signed_seismic_fields(
 fn decode_enveloped_seismic_tx(data: &mut &[u8]) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
     let original_encoding_without_header = *data;
 
-    // let tx_type = *data.first().ok_or(alloy_rlp::Error::InputTooShort)?;
-    // if tx_type != SeismicTransaction::transaction_type() {
-    //     return Err(alloy_rlp::Error::Custom("Not a seismic transaction"));
-    // }
-    // data.advance(1);
+    let tx_type = *data.first().ok_or(alloy_rlp::Error::InputTooShort)?;
+    if tx_type != SeismicTransaction::transaction_type() {
+        println!("Tx type = {:?}", tx_type);
+        // return Err(alloy_rlp::Error::Custom("Not a seismic transaction"));
+    }
+    data.advance(1);
 
     // decode the list header for the rest of the transaction
     let header = Header::decode(data)?;
