@@ -241,6 +241,9 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
 }
 
 impl SeismicTransaction {
+    pub fn transaction_type() -> u8 {
+        0x4A
+    }
     pub(crate) fn decode_fields(buf: &mut &[u8]) -> alloy_rlp::Result<Self> {
         Ok(Self {
             tx: SeismicTransactionRequest {
@@ -319,7 +322,7 @@ impl Transaction for SeismicTransaction {
         self.tx.gas_price.try_into().unwrap_or(u128::MAX)
     }
     fn ty(&self) -> u8 {
-        0x64
+        Self::transaction_type()
     }
     fn access_list(&self) -> Option<&AccessList> {
         None

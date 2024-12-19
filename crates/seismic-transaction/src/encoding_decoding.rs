@@ -1,7 +1,7 @@
 use crate::transaction::SeismicTransaction;
 use alloy_consensus::{SignableTransaction, Signed};
-use alloy_primitives::Signature;
-use alloy_rlp::{Buf, Header, EMPTY_STRING_CODE};
+use alloy_primitives::{keccak256, Signature};
+use alloy_rlp::{Buf, Decodable, Header, EMPTY_STRING_CODE};
 
 /// Encodes a signed SeismicTransaction into the provided buffer.
 ///
@@ -37,7 +37,7 @@ pub fn encode_2718_len(tx: &Signed<SeismicTransaction>) -> usize {
 /// A Result containing the decoded Signed<SeismicTransaction> or an alloy_rlp::Error if decoding
 /// fails.
 #[allow(dead_code)]
-pub fn decode_signed_seismic_tx(
+pub fn _decode_enveloped_typed_transaction(
     buf: &mut &[u8],
 ) -> Result<Signed<SeismicTransaction>, alloy_rlp::Error> {
     let mut h_decode = *buf;
@@ -49,7 +49,7 @@ pub fn decode_signed_seismic_tx(
     }
 
     buf.advance(1); // Skip tx type
-    let tx = decode_signed_seismic_fields(buf)?;
+    let tx = _decode_signed_seismic_fields(buf)?;
 
     let bytes_consumed = h_decode.len() - buf.len();
 
@@ -70,7 +70,7 @@ pub fn decode_signed_seismic_tx(
 /// A Result containing the decoded Signed<SeismicTransaction> or an alloy_rlp::Error if decoding
 /// fails.
 #[allow(dead_code)]
-pub fn decode_signed_seismic_fields(
+pub fn _decode_signed_seismic_fields(
     buf: &mut &[u8],
 ) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
     let header = Header::decode(buf)?;
@@ -92,4 +92,65 @@ pub fn decode_signed_seismic_fields(
     }
 
     Ok(signed)
+}
+
+fn decode_enveloped_seismic_tx(data: &mut &[u8]) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
+    let original_encoding_without_header = *data;
+
+    let tx_type = *data.first().ok_or(alloy_rlp::Error::InputTooShort)?;
+    if tx_type != SeismicTransaction::transaction_type() {
+        return Err(alloy_rlp::Error::Custom("Not a seismic transaction"));
+    }
+    data.advance(1);
+
+    // decode the list header for the rest of the transaction
+    let header = Header::decode(data)?;
+    if !header.list {
+        return Err(alloy_rlp::Error::Custom("typed tx fields must be encoded as a list"))
+    }
+
+    let remaining_len = data.len();
+
+    // length of tx encoding = tx type byte (size = 1) + length of header + payload length
+    let tx_length = 1 + header.length() + header.payload_length;
+
+    let tx = SeismicTransaction::decode_fields(data)?;
+    let signature = Signature::decode(data)?;
+
+    let bytes_consumed = remaining_len - data.len();
+    if bytes_consumed != header.payload_length {
+        return Err(alloy_rlp::Error::UnexpectedLength)
+    }
+
+    let hash = keccak256(&original_encoding_without_header[..tx_length]);
+    let signed = Signed::<SeismicTransaction>::new_unchecked(tx, signature, hash);
+    Ok(signed)
+}
+
+
+pub fn decode_signed_seismic_tx(buf: &mut &[u8]) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
+    if buf.is_empty() {
+        return Err(alloy_rlp::Error::InputTooShort)
+    }
+
+    // decode header
+    let original_encoding = *buf;
+    let header = Header::decode(buf)?;
+
+    if !header.list {
+        return Err(alloy_rlp::Error::UnexpectedString);
+    }
+
+    let remaining_len = buf.len();
+    let tx = decode_enveloped_seismic_tx(buf)?;
+
+    let bytes_consumed = remaining_len - buf.len();
+    // because Header::decode works for single bytes (including the tx type), returning a
+    // string Header with payload_length of 1, we need to make sure this check is only
+    // performed for transactions with a string header
+    if bytes_consumed != header.payload_length && original_encoding[0] > EMPTY_STRING_CODE {
+        return Err(alloy_rlp::Error::UnexpectedLength)
+    }
+
+    Ok(tx)
 }
