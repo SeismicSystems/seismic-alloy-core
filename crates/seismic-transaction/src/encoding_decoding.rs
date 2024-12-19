@@ -131,7 +131,7 @@ pub fn decode_enveloped_seismic_tx(data: &mut &[u8]) -> alloy_rlp::Result<Signed
 
     let original_with_txtype_without_header: Vec<u8> = {
         let mut with_tx_type = Vec::with_capacity(1 + original_encoding_without_header.len());
-        with_tx_type.push(SeismicTransaction::transaction_type());
+        with_tx_type.push(SeismicTransaction::TRANSACTION_TYPE);
         with_tx_type.extend_from_slice(&original_encoding_without_header);
         with_tx_type
     };

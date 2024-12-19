@@ -62,22 +62,22 @@ impl Transaction for SeismicTransactionRequest {
 
 impl Encodable for SeismicTransactionRequest {
     fn encode(&self, out: &mut dyn BufMut) {
+        self.chain_id.encode(out);
         self.nonce.encode(out);
         self.gas_price.encode(out);
         self.gas_limit.encode(out);
         self.kind.encode(out);
         self.value.encode(out);
-        self.chain_id.encode(out);
         self.seismic_input.encode(out);
     }
 
     fn length(&self) -> usize {
-        self.nonce.length()
+        self.chain_id.length()
+            + self.nonce.length()
             + self.gas_price.length()
             + self.gas_limit.length()
             + self.kind.length()
             + self.value.length()
-            + self.chain_id.length()
             + self.seismic_input.length()
     }
 }
@@ -227,7 +227,6 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
     }
 
     fn encode_for_signing(&self, out: &mut dyn alloy_rlp::BufMut) {
-        out.put_u8(self.chain_id as u8);
         self.encode(out)
     }
 
@@ -241,9 +240,9 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
 }
 
 impl SeismicTransaction {
-    pub fn transaction_type() -> u8 {
-        0x4A
-    }
+    /// Seismic transaction type is 74
+    pub const TRANSACTION_TYPE: u8 = 0x4A;
+    
     pub(crate) fn decode_fields(buf: &mut &[u8]) -> alloy_rlp::Result<Self> {
         Ok(Self {
             tx: SeismicTransactionRequest {
@@ -322,7 +321,7 @@ impl Transaction for SeismicTransaction {
         self.tx.gas_price.try_into().unwrap_or(u128::MAX)
     }
     fn ty(&self) -> u8 {
-        Self::transaction_type()
+        Self::TRANSACTION_TYPE
     }
     fn access_list(&self) -> Option<&AccessList> {
         None
