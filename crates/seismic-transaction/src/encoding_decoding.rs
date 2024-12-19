@@ -1,6 +1,6 @@
 use crate::transaction::SeismicTransaction;
 use alloy_consensus::{SignableTransaction, Signed};
-use alloy_primitives::{keccak256, Signature};
+use alloy_primitives::{keccak256, Bytes, Signature};
 use alloy_rlp::{Buf, Decodable, Header, EMPTY_STRING_CODE};
 
 /// Encodes a signed SeismicTransaction into the provided buffer.
@@ -95,6 +95,8 @@ pub fn _decode_signed_seismic_fields(
 }
 
 fn decode_enveloped_seismic_tx(data: &mut &[u8]) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
+
+    println!("Bytes when calling decode_enveloped: {:0x}", Bytes::from(data.to_vec()));
     let original_encoding_without_header = *data;
 
     let tx_type = *data.first().ok_or(alloy_rlp::Error::InputTooShort)?;
