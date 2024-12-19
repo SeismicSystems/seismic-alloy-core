@@ -267,12 +267,14 @@ impl SignableTransaction<Signature> for SeismicTransaction {
     }
 
     fn encode_for_signing(&self, out: &mut dyn alloy_rlp::BufMut) {
-        out.put_u8(self.tx.chain_id as u8);
+        out.put_u8(SeismicTransaction::TRANSACTION_TYPE);
+        Header { list: true, payload_length: self.tx.length() }.encode(out);
         self.tx.encode(out)
     }
 
     fn payload_len_for_signature(&self) -> usize {
-        1 + self.tx.length()
+        let payload_length = self.tx.length();
+        1 + length_of_length(payload_length) + self.tx.length()
     }
 
     fn into_signed(self, signature: Signature) -> Signed<Self> {
