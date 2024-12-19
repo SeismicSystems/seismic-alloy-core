@@ -1,7 +1,7 @@
 use alloy_consensus::{SignableTransaction, Signed, Transaction};
 use alloy_eips::{eip2930::AccessList, eip7702::SignedAuthorization};
 use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
-use alloy_rlp::{BufMut, Decodable, Encodable, Header};
+use alloy_rlp::{length_of_length, BufMut, Decodable, Encodable, Header};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -231,7 +231,8 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
     }
 
     fn payload_len_for_signature(&self) -> usize {
-        1 + self.length()
+        let payload_length = self.length();
+        1 + length_of_length(payload_length) + self.length()
     }
 
     fn into_signed(self, _signature: Signature) -> Signed<Self> {
