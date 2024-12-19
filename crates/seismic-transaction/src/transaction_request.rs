@@ -7,71 +7,6 @@ use std::fmt::Debug;
 
 use crate::transaction::SeismicTransaction;
 
-impl Transaction for SeismicTransactionRequest {
-    fn chain_id(&self) -> Option<ChainId> {
-        Some(ChainId::from(self.chain_id))
-    }
-    fn nonce(&self) -> u64 {
-        self.nonce
-    }
-    fn gas_limit(&self) -> u128 {
-        self.gas_limit.try_into().unwrap_or(u128::MAX)
-    }
-    fn gas_price(&self) -> Option<u128> {
-        Some(self.gas_price.try_into().unwrap_or(u128::MAX))
-    }
-    fn to(&self) -> TxKind {
-        self.kind
-    }
-    fn value(&self) -> U256 {
-        self.value
-    }
-    fn input(&self) -> &[u8] {
-        &self.seismic_input
-    }
-
-    fn max_fee_per_gas(&self) -> u128 {
-        self.gas_price.try_into().unwrap_or(u128::MAX)
-    }
-
-    fn max_priority_fee_per_gas(&self) -> Option<u128> {
-        Some(self.gas_price.try_into().unwrap_or(u128::MAX))
-    }
-    fn max_fee_per_blob_gas(&self) -> Option<u128> {
-        None
-    }
-
-    fn priority_fee_or_price(&self) -> u128 {
-        self.gas_price.try_into().unwrap_or(u128::MAX)
-    }
-
-    fn ty(&self) -> u8 {
-        SeismicTransaction::TRANSACTION_TYPE
-    }
-
-    fn access_list(&self) -> Option<&AccessList> {
-        None
-    }
-
-    fn blob_versioned_hashes(&self) -> Option<&[B256]> {
-        None
-    }
-
-    fn authorization_list(&self) -> Option<&[SignedAuthorization]> {
-        None
-    }
-}
-
-impl Encodable for SeismicTransactionRequest {
-    fn encode(&self, out: &mut dyn BufMut) {
-        self.encode_fields(out);
-    }
-
-    fn length(&self) -> usize {
-        self.fields_len()
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 /// Represents a request for a seismic transaction.
 pub struct SeismicTransactionRequest {
@@ -210,6 +145,71 @@ impl SeismicTransactionRequest {
         self.encode_with_signature(&signature, &mut buf, false);
         let hash = keccak256(&buf);
         Signed::new_unchecked(SeismicTransaction { tx: self }, signature.with_parity_bool(), hash)
+    }
+}
+
+impl Transaction for SeismicTransactionRequest {
+    fn chain_id(&self) -> Option<ChainId> {
+        Some(ChainId::from(self.chain_id))
+    }
+    fn nonce(&self) -> u64 {
+        self.nonce
+    }
+    fn gas_limit(&self) -> u128 {
+        self.gas_limit.try_into().unwrap_or(u128::MAX)
+    }
+    fn gas_price(&self) -> Option<u128> {
+        Some(self.gas_price.try_into().unwrap_or(u128::MAX))
+    }
+    fn to(&self) -> TxKind {
+        self.kind
+    }
+    fn value(&self) -> U256 {
+        self.value
+    }
+    fn input(&self) -> &[u8] {
+        &self.seismic_input
+    }
+
+    fn max_fee_per_gas(&self) -> u128 {
+        self.gas_price.try_into().unwrap_or(u128::MAX)
+    }
+
+    fn max_priority_fee_per_gas(&self) -> Option<u128> {
+        Some(self.gas_price.try_into().unwrap_or(u128::MAX))
+    }
+    fn max_fee_per_blob_gas(&self) -> Option<u128> {
+        None
+    }
+
+    fn priority_fee_or_price(&self) -> u128 {
+        self.gas_price.try_into().unwrap_or(u128::MAX)
+    }
+
+    fn ty(&self) -> u8 {
+        SeismicTransaction::TRANSACTION_TYPE
+    }
+
+    fn access_list(&self) -> Option<&AccessList> {
+        None
+    }
+
+    fn blob_versioned_hashes(&self) -> Option<&[B256]> {
+        None
+    }
+
+    fn authorization_list(&self) -> Option<&[SignedAuthorization]> {
+        None
+    }
+}
+
+impl Encodable for SeismicTransactionRequest {
+    fn encode(&self, out: &mut dyn BufMut) {
+        self.encode_fields(out);
+    }
+
+    fn length(&self) -> usize {
+        self.fields_len()
     }
 }
 
