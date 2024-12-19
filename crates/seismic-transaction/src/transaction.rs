@@ -227,6 +227,8 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
     }
 
     fn encode_for_signing(&self, out: &mut dyn alloy_rlp::BufMut) {
+        out.put_u8(SeismicTransaction::TRANSACTION_TYPE);
+        Header { list: true, payload_length: self.fields_len() }.encode(out);
         self.encode(out)
     }
 
