@@ -120,32 +120,3 @@ mod tests {
         assert_eq!(reth_encoding, alloy_encoding);
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::transaction::{SeismicTransaction, SeismicTransactionRequest};
-    use alloy_primitives::{Address, Bytes, U256};
-    use std::str::FromStr;
-
-    #[test]
-    fn test_encoding_fields() {
-        let tx = SeismicTransaction {
-            tx: SeismicTransactionRequest {
-                chain_id: 4u64,
-                nonce: 2,
-                gas_price: 1000000000,
-                gas_limit: 100000,
-                kind: Address::from_str("d3e8763675e4c425df46cc3b5c0f6cbdac396046").unwrap().into(),
-                value: U256::from(1000000000000000u64),
-                seismic_input: vec![1, 2, 3].into(),
-            },
-        };
-
-        let mut encoded_tx = Vec::new();
-        tx.tx.encode_fields(&mut encoded_tx);
-        let alloy_encoding = format!("{:0x}", Bytes::from(encoded_tx));
-
-        let reth_encoding = String::from("0x0402843b9aca00830186a094d3e8763675e4c425df46cc3b5c0f6cbdac39604687038d7ea4c6800083010203");
-        assert_eq!(reth_encoding, alloy_encoding);
-    }
-}
