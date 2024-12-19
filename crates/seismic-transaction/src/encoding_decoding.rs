@@ -120,7 +120,7 @@ pub fn decode_enveloped_seismic_tx(data: &mut &[u8]) -> alloy_rlp::Result<Signed
     let tx_length = 1 + header.length() + header.payload_length;
 
     let tx = SeismicTransaction::decode_fields(data)?;
-    let signature = Signature::decode(data)?;
+    let signature = Signature::decode_rlp_vrs(data)?;
 
     let bytes_consumed = remaining_len - data.len();
     if bytes_consumed != header.payload_length {
