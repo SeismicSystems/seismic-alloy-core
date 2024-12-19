@@ -1,4 +1,4 @@
-use crate::transaction::SeismicTransactionRequest;
+use crate::transaction_request::SeismicTransactionRequest;
 use alloy_primitives::Bytes;
 use alloy_serde::OtherFields;
 use reth_rpc_types::transaction::{
