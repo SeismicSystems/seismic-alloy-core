@@ -339,10 +339,10 @@ impl Transaction for SeismicTransaction {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use crate::transaction::{SeismicTransaction, SeismicTransactionRequest};
-    use alloy_consensus::{SignableTransaction, Signed};
-    use alloy_primitives::{Address, Bytes, Parity, Signature, U256};
+    use alloy_primitives::{Address, Bytes, U256};
     use std::str::FromStr;
 
     #[test]
