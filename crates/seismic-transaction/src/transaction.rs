@@ -1,7 +1,7 @@
 use alloy_consensus::{SignableTransaction, Signed, Transaction};
 use alloy_eips::{eip2930::AccessList, eip7702::SignedAuthorization};
 use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
-use alloy_rlp::{BufMut, Decodable, Encodable, Header};
+use alloy_rlp::{length_of_length, BufMut, Decodable, Encodable, Header};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -44,7 +44,7 @@ impl Transaction for SeismicTransactionRequest {
     }
 
     fn ty(&self) -> u8 {
-        0x64 // subject to change
+        SeismicTransaction::TRANSACTION_TYPE
     }
 
     fn access_list(&self) -> Option<&AccessList> {
@@ -62,22 +62,22 @@ impl Transaction for SeismicTransactionRequest {
 
 impl Encodable for SeismicTransactionRequest {
     fn encode(&self, out: &mut dyn BufMut) {
+        self.chain_id.encode(out);
         self.nonce.encode(out);
         self.gas_price.encode(out);
         self.gas_limit.encode(out);
         self.kind.encode(out);
         self.value.encode(out);
-        self.chain_id.encode(out);
         self.seismic_input.encode(out);
     }
 
     fn length(&self) -> usize {
-        self.nonce.length()
+        self.chain_id.length()
+            + self.nonce.length()
             + self.gas_price.length()
             + self.gas_limit.length()
             + self.kind.length()
             + self.value.length()
-            + self.chain_id.length()
             + self.seismic_input.length()
     }
 }
@@ -88,9 +88,9 @@ pub struct SeismicTransactionRequest {
     /// The nonce of the transaction
     pub nonce: u64,
     /// The gas price for the transaction
-    pub gas_price: U256,
+    pub gas_price: u128,
     /// The gas limit for the transaction
-    pub gas_limit: U256,
+    pub gas_limit: u64,
     /// The kind of transaction (e.g., Call, Create)
     pub kind: TxKind,
     /// The value of the transaction
@@ -171,6 +171,7 @@ impl SeismicTransactionRequest {
             }
             .encode(out);
         }
+        out.put_u8(self.ty() as u8);
         self.encode_with_signature_fields(signature, out);
     }
 
@@ -226,12 +227,14 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
     }
 
     fn encode_for_signing(&self, out: &mut dyn alloy_rlp::BufMut) {
-        out.put_u8(self.chain_id as u8);
+        out.put_u8(SeismicTransaction::TRANSACTION_TYPE);
+        Header { list: true, payload_length: self.fields_len() }.encode(out);
         self.encode(out)
     }
 
     fn payload_len_for_signature(&self) -> usize {
-        1 + self.length()
+        let payload_length = self.length();
+        1 + length_of_length(payload_length) + self.length()
     }
 
     fn into_signed(self, _signature: Signature) -> Signed<Self> {
@@ -240,6 +243,9 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
 }
 
 impl SeismicTransaction {
+    /// Seismic transaction type is 74
+    pub const TRANSACTION_TYPE: u8 = 0x4A;
+    
     pub(crate) fn decode_fields(buf: &mut &[u8]) -> alloy_rlp::Result<Self> {
         Ok(Self {
             tx: SeismicTransactionRequest {
@@ -261,23 +267,27 @@ impl SignableTransaction<Signature> for SeismicTransaction {
     }
 
     fn encode_for_signing(&self, out: &mut dyn alloy_rlp::BufMut) {
-        out.put_u8(self.tx.chain_id as u8);
+        out.put_u8(SeismicTransaction::TRANSACTION_TYPE);
+        Header { list: true, payload_length: self.tx.length() }.encode(out);
         self.tx.encode(out)
     }
 
     fn payload_len_for_signature(&self) -> usize {
-        1 + self.tx.length()
+        let payload_length = self.tx.length();
+        1 + length_of_length(payload_length) + self.tx.length()
     }
 
     fn into_signed(self, signature: Signature) -> Signed<Self> {
+        // Drop any v chain id value to ensure the signature format is correct at the time of
+        // combination for an EIP-7702 transaction. V should indicate the y-parity of the
+        // signature.
+        let signature = signature.with_parity_bool();
+
         let mut buf = Vec::with_capacity(self.tx.encoded_len_with_signature(&signature, false));
         self.tx.encode_with_signature(&signature, &mut buf, false);
         let hash = keccak256(&buf);
 
-        // Drop any v chain id value to ensure the signature format is correct at the time of
-        // combination for an EIP-1559 transaction. V should indicate the y-parity of the
-        // signature.
-        Signed::new_unchecked(self, signature.with_parity_bool(), hash)
+        Signed::new_unchecked(self, signature, hash)
     }
 }
 
@@ -316,7 +326,7 @@ impl Transaction for SeismicTransaction {
         self.tx.gas_price.try_into().unwrap_or(u128::MAX)
     }
     fn ty(&self) -> u8 {
-        0x64
+        Self::TRANSACTION_TYPE
     }
     fn access_list(&self) -> Option<&AccessList> {
         None
@@ -326,5 +336,34 @@ impl Transaction for SeismicTransaction {
     }
     fn authorization_list(&self) -> Option<&[SignedAuthorization]> {
         None
+    }
+}
+
+mod tests {
+    use crate::transaction::{SeismicTransaction, SeismicTransactionRequest};
+    use alloy_consensus::{SignableTransaction, Signed};
+    use alloy_primitives::{Address, Bytes, Parity, Signature, U256};
+    use std::str::FromStr;
+
+    #[test]
+    fn test_encoding_fields() {
+        let tx = SeismicTransaction {
+            tx: SeismicTransactionRequest {
+                chain_id: 4u64,
+                nonce: 2,
+                gas_price: 1000000000,
+                gas_limit: 100000,
+                kind: Address::from_str("d3e8763675e4c425df46cc3b5c0f6cbdac396046").unwrap().into(),
+                value: U256::from(1000000000000000u64),
+                seismic_input: vec![1, 2, 3].into(),
+            },
+        };
+
+        let mut encoded_tx = Vec::new();
+        tx.tx.encode_fields(&mut encoded_tx);
+        let alloy_encoding = format!("{:0x}", Bytes::from(encoded_tx));
+
+        let reth_encoding = String::from("0x0402843b9aca00830186a094d3e8763675e4c425df46cc3b5c0f6cbdac39604687038d7ea4c6800083010203");
+        assert_eq!(reth_encoding, alloy_encoding);
     }
 }
