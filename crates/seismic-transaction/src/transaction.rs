@@ -245,7 +245,7 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
 impl SeismicTransaction {
     /// Seismic transaction type is 74
     pub const TRANSACTION_TYPE: u8 = 0x4A;
-    
+
     pub(crate) fn decode_fields(buf: &mut &[u8]) -> alloy_rlp::Result<Self> {
         Ok(Self {
             tx: SeismicTransactionRequest {
