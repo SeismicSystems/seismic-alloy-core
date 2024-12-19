@@ -94,7 +94,7 @@ pub fn _decode_signed_seismic_fields(
     Ok(signed)
 }
 
-fn decode_enveloped_seismic_tx(data: &mut &[u8]) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
+pub fn decode_enveloped_seismic_tx(data: &mut &[u8]) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
     if data.is_empty() {
         return Err(alloy_rlp::Error::InputTooShort)
     }
