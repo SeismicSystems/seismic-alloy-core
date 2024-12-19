@@ -95,7 +95,9 @@ pub fn _decode_signed_seismic_fields(
 }
 
 fn decode_enveloped_seismic_tx(data: &mut &[u8]) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
-
+    if data.is_empty() {
+        return Err(alloy_rlp::Error::InputTooShort)
+    }
     println!("Bytes when calling decode_enveloped: {:0x}", Bytes::from(data.to_vec()));
     let original_encoding_without_header = *data;
 
@@ -131,18 +133,17 @@ fn decode_enveloped_seismic_tx(data: &mut &[u8]) -> alloy_rlp::Result<Signed<Sei
 }
 
 
+/*
 pub fn decode_signed_seismic_tx(buf: &mut &[u8]) -> alloy_rlp::Result<Signed<SeismicTransaction>> {
-    if buf.is_empty() {
-        return Err(alloy_rlp::Error::InputTooShort)
-    }
+    
 
     // decode header
     let original_encoding = *buf;
-    let header = Header::decode(buf)?;
+    // let header = Header::decode(buf)?;
 
-    if !header.list {
-        return Err(alloy_rlp::Error::UnexpectedString);
-    }
+    // if !header.list {
+    //     return Err(alloy_rlp::Error::UnexpectedString);
+    // }
 
     let remaining_len = buf.len();
     let tx = decode_enveloped_seismic_tx(buf)?;
@@ -157,3 +158,4 @@ pub fn decode_signed_seismic_tx(buf: &mut &[u8]) -> alloy_rlp::Result<Signed<Sei
 
     Ok(tx)
 }
+     */
