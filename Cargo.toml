@@ -125,4 +125,4 @@ alloy-sol-type-parser = { path = "crates/sol-type-parser" }
 alloy-sol-types = { path = "crates/sol-types" }
 syn-solidity = { path = "crates/syn-solidity" }
 seismic-transaction = { path = "crates/seismic-transaction" }
-reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", rev = "de5cfa3"}
+reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", rev = "8e4dc37"}
