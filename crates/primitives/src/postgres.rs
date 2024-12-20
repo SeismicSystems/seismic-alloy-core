@@ -62,7 +62,7 @@ pub enum ToSqlError {
     Overflow(usize, Type),
 }
 
-impl std::error::Error for ToSqlError {}
+impl core::error::Error for ToSqlError {}
 
 /// Convert to Postgres types.
 ///
@@ -224,7 +224,7 @@ pub enum FromSqlError {
     ParseError(Type),
 }
 
-impl std::error::Error for FromSqlError {}
+impl core::error::Error for FromSqlError {}
 
 impl<'a, const BITS: usize, const LIMBS: usize> FromSql<'a> for Signed<BITS, LIMBS> {
     fn accepts(ty: &Type) -> bool {

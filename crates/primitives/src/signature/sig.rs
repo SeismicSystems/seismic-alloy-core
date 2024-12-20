@@ -13,6 +13,7 @@ const SECP256K1N_ORDER: U256 =
     uint!(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141_U256);
 
 /// An Ethereum ECDSA signature.
+#[deprecated(since = "0.8.15", note = "use PrimitiveSignature instead")]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct Signature {
     v: Parity,
@@ -114,8 +115,7 @@ impl Signature {
     }
 
     /// Instantiate a new signature from `r`, `s`, and `v` values.
-    #[allow(clippy::missing_const_for_fn)]
-    pub fn new(r: U256, s: U256, v: Parity) -> Self {
+    pub const fn new(r: U256, s: U256, v: Parity) -> Self {
         Self { r, s, v }
     }
 
