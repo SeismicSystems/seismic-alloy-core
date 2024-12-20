@@ -114,7 +114,7 @@ ruint = { version = "1.12.3", default-features = false, features = ["alloc"] }
 ruint-macro = { version = "1", default-features = false }
 winnow = { version = "0.6", default-features = false, features = ["alloc"] }
 
-reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", rev = "de5cfa3"}
+reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", rev = "8e4dc37"}
 
 [patch.crates-io]
 alloy-primitives = { path = "crates/primitives" }
