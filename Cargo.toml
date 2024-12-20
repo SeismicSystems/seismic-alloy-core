@@ -50,10 +50,9 @@ alloy-sol-type-parser = { version = "0.8.15", path = "crates/sol-type-parser", d
 alloy-sol-types = { version = "0.8.15", path = "crates/sol-types", default-features = false }
 syn-solidity = { version = "0.8.15", path = "crates/syn-solidity", default-features = false }
 
-alloy-rpc-types = { version = "0.3.5", default-features = false }
-alloy-serde = { version = "0.3.5", default-features = false }
-alloy-consensus = { version = "0.3.5", default-features = false }
-alloy-eips = { version = "0.3.5", default-features = false, features = ["serde"] }
+alloy-serde = { version = "0.8.0", default-features = false }
+alloy-consensus = { version = "0.8.0", default-features = false }
+alloy-eips = { version = "0.8.0", default-features = false, features = ["serde"] }
 
 # serde
 serde = { version = "1.0.198", features = ["derive", "alloc"] }
@@ -126,3 +125,7 @@ alloy-sol-types = { path = "crates/sol-types" }
 syn-solidity = { path = "crates/syn-solidity" }
 seismic-transaction = { path = "crates/seismic-transaction" }
 reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", rev = "8e4dc37"}
+
+alloy-serde = { git = "ssh://git@github.com/SeismicSystems/seismic-alloy.git", rev = "97710dc" }
+alloy-consensus = { git = "ssh://git@github.com/SeismicSystems/seismic-alloy.git", rev = "97710dc" }
+alloy-eips = { git = "ssh://git@github.com/SeismicSystems/seismic-alloy.git", rev = "97710dc" }

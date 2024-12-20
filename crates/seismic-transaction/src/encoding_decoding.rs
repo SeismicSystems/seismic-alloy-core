@@ -1,7 +1,7 @@
 use crate::transaction::SeismicTransaction;
 use alloy_consensus::{SignableTransaction, Signed};
-use alloy_primitives::Signature;
-use alloy_rlp::{Buf, Header, EMPTY_STRING_CODE};
+use alloy_primitives::PrimitiveSignature;
+use alloy_rlp::{Buf, Header, Decodable, EMPTY_STRING_CODE};
 
 /// Encodes a signed SeismicTransaction into the provided buffer.
 ///
@@ -77,7 +77,7 @@ pub fn decode_signed_seismic_fields(
     let original_len = buf.len();
 
     let tx = SeismicTransaction::decode_fields(buf)?;
-    let signature = Signature::decode_rlp_vrs(buf)?;
+    let signature = PrimitiveSignature::decode_rlp_vrs(buf, bool::decode)?;
 
     let signed = tx.into_signed(signature);
     if buf.len() + header.payload_length != original_len {

@@ -1,6 +1,8 @@
-use alloy_consensus::{SignableTransaction, Signed, Transaction};
+use alloy_consensus::{SignableTransaction, Signed, Transaction, Typed2718};
 use alloy_eips::{eip2930::AccessList, eip7702::SignedAuthorization};
-use alloy_primitives::{keccak256, Bytes, ChainId, Signature, TxKind, B256, U256};
+use alloy_primitives::{
+    keccak256, Address, Bytes, ChainId, PrimitiveSignature, TxKind, B256, U256,
+};
 use alloy_rlp::{length_of_length, BufMut, Decodable, Encodable, Header};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -68,12 +70,16 @@ impl SeismicTransactionRequest {
     /// tx type byte or string header.
     ///
     /// This __does__ encode a list header and include a signature.
-    pub(crate) fn encode_with_signature_fields(&self, signature: &Signature, out: &mut dyn BufMut) {
-        let payload_length = self.fields_len() + signature.rlp_vrs_len();
+    pub(crate) fn encode_with_signature_fields(
+        &self,
+        signature: &PrimitiveSignature,
+        out: &mut dyn BufMut,
+    ) {
+        let payload_length = self.fields_len() + signature.rlp_rs_len() + signature.v().length();
         let header = Header { list: true, payload_length };
         header.encode(out);
         self.encode_fields(out);
-        signature.write_rlp_vrs(out);
+        signature.write_rlp_vrs(out, signature.v());
     }
 
     /// Encodes the transaction with the provided signature into the desired buffer.
@@ -88,11 +94,11 @@ impl SeismicTransactionRequest {
     /// If `with_header` is `false`, the encoded transaction will not include the RLP header.
     pub fn encode_with_signature(
         &self,
-        signature: &Signature,
+        signature: &PrimitiveSignature,
         out: &mut dyn BufMut,
         with_header: bool,
     ) {
-        let payload_length = self.fields_len() + signature.rlp_vrs_len();
+        let payload_length = self.fields_len() + signature.rlp_rs_len() + signature.v().length();
         if with_header {
             Header {
                 list: false,
@@ -109,9 +115,13 @@ impl SeismicTransactionRequest {
     ///
     /// If `with_header` is `true`, the payload length will include the RLP header length.
     /// If `with_header` is `false`, the payload length will not include the RLP header length.
-    pub fn encoded_len_with_signature(&self, signature: &Signature, with_header: bool) -> usize {
+    pub fn encoded_len_with_signature(
+        &self,
+        signature: &PrimitiveSignature,
+        with_header: bool,
+    ) -> usize {
         // this counts the tx fields and signature fields
-        let payload_length = self.fields_len() + signature.rlp_vrs_len();
+        let payload_length = self.fields_len() + signature.rlp_rs_len() + signature.v().length();
 
         // this counts:
         // * tx type byte
@@ -140,11 +150,20 @@ impl SeismicTransactionRequest {
 
     /// Converts the transaction request into a signed transaction object
     /// without signing the secret data field so as to not leak the secret data.
-    pub fn into_signed_without_secrets(self, signature: Signature) -> Signed<SeismicTransaction> {
+    pub fn into_signed_without_secrets(
+        self,
+        signature: PrimitiveSignature,
+    ) -> Signed<SeismicTransaction> {
         let mut buf = Vec::with_capacity(self.encoded_len_with_signature(&signature, false));
         self.encode_with_signature(&signature, &mut buf, false);
         let hash = keccak256(&buf);
-        Signed::new_unchecked(SeismicTransaction { tx: self }, signature.with_parity_bool(), hash)
+        Signed::new_unchecked(SeismicTransaction { tx: self }, signature, hash)
+    }
+}
+
+impl Typed2718 for SeismicTransactionRequest {
+    fn ty(&self) -> u8 {
+        SeismicTransaction::TRANSACTION_TYPE as u8
     }
 }
 
@@ -155,19 +174,22 @@ impl Transaction for SeismicTransactionRequest {
     fn nonce(&self) -> u64 {
         self.nonce
     }
-    fn gas_limit(&self) -> u128 {
-        self.gas_limit.try_into().unwrap_or(u128::MAX)
+    fn gas_limit(&self) -> u64 {
+        self.gas_limit.try_into().unwrap_or(u64::MAX)
     }
     fn gas_price(&self) -> Option<u128> {
         Some(self.gas_price.try_into().unwrap_or(u128::MAX))
     }
-    fn to(&self) -> TxKind {
-        self.kind
+    fn to(&self) -> Option<Address> {
+        match self.kind {
+            TxKind::Call(address) => Some(address),
+            TxKind::Create => None,
+        }
     }
     fn value(&self) -> U256 {
         self.value
     }
-    fn input(&self) -> &[u8] {
+    fn input(&self) -> &Bytes {
         &self.seismic_input
     }
 
@@ -186,10 +208,6 @@ impl Transaction for SeismicTransactionRequest {
         self.gas_price.try_into().unwrap_or(u128::MAX)
     }
 
-    fn ty(&self) -> u8 {
-        SeismicTransaction::TRANSACTION_TYPE
-    }
-
     fn access_list(&self) -> Option<&AccessList> {
         None
     }
@@ -200,6 +218,22 @@ impl Transaction for SeismicTransactionRequest {
 
     fn authorization_list(&self) -> Option<&[SignedAuthorization]> {
         None
+    }
+
+    fn effective_gas_price(&self, _base_fee: Option<u64>) -> u128 {
+        self.gas_price
+    }
+
+    fn is_create(&self) -> bool {
+        return self.kind == TxKind::Create;
+    }
+
+    fn is_dynamic_fee(&self) -> bool {
+        false
+    }
+
+    fn kind(&self) -> TxKind {
+        self.kind
     }
 }
 
@@ -213,7 +247,7 @@ impl Encodable for SeismicTransactionRequest {
     }
 }
 
-impl SignableTransaction<Signature> for SeismicTransactionRequest {
+impl SignableTransaction<PrimitiveSignature> for SeismicTransactionRequest {
     fn set_chain_id(&mut self, chain_id: ChainId) {
         self.chain_id = chain_id;
     }
@@ -229,12 +263,7 @@ impl SignableTransaction<Signature> for SeismicTransactionRequest {
         1 + length_of_length(payload_length) + self.length()
     }
 
-    fn into_signed(self, signature: Signature) -> Signed<Self> {
-        // Drop any v chain id value to ensure the signature format is correct at the time of
-        // combination for an EIP-7702 transaction. V should indicate the y-parity of the
-        // signature.
-        let signature = signature.with_parity_bool();
-
+    fn into_signed(self, signature: PrimitiveSignature) -> Signed<Self> {
         let mut buf = Vec::with_capacity(self.encoded_len_with_signature(&signature, false));
         self.encode_with_signature(&signature, &mut buf, false);
         let hash = keccak256(&buf);

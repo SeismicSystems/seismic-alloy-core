@@ -1,6 +1,6 @@
-use alloy_consensus::{SignableTransaction, Signed, Transaction};
+use alloy_consensus::{SignableTransaction, Signed, Transaction, Typed2718};
 use alloy_eips::{eip2930::AccessList, eip7702::SignedAuthorization};
-use alloy_primitives::{ChainId, Signature, TxKind, B256, U256};
+use alloy_primitives::{Address, Bytes, ChainId, PrimitiveSignature, TxKind, B256, U256};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -23,7 +23,7 @@ impl SeismicTransaction {
     }
 }
 
-impl SignableTransaction<Signature> for SeismicTransaction {
+impl SignableTransaction<PrimitiveSignature> for SeismicTransaction {
     fn set_chain_id(&mut self, chain_id: ChainId) {
         self.tx.set_chain_id(chain_id);
     }
@@ -36,11 +36,17 @@ impl SignableTransaction<Signature> for SeismicTransaction {
         self.tx.payload_len_for_signature()
     }
 
-    fn into_signed(self, signature: Signature) -> Signed<Self> {
+    fn into_signed(self, signature: PrimitiveSignature) -> Signed<Self> {
         let signed_request = self.tx.into_signed(signature);
         let (tx_request, signature, hash) = signed_request.into_parts();
         let tx = SeismicTransaction { tx: tx_request };
         Signed::new_unchecked(tx, signature, hash)
+    }
+}
+
+impl Typed2718 for SeismicTransaction {
+    fn ty(&self) -> u8 {
+        self.tx.ty()
     }
 }
 
@@ -51,19 +57,19 @@ impl Transaction for SeismicTransaction {
     fn nonce(&self) -> u64 {
         self.tx.nonce()
     }
-    fn gas_limit(&self) -> u128 {
+    fn gas_limit(&self) -> u64 {
         self.tx.gas_limit()
     }
     fn gas_price(&self) -> Option<u128> {
         self.tx.gas_price()
     }
-    fn to(&self) -> TxKind {
+    fn to(&self) -> Option<Address> {
         self.tx.to()
     }
     fn value(&self) -> U256 {
         self.tx.value()
     }
-    fn input(&self) -> &[u8] {
+    fn input(&self) -> &Bytes {
         &self.tx.input()
     }
     fn max_fee_per_gas(&self) -> u128 {
@@ -78,9 +84,6 @@ impl Transaction for SeismicTransaction {
     fn priority_fee_or_price(&self) -> u128 {
         self.tx.priority_fee_or_price()
     }
-    fn ty(&self) -> u8 {
-        self.tx.ty()
-    }
     fn access_list(&self) -> Option<&AccessList> {
         self.tx.access_list()
     }
@@ -89,6 +92,24 @@ impl Transaction for SeismicTransaction {
     }
     fn authorization_list(&self) -> Option<&[SignedAuthorization]> {
         self.tx.authorization_list()
+    }
+    fn effective_gas_price(&self, base_fee: Option<u64>) -> u128 {
+        self.tx.effective_gas_price(base_fee)
+    }
+    fn blob_gas_used(&self) -> Option<u64> {
+        self.tx.blob_gas_used()
+    }
+    fn is_create(&self) -> bool {
+        self.tx.is_create()
+    }
+    fn is_dynamic_fee(&self) -> bool {
+        self.tx.is_dynamic_fee()
+    }
+    fn effective_tip_per_gas(&self, base_fee: u64) -> Option<u128> {
+        self.tx.effective_tip_per_gas(base_fee)
+    }
+    fn kind(&self) -> TxKind {
+        self.tx.kind()
     }
 }
 
