@@ -44,7 +44,7 @@ impl From<SeismicTransactionFields> for OtherFields {
 }
 
 /// Either a normal ETH call or a signed/serialized one
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(untagged)]
 pub enum SeismicCallRequest {
     /// signed call request
