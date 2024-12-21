@@ -49,5 +49,5 @@ pub enum SeismicCallRequest {
     /// signed call request
     Bytes(Bytes),
     /// normal call request
-    TransactionRequest(WithOtherFields<TransactionRequest>),
+    TransactionRequest(WithOtherFields<SeismicTransactionRequest>),
 }
