@@ -21,6 +21,7 @@ alloy-rlp.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 reth-rpc-types.workspace = true
+alloy-rpc-types-eth.workspace = true
 
 aes-gcm = "0.10"
 once_cell.workspace = true

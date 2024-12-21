@@ -3,8 +3,9 @@ use alloy_primitives::Bytes;
 use alloy_serde::{OtherFields, WithOtherFields};
 use reth_rpc_types::transaction::{
     EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest,
-    LegacyTransactionRequest, TransactionRequest
+    LegacyTransactionRequest,
 };
+use alloy_rpc_types_eth::TransactionRequest;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -49,5 +50,5 @@ pub enum SeismicCallRequest {
     /// signed call request
     Bytes(Bytes),
     /// normal call request
-    TransactionRequest(WithOtherFields<SeismicTransactionRequest>),
+    TransactionRequest(WithOtherFields<TransactionRequest>),
 }
