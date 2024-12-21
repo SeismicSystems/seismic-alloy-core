@@ -1,9 +1,9 @@
 use crate::transaction_request::SeismicTransactionRequest;
 use alloy_primitives::Bytes;
-use alloy_serde::OtherFields;
+use alloy_serde::{OtherFields, WithOtherFields};
 use reth_rpc_types::transaction::{
     EIP1559TransactionRequest, EIP2930TransactionRequest, EIP4844TransactionRequest,
-    LegacyTransactionRequest,
+    LegacyTransactionRequest, TransactionRequest
 };
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -40,4 +40,14 @@ impl From<SeismicTransactionFields> for OtherFields {
     fn from(value: SeismicTransactionFields) -> Self {
         serde_json::to_value(value).unwrap().try_into().unwrap()
     }
+}
+
+/// Either a normal ETH call or a signed/serialized one
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum SeismicCallRequest {
+    /// signed call request
+    Bytes(Bytes),
+    /// normal call request
+    TransactionRequest(WithOtherFields<TransactionRequest>),
 }
