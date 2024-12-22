@@ -130,3 +130,4 @@ reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git",
 alloy-serde = { git = "ssh://git@github.com/SeismicSystems/seismic-alloy.git", rev = "97710dc" }
 alloy-consensus = { git = "ssh://git@github.com/SeismicSystems/seismic-alloy.git", rev = "97710dc" }
 alloy-eips = { git = "ssh://git@github.com/SeismicSystems/seismic-alloy.git", rev = "97710dc" }
+alloy-rpc-types-eth = { git = "ssh://git@github.com/SeismicSystems/seismic-alloy.git", rev = "97710dc" }
