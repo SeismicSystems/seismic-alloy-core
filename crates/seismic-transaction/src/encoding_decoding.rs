@@ -1,7 +1,7 @@
 use crate::transaction::SeismicTransaction;
 use alloy_consensus::{SignableTransaction, Signed};
 use alloy_primitives::PrimitiveSignature;
-use alloy_rlp::{Buf, Header, Decodable, EMPTY_STRING_CODE};
+use alloy_rlp::{Buf, Decodable, Header, EMPTY_STRING_CODE};
 
 /// Encodes a signed SeismicTransaction into the provided buffer.
 ///
