@@ -2,9 +2,6 @@ use crate::{alloc::string::ToString, Error, Panic, Result, Revert, SolError};
 use alloc::{string::String, vec::Vec};
 use core::{convert::Infallible, fmt, iter::FusedIterator, marker::PhantomData};
 
-#[cfg(feature = "std")]
-use std::error::Error as StdError;
-
 mod event;
 pub use event::SolEventInterface;
 
@@ -89,7 +86,7 @@ pub trait SolInterface: Sized {
         if data.len() < Self::MIN_DATA_LENGTH.saturating_add(4) {
             Err(crate::Error::type_check_fail(data, Self::NAME))
         } else {
-            let (selector, data) = crate::impl_core::split_array_ref(data);
+            let (selector, data) = data.split_first_chunk().unwrap();
             Self::abi_decode_raw(*selector, data, validate)
         }
     }
@@ -211,10 +208,9 @@ impl<T: fmt::Display> fmt::Display for ContractError<T> {
     }
 }
 
-#[cfg(feature = "std")]
-impl<T: StdError + 'static> StdError for ContractError<T> {
+impl<T: core::error::Error + 'static> core::error::Error for ContractError<T> {
     #[inline]
-    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             Self::CustomError(error) => Some(error),
             Self::Panic(panic) => Some(panic),

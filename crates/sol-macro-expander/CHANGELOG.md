@@ -5,6 +5,106 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.15](https://github.com/alloy-rs/core/releases/tag/v0.8.15) - 2024-12-09
+
+### Other
+
+- Remove unsafe code from macro expansions ([#818](https://github.com/alloy-rs/core/issues/818))
+
+## [0.8.14](https://github.com/alloy-rs/core/releases/tag/v0.8.14) - 2024-11-28
+
+### Miscellaneous Tasks
+
+- Release 0.8.14
+
+## [0.8.13](https://github.com/alloy-rs/core/releases/tag/v0.8.13) - 2024-11-26
+
+### Bug Fixes
+
+- [sol-macro] Expand all getter return types ([#812](https://github.com/alloy-rs/core/issues/812))
+
+### Dependencies
+
+- Remove cron schedule for deps.yml ([#808](https://github.com/alloy-rs/core/issues/808))
+
+### Miscellaneous Tasks
+
+- Release 0.8.13 ([#813](https://github.com/alloy-rs/core/issues/813))
+- Release 0.8.12 ([#806](https://github.com/alloy-rs/core/issues/806))
+- Release 0.8.11 ([#803](https://github.com/alloy-rs/core/issues/803))
+
+## [0.8.10](https://github.com/alloy-rs/core/releases/tag/v0.8.10) - 2024-10-28
+
+### Miscellaneous Tasks
+
+- Release 0.8.10
+
+## [0.8.9](https://github.com/alloy-rs/core/releases/tag/v0.8.9) - 2024-10-21
+
+### Miscellaneous Tasks
+
+- Release 0.8.9
+
+## [0.8.8](https://github.com/alloy-rs/core/releases/tag/v0.8.8) - 2024-10-14
+
+### Bug Fixes
+
+- [alloy-sol-macro] Allow clippy::pub_underscore_fields on `sol!` output ([#770](https://github.com/alloy-rs/core/issues/770))
+
+### Miscellaneous Tasks
+
+- Release 0.8.8
+
+## [0.8.7](https://github.com/alloy-rs/core/releases/tag/v0.8.7) - 2024-10-08
+
+### Miscellaneous Tasks
+
+- Release 0.8.7
+
+## [0.8.6](https://github.com/alloy-rs/core/releases/tag/v0.8.6) - 2024-10-06
+
+### Bug Fixes
+
+- Fix lint `alloy-sol-macro-expander` ([#760](https://github.com/alloy-rs/core/issues/760))
+
+### Miscellaneous Tasks
+
+- Release 0.8.6
+
+## [0.8.5](https://github.com/alloy-rs/core/releases/tag/v0.8.5) - 2024-09-25
+
+### Miscellaneous Tasks
+
+- Release 0.8.5
+
+## [0.8.4](https://github.com/alloy-rs/core/releases/tag/v0.8.4) - 2024-09-25
+
+### Bug Fixes
+
+- [sol-types] Check signature in SolEvent if non-anonymous ([#741](https://github.com/alloy-rs/core/issues/741))
+
+### Miscellaneous Tasks
+
+- Release 0.8.4
+
+## [0.8.3](https://github.com/alloy-rs/core/releases/tag/v0.8.3) - 2024-09-10
+
+### Bug Fixes
+
+- [sol-macro] Correctly determine whether event parameters are hashes ([#735](https://github.com/alloy-rs/core/issues/735))
+- [sol-macro] Namespaced custom type resolution ([#731](https://github.com/alloy-rs/core/issues/731))
+- Parse selector hashes in `sol` macro ([#730](https://github.com/alloy-rs/core/issues/730))
+
+### Miscellaneous Tasks
+
+- Release 0.8.3
+
+## [0.8.2](https://github.com/alloy-rs/core/releases/tag/v0.8.2) - 2024-09-06
+
+### Miscellaneous Tasks
+
+- Release 0.8.2
+
 ## [0.8.1](https://github.com/alloy-rs/core/releases/tag/v0.8.1) - 2024-09-06
 
 ### Dependencies
@@ -13,6 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Miscellaneous Tasks
 
+- Release 0.8.1
 - Use proc-macro-error2 ([#723](https://github.com/alloy-rs/core/issues/723))
 
 ## [0.8.0](https://github.com/alloy-rs/core/releases/tag/v0.8.0) - 2024-08-21

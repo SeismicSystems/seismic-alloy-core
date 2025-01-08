@@ -1013,3 +1013,213 @@ fn normal_paths() {
 
     let _ = funcCall { stuff: I::S { x: U256::ZERO } };
 }
+
+#[test]
+fn regression_nested_namespaced_structs() {
+    mod inner {
+        super::sol! {
+            library LibA {
+                struct Simple {
+                    uint256 x;
+                }
+
+                struct Nested {
+                    Simple simple;
+                    LibB.Simple[] simpleB;
+                }
+            }
+
+            library LibB {
+                struct Simple {
+                    uint256 x;
+                    uint256 y;
+                }
+
+                struct Nested {
+                    Simple simple;
+                    LibA.Simple simpleA;
+                    LibB.Simple simpleB;
+                }
+            }
+
+            library LibC {
+                struct Nested1 {
+                    LibA.Nested nestedA;
+                    LibB.Nested nestedB;
+                }
+
+                struct Nested2 {
+                    LibA.Simple simpleA;
+                    LibB.Simple simpleB;
+                    LibA.Nested[] nestedA;
+                    LibB.Nested nestedB;
+                    Nested1[] nestedC1;
+                    LibC.Nested1 nestedC2;
+                }
+            }
+
+            contract C {
+                function libASimple(LibA.Simple memory simple) public returns(LibA.Simple memory);
+                function libBSimple(LibB.Simple memory simple) public returns(LibB.Simple memory);
+                function libANested(LibA.Nested memory nested) public returns(LibA.Nested memory);
+                function libBNested(LibB.Nested memory nested) public returns(LibB.Nested memory);
+                function libCNested1(LibC.Nested1 memory nested) public returns(LibC.Nested1 memory);
+                function libCNested2(LibC.Nested2 memory nested) public returns(LibC.Nested2 memory);
+            }
+        }
+    }
+
+    let a_simple = "(uint256)";
+    let b_simple = "(uint256,uint256)";
+    let a_nested = format!("({a_simple},{b_simple}[])");
+    let b_nested = format!("({b_simple},{a_simple},{b_simple})");
+    let c_nested1 = format!("({a_nested},{b_nested})");
+    let c_nested2 =
+        format!("({a_simple},{b_simple},{a_nested}[],{b_nested},{c_nested1}[],{c_nested1})");
+
+    assert_eq!(inner::C::libASimpleCall::SIGNATURE, format!("libASimple({a_simple})"));
+    assert_eq!(inner::C::libBSimpleCall::SIGNATURE, format!("libBSimple({b_simple})"));
+    assert_eq!(inner::C::libANestedCall::SIGNATURE, format!("libANested({a_nested})"));
+    assert_eq!(inner::C::libBNestedCall::SIGNATURE, format!("libBNested({b_nested})"));
+    assert_eq!(inner::C::libCNested1Call::SIGNATURE, format!("libCNested1({c_nested1})"));
+    assert_eq!(inner::C::libCNested2Call::SIGNATURE, format!("libCNested2({c_nested2})"));
+}
+
+// https://github.com/alloy-rs/core/issues/734
+#[test]
+fn event_indexed_udvt() {
+    use alloy_primitives::aliases::*;
+
+    sol! {
+        type Currency is address;
+        type PoolId is bytes32;
+
+        event Initialize(
+            PoolId indexed id,
+            Currency indexed currency0,
+            Currency indexed currency1,
+            uint24 fee,
+            int24 tickSpacing,
+            address hooks,
+            uint160 sqrtPriceX96,
+            int24 tick
+        );
+    }
+
+    assert_eq!(
+        Initialize::SIGNATURE,
+        "Initialize(bytes32,address,address,uint24,int24,address,uint160,int24)",
+    );
+    assert_eq!(
+        Initialize::SIGNATURE_HASH,
+        b256!("dd466e674ea557f56295e2d0218a125ea4b4f0f6f3307b95f85e6110838d6438"),
+    );
+
+    let _ = Initialize {
+        id: B256::ZERO,
+        currency0: Address::ZERO,
+        currency1: Address::ZERO,
+        fee: U24::ZERO,
+        tickSpacing: I24::ZERO,
+        hooks: Address::ZERO,
+        sqrtPriceX96: U160::ZERO,
+        tick: I24::ZERO,
+    };
+}
+
+#[test]
+fn event_indexed_elementary_arrays() {
+    sol! {
+        event AddrArray(address[1] indexed x);
+        event AddrDynArray(address[] indexed x);
+
+        type MyAddress is address;
+        event AddrUdvtArray(MyAddress[1] indexed y);
+        event AddrUdvtDynArray(MyAddress[] indexed y);
+    }
+
+    assert_eq!(AddrArray::SIGNATURE, "AddrArray(address[1])");
+    let _ = AddrArray { x: B256::ZERO };
+    assert_eq!(AddrDynArray::SIGNATURE, "AddrDynArray(address[])");
+    let _ = AddrDynArray { x: B256::ZERO };
+
+    assert_eq!(AddrUdvtArray::SIGNATURE, "AddrUdvtArray(address[1])");
+    let _ = AddrUdvtArray { y: B256::ZERO };
+    assert_eq!(AddrUdvtDynArray::SIGNATURE, "AddrUdvtDynArray(address[])");
+    let _ = AddrUdvtDynArray { y: B256::ZERO };
+}
+
+// https://github.com/alloy-rs/core/issues/589
+#[test]
+#[allow(clippy::assertions_on_constants)]
+fn event_check_signature() {
+    sol! {
+        #[derive(Debug)]
+        event MyEvent();
+        event MyEventAnonymous() anonymous;
+    }
+
+    let no_topics: [B256; 0] = [];
+
+    assert!(!MyEvent::ANONYMOUS);
+    let e = MyEvent::decode_raw_log(no_topics, &[], false).unwrap_err();
+    assert_eq!(e.to_string(), "topic list length mismatch");
+    let e = MyEvent::decode_raw_log([B256::ZERO], &[], false).unwrap_err();
+    assert!(e.to_string().contains("invalid signature hash"), "{e:?}");
+    let MyEvent {} = MyEvent::decode_raw_log([MyEvent::SIGNATURE_HASH], &[], false).unwrap();
+
+    assert!(MyEventAnonymous::ANONYMOUS);
+    let MyEventAnonymous {} = MyEventAnonymous::decode_raw_log(no_topics, &[], false).unwrap();
+}
+
+// https://github.com/alloy-rs/core/issues/811
+#[test]
+fn mapping_getters() {
+    sol! {
+        #![sol(all_derives)]
+
+        contract TestIbc {
+            /// ConnectionId -> Connection
+            mapping(uint32 => Connection) public connections;
+            /// ChannelId -> Channel
+            mapping(uint32 => Channel) public channels;
+
+            enum ConnectionState {
+                Unspecified,
+                Init,
+                TryOpen,
+                Open
+            }
+
+            struct Connection {
+                ConnectionState state;
+                uint32 client_id;
+                uint32 counterparty_client_id;
+                uint32 counterparty_connection_id;
+            }
+
+            enum ChannelState {
+                Unspecified,
+                Init,
+                TryOpen,
+                Open,
+                Closed
+            }
+
+            struct Channel {
+                ChannelState state;
+                uint32 connection_id;
+                uint32 counterparty_channel_id;
+                bytes counterparty_port_id;
+                string version;
+            }
+        }
+    }
+
+    assert_eq!(TestIbc::connectionsCall::SIGNATURE, "connections(uint32)");
+    let _ = TestIbc::connectionsReturn { _0: 0u8, _1: 0u32, _2: 0u32, _3: 0u32 };
+
+    assert_eq!(TestIbc::channelsCall::SIGNATURE, "channels(uint32)");
+    let _ =
+        TestIbc::channelsReturn { _0: 0u8, _1: 0u32, _2: 0u32, _3: bytes![], _4: String::new() };
+}

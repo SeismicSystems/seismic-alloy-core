@@ -488,7 +488,7 @@ pub(super) fn expand(cx: &mut ExpCtxt<'_>, contract: &ItemContract) -> Result<To
         #mod_descr_doc
         #(#mod_attrs)*
         #mod_iface_doc
-        #[allow(non_camel_case_types, non_snake_case, clippy::style)]
+        #[allow(non_camel_case_types, non_snake_case, clippy::pub_underscore_fields, clippy::style, clippy::empty_structs_with_brackets)]
         pub mod #name {
             use super::*;
             use #alloy_sol_types as alloy_sol_types;
@@ -602,7 +602,7 @@ enum ToExpand<'a> {
     Events(&'a [&'a ItemEvent]),
 }
 
-impl<'a> ToExpand<'a> {
+impl ToExpand<'_> {
     fn to_data(&self, expander: &CallLikeExpander<'_>) -> ExpandData {
         let &CallLikeExpander { cx, ref contract_name, .. } = expander;
         match self {
@@ -660,7 +660,7 @@ impl<'a> ToExpand<'a> {
     }
 }
 
-impl<'a> CallLikeExpander<'a> {
+impl CallLikeExpander<'_> {
     fn expand(&self, to_expand: ToExpand<'_>, attrs: Vec<Attribute>) -> TokenStream {
         let data = &to_expand.to_data(self);
 
@@ -715,7 +715,7 @@ impl<'a> CallLikeExpander<'a> {
                 }
 
                 #[inline]
-                #[allow(unsafe_code, non_snake_case)]
+                #[allow(non_snake_case)]
                 fn abi_decode_raw(
                     selector: [u8; 4],
                     data: &[u8],
@@ -737,8 +737,8 @@ impl<'a> CallLikeExpander<'a> {
                             selector,
                         ));
                     };
-                    // SAFETY: `idx` is a valid index into `DECODE_SHIMS`.
-                    (unsafe { DECODE_SHIMS.get_unchecked(idx) })(data, validate)
+                    // `SELECTORS` and `DECODE_SHIMS` have the same length and are sorted in the same order.
+                    DECODE_SHIMS[idx](data, validate)
                 }
 
                 #[inline]

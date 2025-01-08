@@ -5,10 +5,79 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.14](https://github.com/alloy-rs/core/releases/tag/v0.8.14) - 2024-11-28
+
+### Miscellaneous Tasks
+
+- Release 0.8.14
+
+## [0.8.13](https://github.com/alloy-rs/core/releases/tag/v0.8.13) - 2024-11-26
+
+### Miscellaneous Tasks
+
+- Release 0.8.13 ([#813](https://github.com/alloy-rs/core/issues/813))
+- Release 0.8.12 ([#806](https://github.com/alloy-rs/core/issues/806))
+- Release 0.8.11 ([#803](https://github.com/alloy-rs/core/issues/803))
+
+## [0.8.10](https://github.com/alloy-rs/core/releases/tag/v0.8.10) - 2024-10-28
+
+### Miscellaneous Tasks
+
+- Release 0.8.10
+
+## [0.8.9](https://github.com/alloy-rs/core/releases/tag/v0.8.9) - 2024-10-21
+
+### Miscellaneous Tasks
+
+- Release 0.8.9
+
+## [0.8.8](https://github.com/alloy-rs/core/releases/tag/v0.8.8) - 2024-10-14
+
+### Miscellaneous Tasks
+
+- Release 0.8.8
+
+## [0.8.7](https://github.com/alloy-rs/core/releases/tag/v0.8.7) - 2024-10-08
+
+### Miscellaneous Tasks
+
+- Release 0.8.7
+
+## [0.8.6](https://github.com/alloy-rs/core/releases/tag/v0.8.6) - 2024-10-06
+
+### Miscellaneous Tasks
+
+- Release 0.8.6
+
+## [0.8.5](https://github.com/alloy-rs/core/releases/tag/v0.8.5) - 2024-09-25
+
+### Miscellaneous Tasks
+
+- Release 0.8.5
+
+## [0.8.4](https://github.com/alloy-rs/core/releases/tag/v0.8.4) - 2024-09-25
+
+### Miscellaneous Tasks
+
+- Release 0.8.4
+
+## [0.8.3](https://github.com/alloy-rs/core/releases/tag/v0.8.3) - 2024-09-10
+
+### Miscellaneous Tasks
+
+- Release 0.8.3
+
+## [0.8.2](https://github.com/alloy-rs/core/releases/tag/v0.8.2) - 2024-09-06
+
+### Miscellaneous Tasks
+
+- Release 0.8.2
+
 ## [0.8.1](https://github.com/alloy-rs/core/releases/tag/v0.8.1) - 2024-09-06
 
 ### Miscellaneous Tasks
 
+- Release 0.8.1
 - Use proc-macro-error2 ([#723](https://github.com/alloy-rs/core/issues/723))
 
 ## [0.8.0](https://github.com/alloy-rs/core/releases/tag/v0.8.0) - 2024-08-21
