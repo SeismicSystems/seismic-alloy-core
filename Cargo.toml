@@ -60,7 +60,6 @@ serde_json = { version = "1.0.116", features = ["alloc"] }
 
 # seismic
 lazy_static = "1.4"
-seismic-types = { git = "ssh://git@github.com/SeismicSystems/mantle.git", rev = "90277e21", features = ["zero-salt"] }
 
 # macros
 proc-macro-error2 = "2.0.0"
@@ -113,8 +112,6 @@ ruint = { version = "1.12.3", default-features = false, features = ["alloc"] }
 ruint-macro = { version = "1", default-features = false }
 winnow = { version = "0.6", default-features = false, features = ["alloc"] }
 
-reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", rev = "8e4dc37"}
-
 [patch.crates-io]
 alloy-primitives = { path = "crates/primitives" }
 alloy-sol-macro = { path = "crates/sol-macro" }
@@ -123,9 +120,3 @@ alloy-sol-macro-expander = { path = "crates/sol-macro-expander" }
 alloy-sol-type-parser = { path = "crates/sol-type-parser" }
 alloy-sol-types = { path = "crates/sol-types" }
 syn-solidity = { path = "crates/syn-solidity" }
-
-reth-rpc-types = { git = "ssh://git@github.com/SeismicSystems/seismic-reth.git", rev = "8e4dc37"}
-
-alloy-serde = { git = "ssh://git@github.com/SeismicSystems/seismic-alloy.git", rev = "3206d906" }
-alloy-consensus = { git = "ssh://git@github.com/SeismicSystems/seismic-alloy.git", rev = "3206d906" }
-alloy-eips = { git = "ssh://git@github.com/SeismicSystems/seismic-alloy.git", rev = "3206d906" }
