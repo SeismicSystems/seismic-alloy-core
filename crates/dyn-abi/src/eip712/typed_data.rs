@@ -204,16 +204,28 @@ impl TypedData {
     /// This is the same as [`eip712_signing_hash`] but without the final keccak256
     /// hash.
     pub fn eip712_encode_for_signing(&self) -> Result<Vec<u8>> {
-        let mut buf = Vec::with_capacity(66);
-        buf.push(0x19);
-        buf.push(0x01);
-        buf.extend_from_slice(self.domain.separator().as_slice());
+        let mut buf = [0u8; 66];
+        buf[0] = 0x19;
+        buf[1] = 0x01;
+        buf[2..34].copy_from_slice(self.domain.separator().as_slice());
 
         // compatibility with <https://github.com/MetaMask/eth-sig-util>
+        let len = if self.primary_type != "EIP712Domain" {
+            buf[34..].copy_from_slice(self.hash_struct()?.as_slice());
+            66
+        } else {
+            34
+        };
+        Ok(buf[..len].to_vec())
+    }
+
+    /// Returns the length of the EIP-712 encoded data for signing.
+    pub fn eip712_encode_for_signing_len(&self) -> usize {
         if self.primary_type != "EIP712Domain" {
-            buf.extend_from_slice(self.hash_struct()?.as_slice());
+            66
+        } else {
+            34
         }
-        Ok(buf)
     }
 
     /// Calculate the EIP-712 signing hash for this value.
