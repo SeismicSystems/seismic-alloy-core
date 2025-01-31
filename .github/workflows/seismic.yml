@@ -2,9 +2,9 @@ name: Seismic CI
 
 on:
   push:
-    branches: [ seismic ]
+    branches: [seismic]
   pull_request:
-    branches: [ seismic ]
+    branches: [seismic]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -13,6 +13,7 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
+  CARGO_REGISTRY_UPDATE: false
 
 jobs:
   rustfmt:
@@ -52,7 +53,6 @@ jobs:
         run: RUSTFLAGS="-D warnings" cargo check
       - name: cargo check warnings with foundry flags
         run: RUSTFLAGS="-D warnings" cargo check --features arbitrary,eip712,seismic
-
 
   test:
     runs-on: ubuntu-latest
