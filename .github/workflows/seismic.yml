@@ -50,9 +50,9 @@ jobs:
         with:
           shared-key: "warnings-cache"
       - name: cargo check warnings without flags
-        run: RUSTFLAGS="-D warnings" cargo check
+        run: RUSTFLAGS="-D warnings" cargo check --offline
       - name: cargo check warnings with foundry flags
-        run: RUSTFLAGS="-D warnings" cargo check --features arbitrary,eip712,seismic
+        run: RUSTFLAGS="-D warnings" cargo check --offline --features arbitrary,eip712,seismic
 
   test:
     runs-on: ubuntu-latest
