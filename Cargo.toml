@@ -111,12 +111,3 @@ rand = { version = "0.8", default-features = false }
 ruint = { version = "1.12.3", default-features = false, features = ["alloc"] }
 ruint-macro = { version = "1", default-features = false }
 winnow = { version = "=0.6.24", default-features = false, features = ["alloc"] }
-
-[patch.crates-io]
-alloy-primitives = { path = "crates/primitives" }
-alloy-sol-macro = { path = "crates/sol-macro" }
-alloy-sol-macro-input = { path = "crates/sol-macro-input" }
-alloy-sol-macro-expander = { path = "crates/sol-macro-expander" }
-alloy-sol-type-parser = { path = "crates/sol-type-parser" }
-alloy-sol-types = { path = "crates/sol-types" }
-syn-solidity = { path = "crates/syn-solidity" }
