@@ -1,3 +1,20 @@
+# Seismic Alloy Core
+
+This repository contains Seismic's fork of alloy-core
+
+The upstream repository lives [here](https://github.com/alloy-rs/alloy-core). This fork is up-to-date with it through commit `c268e8d`. You can see this by viewing the [main](https://github.com/SeismicSystems/seismic-alloy-core/tree/main) branch on this repository
+
+You can view all of our changes vs. upstream on this [pull request](https://github.com/SeismicSystems/seismic-alloy-core/pull/30). The sole purpose of this PR is display our diff; it will never be merged in to the main branch of this repo
+
+## Main changes
+- TODO(christian)
+
+## Structure
+
+Seismic's forks of the [reth](https://github.com/paradigmxyz/reth) stack all have the same branch structure:
+- `main` or `master`: this branch consists of commits purely from the upstream repository. However it will rarely be up-to-date with upstream. The latest commit from this branch reflects how recently Seismic has merged in upstream commits to the seismic branch
+- `seismic`: the default and production branch for these repositories. This includes all Seismic-specific code essential to make our network run
+
 # Alloy
 
 Core libraries at the root of the Rust Ethereum ecosystem.
