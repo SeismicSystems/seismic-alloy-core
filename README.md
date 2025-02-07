@@ -11,7 +11,7 @@ You can view all of our changes vs. upstream on this [pull request](https://gith
     - `saddress`
     - `suint` and the `suint{n}` family
     - `sint` and the `sint{n}` family
-    - `sbool`
+    - `sbool` - note that this repository does not yet support `sbool`, but seismic-solidity does (it's a TODO)
 
 Each of these types behave similarly to their unshielded counterparts. The main exception is that these values are hidden from the state tree
 
