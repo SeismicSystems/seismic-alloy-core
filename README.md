@@ -12,7 +12,7 @@ The repository was forked to support Seismic's [modifications](https://github.co
 
 ### New Shielded Types
 
-The new shielded types include:
+These shielded types include:
 
 - `saddress`
 - `suint` and the `suint{n}` family
