@@ -58,6 +58,9 @@ pub enum Type {
     #[cfg(feature = "seismic")]
     /// `saddress`
     Saddress(Span),
+    #[cfg(feature = "seismic")]
+    /// `sbool`
+    Sbool(Span),
 
     /// `$ty[$($size)?]`
     Array(TypeArray),
@@ -90,6 +93,8 @@ impl PartialEq for Type {
             (Self::Suint(_, a), Self::Suint(_, b)) => a == b,
             #[cfg(feature = "seismic")]
             (Self::Saddress(_), Self::Saddress(_)) => true,
+            #[cfg(feature = "seismic")]
+            (Self::Sbool(_), Self::Sbool(_)) => true,
 
             (Self::Tuple(a), Self::Tuple(b)) => a == b,
             (Self::Array(a), Self::Array(b)) => a == b,
@@ -119,7 +124,7 @@ impl Hash for Type {
             #[cfg(feature = "seismic")]
             Self::Suint(_, size) => size.hash(state),
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) => {}
+            Self::Saddress(_) | Self::Sbool(_) => {}
 
             Self::Tuple(tuple) => tuple.hash(state),
             Self::Array(array) => array.hash(state),
@@ -150,6 +155,8 @@ impl fmt::Debug for Type {
             Self::Suint(_, size) => f.debug_tuple("Suint").field(size).finish(),
             #[cfg(feature = "seismic")]
             Self::Saddress(_) => f.write_str("Saddress"),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(_) => f.write_str("Sbool"),
 
             Self::Tuple(tuple) => tuple.fmt(f),
             Self::Array(array) => array.fmt(f),
@@ -179,6 +186,8 @@ impl fmt::Display for Type {
             Self::Suint(_, size) => write_opt(f, "suint", *size),
             #[cfg(feature = "seismic")]
             Self::Saddress(_) => f.write_str("saddress"),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(_) => f.write_str("sbool"),
 
             Self::Tuple(tuple) => tuple.fmt(f),
             Self::Array(array) => array.fmt(f),
@@ -216,7 +225,7 @@ impl Spanned for Type {
             | Self::Int(span, _)
             | Self::Uint(span, _) => *span,
             #[cfg(feature = "seismic")]
-            Self::Sint(span, _) | Self::Suint(span, _) | Self::Saddress(span) => *span,
+            Self::Sint(span, _) | Self::Suint(span, _) | Self::Saddress(span) | Self::Sbool(span) => *span,
             Self::Tuple(tuple) => tuple.span(),
             Self::Array(array) => array.span(),
             Self::Function(function) => function.span(),
@@ -241,7 +250,7 @@ impl Spanned for Type {
             | Self::Uint(span, _) => *span = new_span,
 
             #[cfg(feature = "seismic")]
-            Self::Sint(span, _) | Self::Suint(span, _) | Self::Saddress(span) => *span = new_span,
+            Self::Sint(span, _) | Self::Suint(span, _) | Self::Saddress(span) | Self::Sbool(span) => *span = new_span,
 
             Self::Tuple(tuple) => tuple.set_span(new_span),
             Self::Array(array) => array.set_span(new_span),
@@ -280,6 +289,8 @@ impl Type {
             "string" => Self::String(span),
             #[cfg(feature = "seismic")]
             "saddress" => Self::Saddress(span),
+            #[cfg(feature = "seismic")]
+            "sbool" => Self::Sbool(span),
             s => {
                 #[cfg(feature = "seismic")]
                 {
@@ -361,7 +372,7 @@ impl Type {
         #[cfg(feature = "seismic")]
         {
             let is_seismic_one_word =
-                matches!(self, Self::Saddress(_) | Self::Sint(..) | Self::Suint(..));
+                matches!(self, Self::Saddress(_) | Self::Sint(..) | Self::Suint(..) | Self::Sbool(_));
             if is_seismic_one_word {
                 return true;
             }
@@ -391,7 +402,7 @@ impl Type {
             | Self::Function(_) => false,
 
             #[cfg(feature = "seismic")]
-            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) => false,
+            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) | Self::Sbool(_) => false,
 
             Self::String(_) | Self::Bytes(_) | Self::Custom(_) => true,
 
@@ -465,7 +476,7 @@ impl Type {
             | Self::String(_)
             | Self::Bytes(_) => false,
             #[cfg(feature = "seismic")]
-            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) => false,
+            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) | Self::Sbool(_) => false,
         }
     }
 
@@ -486,7 +497,7 @@ impl Type {
             | Self::String(_)
             | Self::Bytes(_) => false,
             #[cfg(feature = "seismic")]
-            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) => false,
+            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) | Self::Sbool(_) => false,
         }
     }
 
