@@ -97,6 +97,11 @@ impl EventTopic for Saddress {
 }
 
 #[cfg(feature = "seismic")]
+impl EventTopic for Sbool {
+    word_impl!();
+}
+
+#[cfg(feature = "seismic")]
 impl<const BITS: usize> EventTopic for Sint<BITS>
 where
     IntBitCount<BITS>: SupportedSint,
