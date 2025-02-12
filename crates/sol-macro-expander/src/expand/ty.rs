@@ -161,7 +161,9 @@ pub(super) fn rec_expand_rust_type(ty: &Type, crates: &ExternCrates, tokens: &mu
             quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::SAddress }
         }
         #[cfg(feature = "seismic")]
-        Type::Sbool(span) => return Ident::new("sbool", span).to_tokens(tokens),
+        Type::Sbool(span) => {
+            quote_spanned! {span=> #alloy_sol_types::sol_data::Sbool }
+        }
 
         Type::Tuple(ref tuple) => {
             return tuple.paren_token.surround(tokens, |tokens| {

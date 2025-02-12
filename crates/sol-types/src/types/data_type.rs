@@ -1205,6 +1205,7 @@ mod seismic {
     use alloy_primitives::{Signed as RustSigned, Uint as RustUint};
 
     /// Sbool - `sbool`
+    #[derive(Clone, Copy, Debug)]
     pub struct Sbool;
 
     impl SolTypeValue<Sbool> for bool {
@@ -1221,6 +1222,23 @@ mod seismic {
         #[inline]
         fn stv_eip712_data_word(&self) -> Word {
             SolTypeValue::<Sbool>::stv_to_tokens(self).0
+        }
+    }
+
+    impl SolTypeValue<Sbool> for SBool {
+        #[inline]
+        fn stv_to_tokens(&self) -> WordToken {
+            <bool as SolTypeValue<Sbool>>::stv_to_tokens(&self.0)
+        }
+
+        #[inline]
+        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
+            <bool as SolTypeValue<Sbool>>::stv_abi_encode_packed_to(&self.0, out)
+        }
+
+        #[inline]
+        fn stv_eip712_data_word(&self) -> Word {
+            <bool as SolTypeValue<Sbool>>::stv_eip712_data_word(&self.0)
         }
     }
 

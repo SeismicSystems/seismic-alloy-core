@@ -270,6 +270,7 @@ impl_sol_value! {
 
 #[cfg(feature = "seismic")]
 impl_sol_value! {
+    [] SBool => sol_data::Sbool [];
     [] SAddress => sol_data::Saddress [];
     []     SU8 => sol_data::Suint<8> [];
     []     SU16 => sol_data::Suint<16> [];
