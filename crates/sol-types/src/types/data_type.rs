@@ -1204,6 +1204,45 @@ mod seismic {
     use super::*;
     use alloy_primitives::{Signed as RustSigned, Uint as RustUint};
 
+    /// Sbool - `sbool`
+    pub struct Sbool;
+
+    impl SolTypeValue<Sbool> for bool {
+        #[inline]
+        fn stv_to_tokens(&self) -> WordToken {
+            WordToken(Word::with_last_byte(*self as u8))
+        }
+
+        #[inline]
+        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
+            out.push(*self as u8);
+        }
+
+        #[inline]
+        fn stv_eip712_data_word(&self) -> Word {
+            SolTypeValue::<Sbool>::stv_to_tokens(self).0
+        }
+    }
+
+    impl SolType for Sbool {
+        type RustType = bool;
+        type Token<'a> = WordToken;
+
+        const SOL_NAME: &'static str = "sbool";
+        const ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+
+        #[inline]
+        fn valid_token(token: &Self::Token<'_>) -> bool {
+            utils::check_zeroes(&token.0[..31])
+        }
+
+        #[inline]
+        fn detokenize(token: Self::Token<'_>) -> Self::RustType {
+            token.0 != Word::ZERO
+        }
+    }
+
     /// Saddress - `saddress`
     #[derive(Clone, Copy, Debug)]
     pub struct Saddress;
