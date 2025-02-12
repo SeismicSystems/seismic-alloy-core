@@ -134,7 +134,9 @@ impl<'i> Parser<Input<'i>, DynSolValue, ContextError> for ValueParser<'_> {
             #[cfg(feature = "seismic")]
             DynSolType::Suint(size) => {
                 uint(*size).parse_next(input).map(|x| DynSolValue::Suint(SUInt(x), *size))
-            }
+            },
+            #[cfg(feature = "seismic")]
+            DynSolType::Sbool => bool(input).map(DynSolValue::Sbool),
         })
         .parse_next(input)
     }

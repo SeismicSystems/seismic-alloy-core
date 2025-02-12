@@ -145,6 +145,8 @@ enum Choice {
     Sint,
     #[cfg(feature = "seismic")]
     Suint,
+    #[cfg(feature = "seismic")]
+    Sbool,
 
     Array,
     FixedArray,
@@ -165,6 +167,8 @@ impl<'a> arbitrary::Arbitrary<'a> for DynSolType {
             #[cfg(feature = "seismic")]
             Choice::Sint => u.arbitrary().map(int_size).map(Self::Sint),
             #[cfg(feature = "seismic")]
+            #[cfg(feature = "seismic")]
+            Choice::Sbool => Ok(Self::Sbool),
             Choice::Suint => u.arbitrary().map(int_size).map(Self::Suint),
             Choice::Function => Ok(Self::Function),
             Choice::FixedBytes => Ok(Self::FixedBytes(u.int_in_range(1..=32)?)),
@@ -350,6 +354,7 @@ impl DynSolType {
             Just(Self::Bytes),
             Just(Self::String),
             Just(Self::Saddress),
+            Just(Self::Sbool),
             any::<usize>().prop_map(|x| Self::Sint(int_size(x))),
             any::<usize>().prop_map(|x| Self::Suint(int_size(x))),
         ]
@@ -439,6 +444,8 @@ impl DynSolValue {
             &DynSolType::Sint(bytes) => u.arbitrary().map(|x| Self::Sint(x, bytes)),
             #[cfg(feature = "seismic")]
             &DynSolType::Suint(bytes) => u.arbitrary().map(|x| Self::Suint(x, bytes)),
+            #[cfg(feature = "seismic")]
+            DynSolType::Sbool => u.arbitrary().map(Self::Sbool),
         }
     }
 
@@ -499,6 +506,8 @@ impl DynSolValue {
             &DynSolType::Suint(sz) => {
                 any::<U256>().prop_map(move |x| Self::Suint(SUInt(adjust_uint(x, sz)), sz)).sboxed()
             }
+            #[cfg(feature = "seismic")]
+            DynSolType::Sbool => any::<bool>().prop_map(Self::Sbool).sboxed(),
         }
     }
 
