@@ -116,7 +116,7 @@ pub enum DynSolType {
     #[cfg(feature = "seismic")]
     /// Boolean.
     Sbool,
-    
+
     /// Signed Integer.
     /// User-defined struct.
     #[cfg(feature = "eip712")]
@@ -375,7 +375,7 @@ impl DynSolType {
             (Self::Suint(size), DynToken::Word(word)) => {
                 Ok(DynSolValue::Suint(sol_data::Suint::<256>::detokenize(word.into()), *size))
             }
-            
+
             #[cfg(feature = "seismic")]
             (Self::Sbool, DynToken::Word(word)) => {
                 Ok(DynSolValue::Sbool(sol_data::Sbool::detokenize(word.0.into())))
@@ -562,7 +562,9 @@ impl DynSolType {
                 DynToken::FixedSeq(tokens.into(), tuple.len())
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Suint(_) | Self::Sint(_) | Self::Sbool => DynToken::Word(Word::ZERO),
+            Self::Saddress | Self::Suint(_) | Self::Sint(_) | Self::Sbool => {
+                DynToken::Word(Word::ZERO)
+            }
         })
     }
 
@@ -947,7 +949,7 @@ re-enc: {re_enc}
         int("int256", "0000000000000000000000000000000000000000000000000000000000000004"),
 
         bool("bool", "0000000000000000000000000000000000000000000000000000000000000001"),
-        
+
         sbool("sbool", "0000000000000000000000000000000000000000000000000000000000000001"),
 
         bool2("bool", "0000000000000000000000000000000000000000000000000000000000000000"),
@@ -1215,7 +1217,7 @@ expected: {expected}",
 
         sbool_false("sbool", "false", "00"),
         sbool_true("sbool", "true", "01"),
-        
+
         int8_1("int8", "0", "00"),
         int8_2("int8", "1", "01"),
         int8_3("int8", "16", "10"),

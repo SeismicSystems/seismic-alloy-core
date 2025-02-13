@@ -101,7 +101,7 @@ pub enum DynSolValue {
     /// The second parameter is the number of bits, not bytes.
     Suint(SU256, usize),
     #[cfg(feature = "seismic")]
-    /// A seismic bool. 
+    /// A seismic bool.
     Sbool(Sbool),
 
     /// A named struct, treated as a tuple with a name parameter.
@@ -390,7 +390,10 @@ impl DynSolValue {
     pub const fn is_word(&self) -> bool {
         #[cfg(feature = "seismic")]
         {
-            let is_sword = matches!(self, Self::Saddress(_) | Self::Sint(..) | Self::Suint(..) | Self::Sbool(_));
+            let is_sword = matches!(
+                self,
+                Self::Saddress(_) | Self::Sint(..) | Self::Suint(..) | Self::Sbool(_)
+            );
             if is_sword {
                 return true;
             }
@@ -605,7 +608,7 @@ impl DynSolValue {
             Self::Bytes(_) | Self::String(_) | Self::Array(_) => true,
             as_fixed_seq!(tuple) => tuple.iter().any(Self::is_dynamic),
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _)  | Self::Sbool(_) => false,
+            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) | Self::Sbool(_) => false,
         }
     }
 
@@ -751,7 +754,7 @@ impl DynSolValue {
                 Self::encode_seq_to(array, enc);
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _)  | Self::Sbool(_) => {}
+            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) | Self::Sbool(_) => {}
         }
     }
 

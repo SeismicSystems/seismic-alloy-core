@@ -74,7 +74,7 @@ pub(super) fn rec_expand_type(ty: &Type, crates: &ExternCrates, tokens: &mut Tok
         Type::Saddress(span) => {
             quote_spanned! {span=> #alloy_sol_types::sol_data::Saddress }
         }
-        
+
         #[cfg(feature = "seismic")]
         Type::Sbool(span) => quote_spanned! {span=> #alloy_sol_types::sol_data::Sbool },
 

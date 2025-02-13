@@ -27,7 +27,7 @@ fn e2e() {
             address[] c;
         }
     }
-    
+
     sol! {
         struct MyStruct3 {
             saddress b;

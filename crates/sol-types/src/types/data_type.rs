@@ -1213,7 +1213,7 @@ mod seismic {
     // 1) Implement `SolType` for `Sbool` in the usual way
     impl SolType for Sbool {
         // Because `Sbool` is the final, stored type
-        type RustType = Sbool; 
+        type RustType = Sbool;
         type Token<'a> = WordToken;
 
         const SOL_NAME: &'static str = "sbool";
@@ -1230,8 +1230,8 @@ mod seismic {
         }
     }
 
-    // 2) Implement `SolTypeValue<Sbool>` for `T: Borrow<Sbool>` 
-    //    so references, owned values, etc., can all encode properly.
+    // 2) Implement `SolTypeValue<Sbool>` for `T: Borrow<Sbool>` so references, owned values, etc.,
+    //    can all encode properly.
     impl<T: Borrow<Sbool>> SolTypeValue<Sbool> for T {
         #[inline]
         fn stv_to_tokens(&self) -> WordToken {

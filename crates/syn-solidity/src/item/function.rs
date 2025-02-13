@@ -515,7 +515,7 @@ mod tests {
         let version = &version[..end];
 
         let mut iter = version.split('.').map(|s| s.split('-').next().unwrap()); // Strip everything after `-`
-    
+
         let major: u16 = iter.next()?.parse().ok()?;
         let minor: u16 = iter.next()?.parse().ok()?;
         let patch: u16 = iter.next()?.parse().ok()?; // Now guaranteed to be clean

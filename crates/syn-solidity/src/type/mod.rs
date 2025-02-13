@@ -225,7 +225,10 @@ impl Spanned for Type {
             | Self::Int(span, _)
             | Self::Uint(span, _) => *span,
             #[cfg(feature = "seismic")]
-            Self::Sint(span, _) | Self::Suint(span, _) | Self::Saddress(span) | Self::Sbool(span) => *span,
+            Self::Sint(span, _)
+            | Self::Suint(span, _)
+            | Self::Saddress(span)
+            | Self::Sbool(span) => *span,
             Self::Tuple(tuple) => tuple.span(),
             Self::Array(array) => array.span(),
             Self::Function(function) => function.span(),
@@ -250,7 +253,10 @@ impl Spanned for Type {
             | Self::Uint(span, _) => *span = new_span,
 
             #[cfg(feature = "seismic")]
-            Self::Sint(span, _) | Self::Suint(span, _) | Self::Saddress(span) | Self::Sbool(span) => *span = new_span,
+            Self::Sint(span, _)
+            | Self::Suint(span, _)
+            | Self::Saddress(span)
+            | Self::Sbool(span) => *span = new_span,
 
             Self::Tuple(tuple) => tuple.set_span(new_span),
             Self::Array(array) => array.set_span(new_span),
@@ -371,8 +377,10 @@ impl Type {
     pub const fn is_one_word(&self) -> bool {
         #[cfg(feature = "seismic")]
         {
-            let is_seismic_one_word =
-                matches!(self, Self::Saddress(_) | Self::Sint(..) | Self::Suint(..) | Self::Sbool(_));
+            let is_seismic_one_word = matches!(
+                self,
+                Self::Saddress(_) | Self::Sint(..) | Self::Suint(..) | Self::Sbool(_)
+            );
             if is_seismic_one_word {
                 return true;
             }
