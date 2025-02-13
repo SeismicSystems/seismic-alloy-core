@@ -1207,7 +1207,7 @@ mod seismic {
     /// `Sbool` is our seismic-boolean type. Unlike the legacy `Bool`,
     /// which uses a plain `bool` in Rust, we store `bool` inside a newtype
     /// so we can treat it differently if desired (e.g. “shielded bool”).
-    #[derive(Clone, Copy, Debug)]
+    #[derive(Clone, Copy, Debug, PartialEq)]
     pub struct Sbool(pub bool);
 
     // 1) Implement `SolType` for `Sbool` in the usual way

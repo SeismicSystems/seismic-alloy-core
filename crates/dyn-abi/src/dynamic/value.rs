@@ -7,7 +7,7 @@ use alloy_primitives::{
     SAddress, SI256, SU256,
 };
 use alloy_primitives::{Address, Function, I256, U256};
-use alloy_sol_types::{abi::Encoder, utils::words_for_len};
+use alloy_sol_types::{abi::Encoder, sol_data::Sbool, utils::words_for_len};
 
 #[cfg(feature = "eip712")]
 macro_rules! as_fixed_seq {
@@ -102,7 +102,7 @@ pub enum DynSolValue {
     Suint(SU256, usize),
     #[cfg(feature = "seismic")]
     /// A seismic bool. 
-    Sbool(bool),
+    Sbool(Sbool),
 
     /// A named struct, treated as a tuple with a name parameter.
     #[cfg(feature = "eip712")]
@@ -378,9 +378,7 @@ impl DynSolValue {
             Some(Cow::Borrowed(s))
         } else if let Some(capacity) = self.sol_type_name_capacity() {
             let mut s = String::with_capacity(capacity);
-            println!("sol_type_name_raw");
             self.sol_type_name_raw(&mut s);
-            println!("result: {:?}", s);
             Some(Cow::Owned(s))
         } else {
             None
@@ -424,7 +422,7 @@ impl DynSolValue {
             #[cfg(feature = "seismic")]
             Self::Suint(u, _) => Some(u.0.into()),
             #[cfg(feature = "seismic")]
-            Self::Sbool(b) => Some(Word::with_last_byte(b as u8)),
+            Self::Sbool(b) => Some(Word::with_last_byte(b.0.into())),
             _ => None,
         }
     }
@@ -446,7 +444,7 @@ impl DynSolValue {
         match self {
             Self::Bool(b) => Some(*b),
             #[cfg(feature = "seismic")]
-            Self::Sbool(a) => Some(*a),
+            Self::Sbool(a) => Some(a.0),
             _ => None,
         }
     }
@@ -822,7 +820,7 @@ impl DynSolValue {
                 buf.extend_from_slice(&num.to_be_bytes::<32>()[start..]);
             }
             #[cfg(feature = "seismic")]
-            Self::Sbool(b) => buf.push(*b as u8),
+            Self::Sbool(b) => buf.push(b.0.into()),
         }
     }
 
@@ -872,7 +870,7 @@ impl DynSolValue {
             #[cfg(feature = "seismic")]
             Self::Suint(SUInt(uint), _) => uint.to_be_bytes::<32>().into(),
             #[cfg(feature = "seismic")]
-            Self::Sbool(b) => Word::with_last_byte(*b as u8).into(),
+            Self::Sbool(b) => Word::with_last_byte(b.0.into()).into(),
         }
     }
 

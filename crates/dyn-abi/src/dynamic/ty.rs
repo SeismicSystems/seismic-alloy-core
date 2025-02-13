@@ -378,7 +378,7 @@ impl DynSolType {
             
             #[cfg(feature = "seismic")]
             (Self::Sbool, DynToken::Word(word)) => {
-                Ok(DynSolValue::Sbool(sol_data::Sbool::detokenize(word.into())))
+                Ok(DynSolValue::Sbool(sol_data::Sbool::detokenize(word.0.into())))
             }
 
             _ => Err(crate::Error::custom("mismatched types on dynamic detokenization")),
