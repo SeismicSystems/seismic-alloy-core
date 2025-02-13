@@ -465,7 +465,6 @@ impl DynSolType {
             #[cfg(feature = "seismic")]
             Self::Sint(size) => {
                 out.push_str("sint");
-                println!("sint size: {}", size);
                 out.push_str(itoa::Buffer::new().format(*size));
             }
             #[cfg(feature = "seismic")]
@@ -512,9 +511,7 @@ impl DynSolType {
     /// this value, if it is known. A type will not be known if the value
     /// contains an empty sequence, e.g. `T[0]`.
     pub fn sol_type_name(&self) -> Cow<'static, str> {
-        println!("sol_type_name");
         if let Some(s) = self.sol_type_name_simple() {
-            println!("inside 1 ");
             Cow::Borrowed(s)
         } else {
             let mut s = String::with_capacity(self.sol_type_name_capacity());
@@ -1184,7 +1181,6 @@ re-enc: {re_enc}
     }
 
     fn packed_test(t_s: &str, v_s: &str, expected: &[u8]) {
-        println!("packed_test({t_s}, {v_s})");
         let ty: DynSolType = t_s.parse().expect("parsing failed");
         assert_eq!(ty.sol_type_name(), t_s, "type names are not the same");
 
