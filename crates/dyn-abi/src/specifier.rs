@@ -63,6 +63,8 @@ impl Specifier<DynSolType> for RootType<'_> {
             #[cfg(feature = "seismic")]
             "saddress" => Ok(DynSolType::Saddress),
             #[cfg(feature = "seismic")]
+            "sbool" => Ok(DynSolType::Sbool),
+            #[cfg(feature = "seismic")]
             "sint" => Ok(DynSolType::Sint(256)),
             #[cfg(feature = "seismic")]
             "suint" => Ok(DynSolType::Suint(256)),

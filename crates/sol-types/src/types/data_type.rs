@@ -1204,6 +1204,60 @@ mod seismic {
     use super::*;
     use alloy_primitives::{Signed as RustSigned, Uint as RustUint};
 
+    /// `Sbool` is our seismic-boolean type. Unlike the legacy `Bool`,
+    /// which uses a plain `bool` in Rust, we store `bool` inside a newtype
+    /// so we can treat it differently if desired (e.g. “shielded bool”).
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub struct Sbool(pub bool);
+
+    // 1) Implement `SolType` for `Sbool` in the usual way
+    impl SolType for Sbool {
+        // Because `Sbool` is the final, stored type
+        type RustType = Sbool;
+        type Token<'a> = WordToken;
+
+        const SOL_NAME: &'static str = "sbool";
+        const ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+
+        fn valid_token(token: &Self::Token<'_>) -> bool {
+            utils::check_zeroes(&token.0[..31])
+        }
+
+        fn detokenize(token: Self::Token<'_>) -> Self::RustType {
+            // Non-zero last byte => true
+            Sbool(token.0 != Word::ZERO)
+        }
+    }
+
+    // 2) Implement `SolTypeValue<Sbool>` for `T: Borrow<Sbool>` so references, owned values, etc.,
+    //    can all encode properly.
+    impl<T: Borrow<Sbool>> SolTypeValue<Sbool> for T {
+        #[inline]
+        fn stv_to_tokens(&self) -> WordToken {
+            let inner = self.borrow();
+            WordToken(Word::with_last_byte(inner.0 as u8))
+        }
+
+        #[inline]
+        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
+            out.push(self.borrow().0 as u8);
+        }
+
+        #[inline]
+        fn stv_eip712_data_word(&self) -> Word {
+            Word::with_last_byte(self.borrow().0 as u8)
+        }
+    }
+
+    #[cfg(all(feature = "seismic", feature = "arbitrary"))]
+    impl arbitrary::Arbitrary<'_> for Sbool {
+        fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+            let arbitrary_bool = u.arbitrary::<bool>()?;
+            Ok(Sbool(arbitrary_bool))
+        }
+    }
+
     /// Saddress - `saddress`
     #[derive(Clone, Copy, Debug)]
     pub struct Saddress;

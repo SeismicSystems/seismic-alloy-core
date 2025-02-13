@@ -7,7 +7,7 @@ use alloy_primitives::{
     SAddress, SI256, SU256,
 };
 use alloy_primitives::{Address, Function, I256, U256};
-use alloy_sol_types::{abi::Encoder, utils::words_for_len};
+use alloy_sol_types::{abi::Encoder, sol_data::Sbool, utils::words_for_len};
 
 #[cfg(feature = "eip712")]
 macro_rules! as_fixed_seq {
@@ -100,6 +100,9 @@ pub enum DynSolValue {
     /// A seismic shielded unsigned integer. Always 32 bytes
     /// The second parameter is the number of bits, not bytes.
     Suint(SU256, usize),
+    #[cfg(feature = "seismic")]
+    /// A seismic bool.
+    Sbool(Sbool),
 
     /// A named struct, treated as a tuple with a name parameter.
     #[cfg(feature = "eip712")]
@@ -243,6 +246,8 @@ impl DynSolValue {
             Self::Sint(_, size) => DynSolType::Sint(*size),
             #[cfg(feature = "seismic")]
             Self::Suint(_, size) => DynSolType::Suint(*size),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(_) => DynSolType::Sbool,
         };
         Some(ty)
     }
@@ -256,6 +261,10 @@ impl DynSolValue {
             Self::Bool(_) => Some("bool"),
             Self::Bytes(_) => Some("bytes"),
             Self::String(_) => Some("string"),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(_) => Some("sbool"),
+            #[cfg(feature = "seismic")]
+            Self::Saddress(_) => Some("saddress"),
             _ => None,
         }
     }
@@ -312,8 +321,6 @@ impl DynSolValue {
                 out.push(')');
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) => out.push_str("saddress"),
-            #[cfg(feature = "seismic")]
             Self::Sint(_, size) => {
                 out.push_str("sint");
                 out.push_str(itoa::Buffer::new().format(*size));
@@ -322,6 +329,10 @@ impl DynSolValue {
             Self::Suint(_, size) => {
                 out.push_str("suint");
                 out.push_str(itoa::Buffer::new().format(*size));
+            }
+            #[cfg(feature = "seismic")]
+            Self::Sbool(_) | Self::Saddress(_) => {
+                out.push_str(unsafe { self.sol_type_name_simple().unwrap_unchecked() });
             }
         }
     }
@@ -354,6 +365,8 @@ impl DynSolValue {
             Self::Sint(_, _) => Some(8),
             #[cfg(feature = "seismic")]
             Self::Suint(_, _) => Some(8),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(_) => Some(8),
         }
     }
 
@@ -377,7 +390,10 @@ impl DynSolValue {
     pub const fn is_word(&self) -> bool {
         #[cfg(feature = "seismic")]
         {
-            let is_sword = matches!(self, Self::Saddress(_) | Self::Sint(..) | Self::Suint(..));
+            let is_sword = matches!(
+                self,
+                Self::Saddress(_) | Self::Sint(..) | Self::Suint(..) | Self::Sbool(_)
+            );
             if is_sword {
                 return true;
             }
@@ -408,6 +424,8 @@ impl DynSolValue {
             Self::Sint(i, _) => Some(i.0.into()),
             #[cfg(feature = "seismic")]
             Self::Suint(u, _) => Some(u.0.into()),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(b) => Some(Word::with_last_byte(b.0.into())),
             _ => None,
         }
     }
@@ -428,6 +446,8 @@ impl DynSolValue {
     pub const fn as_bool(&self) -> Option<bool> {
         match self {
             Self::Bool(b) => Some(*b),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(a) => Some(a.0),
             _ => None,
         }
     }
@@ -588,7 +608,7 @@ impl DynSolValue {
             Self::Bytes(_) | Self::String(_) | Self::Array(_) => true,
             as_fixed_seq!(tuple) => tuple.iter().any(Self::is_dynamic),
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) => false,
+            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) | Self::Sbool(_) => false,
         }
     }
 
@@ -669,7 +689,7 @@ impl DynSolValue {
             Self::Array(vals) => 1 + vals.iter().map(Self::total_words).sum::<usize>(),
 
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) => 0,
+            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) | Self::Sbool(_) => 0,
         }
     }
 
@@ -703,7 +723,7 @@ impl DynSolValue {
                 }
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) => {
+            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) | Self::Sbool(_) => {
                 enc.append_word(unsafe { self.as_word().unwrap_unchecked() })
             }
         }
@@ -734,7 +754,7 @@ impl DynSolValue {
                 Self::encode_seq_to(array, enc);
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) => {}
+            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) | Self::Sbool(_) => {}
         }
     }
 
@@ -802,6 +822,8 @@ impl DynSolValue {
                 let start = 32usize.saturating_sub(byte_size);
                 buf.extend_from_slice(&num.to_be_bytes::<32>()[start..]);
             }
+            #[cfg(feature = "seismic")]
+            Self::Sbool(b) => buf.push(b.0.into()),
         }
     }
 
@@ -826,6 +848,8 @@ impl DynSolValue {
             Self::Sint(SInt(_), size) => (size / 8).min(32),
             #[cfg(feature = "seismic")]
             Self::Suint(SUInt(_), size) => (size / 8).min(32),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(_) => 1,
         }
     }
 
@@ -848,6 +872,8 @@ impl DynSolValue {
             Self::Sint(SInt(int), _) => int.to_be_bytes::<32>().into(),
             #[cfg(feature = "seismic")]
             Self::Suint(SUInt(uint), _) => uint.to_be_bytes::<32>().into(),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(b) => Word::with_last_byte(b.0.into()).into(),
         }
     }
 

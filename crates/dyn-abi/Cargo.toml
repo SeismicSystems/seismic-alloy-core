@@ -47,14 +47,14 @@ derive_arbitrary = { workspace = true, optional = true }
 proptest = { workspace = true, optional = true }
 
 [dev-dependencies]
-alloy-dyn-abi = { path = ".", version = ">=0", features = ["std"] }
+alloy-dyn-abi = { path = ".", version = ">=0", features = ["std", "seismic"] }
 criterion.workspace = true
 ethabi = "18"
 rand = "0.8"
 serde_json.workspace = true
 
 [features]
-default = ["std"]
+default = ["std", "seismic"]
 std = [
     "alloy-json-abi/std",
     "alloy-sol-types/std",
@@ -85,7 +85,7 @@ seismic = [
 ]
 
 # Debug winnow parsers; intentionally doesn't enable `winnow/debug`
-debug = ["std", "alloy-sol-type-parser/debug"]
+debug = ["std", "alloy-sol-type-parser/debug", "seismic"]
 
 [[bench]]
 name = "abi"

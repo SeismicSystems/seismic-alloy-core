@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 #[cfg(feature = "seismic")]
 use alloy_primitives::aliases::{SAddress, SInt, SUInt};
 use alloy_primitives::{Address, Function, Sign, I256, U256};
-use alloy_sol_types::Word;
+use alloy_sol_types::{sol_data::Sbool, Word};
 use core::fmt;
 use hex::FromHexError;
 use parser::{
@@ -135,6 +135,8 @@ impl<'i> Parser<Input<'i>, DynSolValue, ContextError> for ValueParser<'_> {
             DynSolType::Suint(size) => {
                 uint(*size).parse_next(input).map(|x| DynSolValue::Suint(SUInt(x), *size))
             }
+            #[cfg(feature = "seismic")]
+            DynSolType::Sbool => bool(input).map(|x| DynSolValue::Sbool(Sbool(x))),
         })
         .parse_next(input)
     }

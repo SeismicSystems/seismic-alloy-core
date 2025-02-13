@@ -113,6 +113,11 @@ pub enum DynSolType {
     /// Seismic shielded unsigned integer
     Suint(usize),
 
+    #[cfg(feature = "seismic")]
+    /// Boolean.
+    Sbool,
+
+    /// Signed Integer.
     /// User-defined struct.
     #[cfg(feature = "eip712")]
     CustomStruct {
@@ -177,7 +182,7 @@ impl DynSolType {
             | Self::Bytes
             | Self::String => 0,
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Sint(_) | Self::Suint(_) => 0,
+            Self::Saddress | Self::Sint(_) | Self::Suint(_) | Self::Sbool => 0,
             Self::Array(contents) | Self::FixedArray(contents, _) => 1 + contents.nesting_depth(),
             as_tuple!(Self tuple) => 1 + tuple.iter().map(Self::nesting_depth).max().unwrap_or(0),
         }
@@ -276,6 +281,8 @@ impl DynSolType {
             Self::Sint(size) => matches!(value, DynSolValue::Sint(_, s) if s == size),
             #[cfg(feature = "seismic")]
             Self::Suint(size) => matches!(value, DynSolValue::Suint(_, s) if s == size),
+            #[cfg(feature = "seismic")]
+            Self::Sbool => matches!(value, DynSolValue::Sbool(_)),
         }
     }
 
@@ -369,6 +376,11 @@ impl DynSolType {
                 Ok(DynSolValue::Suint(sol_data::Suint::<256>::detokenize(word.into()), *size))
             }
 
+            #[cfg(feature = "seismic")]
+            (Self::Sbool, DynToken::Word(word)) => {
+                Ok(DynSolValue::Sbool(sol_data::Sbool::detokenize(word.0.into())))
+            }
+
             _ => Err(crate::Error::custom("mismatched types on dynamic detokenization")),
         }
     }
@@ -399,6 +411,10 @@ impl DynSolType {
             Self::Bool => Some("bool"),
             Self::Bytes => Some("bytes"),
             Self::String => Some("string"),
+            #[cfg(feature = "seismic")]
+            Self::Saddress => Some("saddress"),
+            #[cfg(feature = "seismic")]
+            Self::Sbool => Some("sbool"),
             _ => None,
         }
     }
@@ -456,6 +472,10 @@ impl DynSolType {
                 out.push_str("suint");
                 out.push_str(itoa::Buffer::new().format(*size));
             }
+            #[cfg(feature = "seismic")]
+            Self::Sbool => {
+                out.push_str(unsafe { self.sol_type_name_simple().unwrap_unchecked() });
+            }
         }
     }
 
@@ -483,7 +503,7 @@ impl DynSolType {
             as_tuple!(Self tuple) // sum(tuple) + len(tuple) + 2
             => tuple.iter().map(Self::sol_type_name_capacity).sum::<usize>() + 8,
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Sint(_) | Self::Suint(_) => 8,
+            Self::Saddress | Self::Sint(_) | Self::Suint(_) | Self::Sbool => 8,
         }
     }
 
@@ -542,7 +562,9 @@ impl DynSolType {
                 DynToken::FixedSeq(tokens.into(), tuple.len())
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Suint(_) | Self::Sint(_) => DynToken::Word(Word::ZERO),
+            Self::Saddress | Self::Suint(_) | Self::Sint(_) | Self::Sbool => {
+                DynToken::Word(Word::ZERO)
+            }
         })
     }
 
@@ -556,7 +578,7 @@ impl DynSolType {
             | Self::Int(_)
             | Self::Uint(_) => self.detokenize(DynToken::Word(topic)).unwrap(),
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Sint(_) | Self::Suint(_) => {
+            Self::Saddress | Self::Sint(_) | Self::Suint(_) | Self::Sbool => {
                 self.detokenize(DynToken::Word(topic)).unwrap()
             }
             _ => DynSolValue::FixedBytes(topic, 32),
@@ -632,7 +654,7 @@ impl DynSolType {
             #[cfg(feature = "eip712")]
             Self::CustomStruct { tuple, ..} => tuple.iter().map(|ty| ty.minimum_words()).sum(),
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Sint(_) | Self::Suint(_) => 1,
+            Self::Saddress | Self::Sint(_) | Self::Suint(_) | Self::Sbool => 1,
         }
     }
 
@@ -928,6 +950,8 @@ re-enc: {re_enc}
 
         bool("bool", "0000000000000000000000000000000000000000000000000000000000000001"),
 
+        sbool("sbool", "0000000000000000000000000000000000000000000000000000000000000001"),
+
         bool2("bool", "0000000000000000000000000000000000000000000000000000000000000000"),
 
         comprehensive_test("(uint8,bytes,uint8,bytes)", "
@@ -1191,10 +1215,14 @@ expected: {expected}",
         bool_false("bool", "false", "00"),
         bool_true("bool", "true", "01"),
 
+        sbool_false("sbool", "false", "00"),
+        sbool_true("sbool", "true", "01"),
+
         int8_1("int8", "0", "00"),
         int8_2("int8", "1", "01"),
         int8_3("int8", "16", "10"),
         int8_4("int8", "127", "7f"),
+        sint8_4("sint8", "127", "7f"),
         neg_int8_1("int8", "-1", "ff"),
         neg_int8_2("int8", "-16", "f0"),
         neg_int8_3("int8", "-127", "81"),

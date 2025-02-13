@@ -28,6 +28,14 @@ fn e2e() {
         }
     }
 
+    sol! {
+        struct MyStruct3 {
+            saddress b;
+            suint256 c;
+            sint248 d;
+        }
+    }
+
     type MyTuple = sol! {
         (MyStruct, bytes32)
     };
