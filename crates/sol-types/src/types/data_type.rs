@@ -1249,6 +1249,15 @@ mod seismic {
             Word::with_last_byte(self.borrow().0 as u8)
         }
     }
+
+    #[cfg(all(feature = "seismic", feature = "arbitrary"))]
+    impl arbitrary::Arbitrary<'_> for Sbool {
+        fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+            let arbitrary_bool = u.arbitrary::<bool>()?;
+            Ok(Sbool(arbitrary_bool))
+        }
+    }
+
     /// Saddress - `saddress`
     #[derive(Clone, Copy, Debug)]
     pub struct Saddress;

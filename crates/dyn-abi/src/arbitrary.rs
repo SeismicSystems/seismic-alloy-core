@@ -13,6 +13,7 @@ use crate::{DynSolType, DynSolValue};
 #[cfg(feature = "seismic")]
 use alloy_primitives::aliases::{SAddress, SInt, SUInt};
 use alloy_primitives::{Address, Function, B256, I256, U256};
+use alloy_sol_types::sol_data::Sbool;
 use arbitrary::{size_hint, Unstructured};
 use core::ops::RangeInclusive;
 use proptest::{
@@ -497,6 +498,7 @@ impl DynSolValue {
                     .sboxed()
             }
             #[cfg(feature = "seismic")]
+            //TODO: should be a saddress?
             &DynSolType::Saddress => any::<Address>().prop_map(Self::Address).sboxed(),
             #[cfg(feature = "seismic")]
             &DynSolType::Sint(sz) => {
@@ -507,7 +509,7 @@ impl DynSolValue {
                 any::<U256>().prop_map(move |x| Self::Suint(SUInt(adjust_uint(x, sz)), sz)).sboxed()
             }
             #[cfg(feature = "seismic")]
-            DynSolType::Sbool => any::<bool>().prop_map(Self::Sbool).sboxed(),
+            DynSolType::Sbool => any::<bool>().prop_map(|x| Self::Sbool(Sbool(x))).sboxed(),
         }
     }
 
@@ -537,7 +539,7 @@ impl DynSolValue {
     fn leaf() -> impl Strategy<Value = Self> {
         prop_oneof![
             any::<bool>().prop_map(Self::Bool),
-            any::<bool>().prop_map(Self::Sbool),
+            any::<bool>().prop_map(|x| Self::Sbool(Sbool(x))),
             any::<Address>().prop_map(Self::Address),
             int_strategy::<I256>().prop_map(|(x, sz)| Self::Int(adjust_int(x, sz), sz)),
             int_strategy::<U256>().prop_map(|(x, sz)| Self::Uint(adjust_uint(x, sz), sz)),
