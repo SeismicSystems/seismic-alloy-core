@@ -537,6 +537,7 @@ impl DynSolValue {
     fn leaf() -> impl Strategy<Value = Self> {
         prop_oneof![
             any::<bool>().prop_map(Self::Bool),
+            any::<bool>().prop_map(Self::Sbool),
             any::<Address>().prop_map(Self::Address),
             int_strategy::<I256>().prop_map(|(x, sz)| Self::Int(adjust_int(x, sz), sz)),
             int_strategy::<U256>().prop_map(|(x, sz)| Self::Uint(adjust_uint(x, sz), sz)),
