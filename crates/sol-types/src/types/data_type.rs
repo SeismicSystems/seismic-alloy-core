@@ -14,6 +14,10 @@ use alloy_primitives::{
     aliases::*, keccak256, Address as RustAddress, Bytes as RustBytes,
     FixedBytes as RustFixedBytes, Function as RustFunction, I256, U256,
 };
+
+#[cfg(feature = "seismic")]
+use alloy_primitives::aliases::SAddress as RustSAddress;
+
 use core::{borrow::Borrow, fmt::*, hash::Hash, marker::PhantomData, ops::*};
 
 // IMPORTANT: Keep in sync with `rec_expand_rust_type` in
@@ -839,9 +843,13 @@ all_the_tuples!(tuple_impls);
 
 #[allow(unknown_lints, unnameable_types)]
 mod sealed {
+    /// To prevent users from implementing downstream
     pub trait Sealed {}
 }
+#[cfg(not(feature = "seismic"))]
 use sealed::Sealed;
+#[cfg(feature = "seismic")]
+pub use sealed::Sealed;
 
 /// Specifies the number of bytes in a [`FixedBytes`] array as a type.
 pub struct ByteCount<const N: usize>;
@@ -1190,6 +1198,368 @@ impl NameBuffer {
         }
     }
 }
+
+#[cfg(feature = "seismic")]
+mod seismic {
+    use super::*;
+    use alloy_primitives::{Signed as RustSigned, Uint as RustUint};
+
+    /// `Sbool` is our seismic-boolean type. Unlike the legacy `Bool`,
+    /// which uses a plain `bool` in Rust, we store `bool` inside a newtype
+    /// so we can treat it differently if desired (e.g. “shielded bool”).
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub struct Sbool(pub bool);
+
+    // 1) Implement `SolType` for `Sbool` in the usual way
+    impl SolType for Sbool {
+        // Because `Sbool` is the final, stored type
+        type RustType = Sbool;
+        type Token<'a> = WordToken;
+
+        const SOL_NAME: &'static str = "sbool";
+        const ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+
+        fn valid_token(token: &Self::Token<'_>) -> bool {
+            utils::check_zeroes(&token.0[..31])
+        }
+
+        fn detokenize(token: Self::Token<'_>) -> Self::RustType {
+            // Non-zero last byte => true
+            Sbool(token.0 != Word::ZERO)
+        }
+    }
+
+    // 2) Implement `SolTypeValue<Sbool>` for `T: Borrow<Sbool>` so references, owned values, etc.,
+    //    can all encode properly.
+    impl<T: Borrow<Sbool>> SolTypeValue<Sbool> for T {
+        #[inline]
+        fn stv_to_tokens(&self) -> WordToken {
+            let inner = self.borrow();
+            WordToken(Word::with_last_byte(inner.0 as u8))
+        }
+
+        #[inline]
+        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
+            out.push(self.borrow().0 as u8);
+        }
+
+        #[inline]
+        fn stv_eip712_data_word(&self) -> Word {
+            Word::with_last_byte(self.borrow().0 as u8)
+        }
+    }
+
+    #[cfg(all(feature = "seismic", feature = "arbitrary"))]
+    impl arbitrary::Arbitrary<'_> for Sbool {
+        fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+            let arbitrary_bool = u.arbitrary::<bool>()?;
+            Ok(Sbool(arbitrary_bool))
+        }
+    }
+
+    /// Saddress - `saddress`
+    #[derive(Clone, Copy, Debug)]
+    pub struct Saddress;
+
+    impl<T: Borrow<RustSAddress>> SolTypeValue<Saddress> for T {
+        #[inline]
+        fn stv_to_tokens(&self) -> WordToken {
+            WordToken(RustAddress::new(self.borrow().0.into()).into_word())
+        }
+
+        #[inline]
+        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
+            let address: RustAddress = self.borrow().0;
+            let fixed_bytes_20 = address.0;
+            out.extend_from_slice(&fixed_bytes_20.0);
+        }
+
+        #[inline]
+        fn stv_eip712_data_word(&self) -> Word {
+            SolTypeValue::<Address>::stv_to_tokens(&self.borrow().0).0
+        }
+    }
+
+    impl SolType for Saddress {
+        type RustType = RustSAddress;
+        type Token<'a> = WordToken;
+
+        const SOL_NAME: &'static str = "saddress";
+        const ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+
+        #[inline]
+        fn valid_token(token: &Self::Token<'_>) -> bool {
+            utils::check_zeroes(&token.0[..12])
+        }
+
+        #[inline]
+        fn detokenize(token: Self::Token<'_>) -> Self::RustType {
+            RustSAddress(RustAddress::from_word(token.0))
+        }
+    }
+
+    /// Seismic Shielded Signed Integer - `sintX`
+    #[derive(Debug)]
+    pub struct Sint<const BITS: usize>;
+
+    #[cfg(feature = "seismic")]
+    impl<T, const BITS: usize> SolTypeValue<Sint<BITS>> for T
+    where
+        T: Borrow<<IntBitCount<BITS> as SupportedSint>::Sint>,
+        IntBitCount<BITS>: SupportedSint,
+    {
+        #[inline]
+        fn stv_to_tokens(&self) -> WordToken {
+            IntBitCount::<BITS>::tokenize_int(*self.borrow())
+        }
+
+        #[inline]
+        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
+            IntBitCount::<BITS>::encode_packed_to_int(*self.borrow(), out);
+        }
+
+        #[inline]
+        fn stv_eip712_data_word(&self) -> Word {
+            SolTypeValue::<Sint<BITS>>::stv_to_tokens(self).0
+        }
+    }
+
+    impl<const BITS: usize> SolType for Sint<BITS>
+    where
+        IntBitCount<BITS>: SupportedSint,
+    {
+        type RustType = <IntBitCount<BITS> as SupportedSint>::Sint;
+        type Token<'a> = WordToken;
+
+        const SOL_NAME: &'static str = IntBitCount::<BITS>::SINT_NAME;
+        const ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+
+        #[inline]
+        fn valid_token(_token: &Self::Token<'_>) -> bool {
+            return true;
+        }
+
+        #[inline]
+        fn detokenize(token: Self::Token<'_>) -> Self::RustType {
+            IntBitCount::<BITS>::detokenize_int(token)
+        }
+    }
+
+    /// Seismic Shielded Unsigned Integer - `suintX`
+    #[derive(Debug)]
+    pub struct Suint<const BITS: usize>;
+
+    impl<const BITS: usize, T> SolTypeValue<Suint<BITS>> for T
+    where
+        T: Borrow<<IntBitCount<BITS> as SupportedSint>::Suint>,
+        IntBitCount<BITS>: SupportedSint,
+    {
+        #[inline]
+        fn stv_to_tokens(&self) -> WordToken {
+            IntBitCount::<BITS>::tokenize_uint(*self.borrow())
+        }
+
+        #[inline]
+        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
+            IntBitCount::<BITS>::encode_packed_to_uint(*self.borrow(), out);
+        }
+
+        #[inline]
+        fn stv_eip712_data_word(&self) -> Word {
+            SolTypeValue::<Suint<BITS>>::stv_to_tokens(self).0
+        }
+    }
+
+    impl<const BITS: usize> SolType for Suint<BITS>
+    where
+        IntBitCount<BITS>: SupportedSint,
+    {
+        type RustType = <IntBitCount<BITS> as SupportedSint>::Suint;
+        type Token<'a> = WordToken;
+
+        const SOL_NAME: &'static str = IntBitCount::<BITS>::SUINT_NAME;
+        const ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+
+        #[inline]
+        fn valid_token(_token: &Self::Token<'_>) -> bool {
+            return true;
+        }
+
+        #[inline]
+        fn detokenize(token: Self::Token<'_>) -> Self::RustType {
+            IntBitCount::<BITS>::detokenize_uint(token)
+        }
+    }
+
+    macro_rules! declare_sint_types {
+        ($($(#[$attr:meta])* type $name:ident;)*) => {$(
+            $(#[$attr])*
+            type $name: Sized + Copy + PartialOrd + Ord + Eq + Hash + Debug;
+        )*};
+    }
+
+    /// Statically guarantees that a [`Sint`] or [`Suint`] bit count is marked as
+    /// supported.
+    ///
+    /// This trait is *sealed*: the list of implementors below is total.
+    ///
+    /// Users do not have the ability to mark additional [`IntBitCount<N>`] values
+    /// as supported. Only `Int` and `Uint` with supported byte counts are
+    /// constructable.
+    pub trait SupportedSint: Sealed {
+        declare_sint_types! {
+            /// The signed integer Rust representation.
+            type Sint;
+
+            /// The unsigned integer Rust representation.
+            type Suint;
+        }
+
+        /// The name of the `Int` type: `int<N>`
+        const SINT_NAME: &'static str;
+
+        /// The name of the `Uint` type: `uint<N>`
+        const SUINT_NAME: &'static str;
+
+        /// The number of bits in the preimage: `BITS`
+        const BITS: usize;
+
+        /// The number of bytes in the preimage: `BITS / 8`
+        const BYTES: usize = Self::BITS / 8;
+
+        /// Tokenizes a signed integer.
+        fn tokenize_int(int: Self::Sint) -> WordToken;
+        /// Detokenizes a signed integer.
+        fn detokenize_int(token: WordToken) -> Self::Sint;
+        /// ABI-encode a signed integer in packed mode.
+        fn encode_packed_to_int(int: Self::Sint, out: &mut Vec<u8>);
+
+        /// Tokenizes an unsigned integer.
+        fn tokenize_uint(uint: Self::Suint) -> WordToken;
+        /// Detokenizes an unsigned integer.
+        fn detokenize_uint(token: WordToken) -> Self::Suint;
+        /// ABI-encode an unsigned integer in packed mode.
+        fn encode_packed_to_uint(uint: Self::Suint, out: &mut Vec<u8>);
+    }
+
+    macro_rules! supported_sint {
+        ($($bits:literal => $i:ident, $u:ident, $limbs:literal;)+) => {$(
+            impl SupportedSint for IntBitCount<$bits> {
+                type Sint = $i;
+                type Suint = $u;
+
+                const SINT_NAME: &'static str = concat!("sint", $bits);
+                const SUINT_NAME: &'static str = concat!("suint", $bits);
+
+                const BITS: usize = $bits;
+
+                sint_impls2!($i $bits $limbs);
+                suint_impls2!($u $bits $limbs);
+            }
+        )+};
+    }
+
+    macro_rules! sint_impls {
+        (@big_int $ity:ident $bits:literal $limbs:literal) => {
+            #[inline]
+            fn tokenize_int(int: $ity) -> WordToken {
+                let mut word = Word::ZERO;
+                word[..].copy_from_slice(&int.0.to_be_bytes::<{ $bits / 8 }>()[..]);
+                WordToken(word)
+            }
+
+            #[inline]
+            fn detokenize_int(token: WordToken) -> $ity {
+                let s = &token.0[..];
+                let signed = RustSigned::<$bits, $limbs>::from_be_bytes::<{ $bits / 8 }>(
+                    s.try_into().unwrap(),
+                );
+                SInt(signed)
+            }
+
+            #[inline]
+            fn encode_packed_to_int(int: $ity, out: &mut Vec<u8>) {
+                out.extend_from_slice(&int.0.to_be_bytes::<{ $bits / 8 }>()[..]);
+            }
+        };
+        (@big_uint $uty:ident $bits:literal $limbs:literal) => {
+            #[inline]
+            fn tokenize_uint(uint: $uty) -> WordToken {
+                let mut word = Word::ZERO;
+                word[..].copy_from_slice(&uint.0.to_be_bytes::<{ $bits / 8 }>()[..]);
+                WordToken(word)
+            }
+
+            #[inline]
+            fn detokenize_uint(token: WordToken) -> $uty {
+                let s = &token.0[..];
+                let unsigned = RustUint::<$bits, $limbs>::from_be_bytes::<{ $bits / 8 }>(
+                    s.try_into().unwrap(),
+                );
+                SUInt(unsigned)
+            }
+
+            #[inline]
+            fn encode_packed_to_uint(uint: $uty, out: &mut Vec<u8>) {
+                out.extend_from_slice(&uint.0.to_be_bytes::<{ $bits / 8 }>()[..]);
+            }
+        };
+    }
+
+    macro_rules! sint_impls2 {
+        ($t:ident $bits:literal $limbs:literal) => {
+            sint_impls! { @big_int $t $bits $limbs }
+        };
+    }
+
+    macro_rules! suint_impls2 {
+        ($t:ident $bits:literal $limbs:literal) => {
+            sint_impls! { @big_uint $t $bits $limbs }
+        };
+    }
+
+    supported_sint!(
+        8 => SI8, SU8, 1;
+        16 => SI16, SU16, 1;
+        24 => SI24, SU24, 1;
+        32 => SI32, SU32, 1;
+        40 => SI40, SU40, 1;
+        48 => SI48, SU48, 1;
+        56 => SI56, SU56, 1;
+        64 => SI64, SU64, 1;
+        72 => SI72, SU72, 2;
+        80 => SI80, SU80, 2;
+        88 => SI88, SU88, 2;
+        96 => SI96, SU96, 2;
+        104 => SI104, SU104, 2;
+        112 => SI112, SU112, 2;
+        120 => SI120, SU120, 2;
+        128 => SI128, SU128, 2;
+        136 => SI136, SU136, 3;
+        144 => SI144, SU144, 3;
+        152 => SI152, SU152, 3;
+        160 => SI160, SU160, 3;
+        168 => SI168, SU168, 3;
+        176 => SI176, SU176, 3;
+        184 => SI184, SU184, 3;
+        192 => SI192, SU192, 3;
+        200 => SI200, SU200, 4;
+        208 => SI208, SU208, 4;
+        216 => SI216, SU216, 4;
+        224 => SI224, SU224, 4;
+        232 => SI232, SU232, 4;
+        240 => SI240, SU240, 4;
+        248 => SI248, SU248, 4;
+        256 => SI256, SU256, 4;
+    );
+}
+
+#[cfg(feature = "seismic")]
+pub use seismic::*;
 
 #[cfg(test)]
 mod tests {

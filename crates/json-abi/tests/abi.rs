@@ -289,10 +289,12 @@ fn get_solc_version() -> Option<(u16, u16, u16)> {
     let end = version.find('+')?;
     let version = &version[..end];
 
-    let mut iter = version.split('.').map(|s| s.parse::<u16>().expect("bad solc version"));
-    let major = iter.next().unwrap();
-    let minor = iter.next().unwrap();
-    let patch = iter.next().unwrap();
+    let mut iter = version.split('.').map(|s| s.split('-').next().unwrap()); // Strip everything after `-`
+
+    let major: u16 = iter.next()?.parse().ok()?;
+    let minor: u16 = iter.next()?.parse().ok()?;
+    let patch: u16 = iter.next()?.parse().ok()?;
+
     Some((major, minor, patch))
 }
 

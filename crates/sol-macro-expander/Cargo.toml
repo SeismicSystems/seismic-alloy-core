@@ -39,3 +39,4 @@ alloy-json-abi = { workspace = true, optional = true }
 
 [features]
 json = ["dep:alloy-json-abi", "alloy-sol-macro-input/json"]
+seismic = ["syn-solidity/seismic", "alloy-sol-macro-input/seismic"]

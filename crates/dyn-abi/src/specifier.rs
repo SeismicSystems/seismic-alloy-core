@@ -60,6 +60,14 @@ impl Specifier<DynSolType> for RootType<'_> {
             "bytes" => Ok(DynSolType::Bytes),
             "uint" => Ok(DynSolType::Uint(256)),
             "int" => Ok(DynSolType::Int(256)),
+            #[cfg(feature = "seismic")]
+            "saddress" => Ok(DynSolType::Saddress),
+            #[cfg(feature = "seismic")]
+            "sbool" => Ok(DynSolType::Sbool),
+            #[cfg(feature = "seismic")]
+            "sint" => Ok(DynSolType::Sint(256)),
+            #[cfg(feature = "seismic")]
+            "suint" => Ok(DynSolType::Suint(256)),
             name => {
                 if let Some(sz) = name.strip_prefix("bytes") {
                     if let Ok(sz) = sz.parse() {
@@ -71,12 +79,33 @@ impl Specifier<DynSolType> for RootType<'_> {
                 }
 
                 // fast path both integer types
+
+                #[cfg(not(feature = "seismic"))]
                 let (s, is_uint) =
                     if let Some(s) = name.strip_prefix('u') { (s, true) } else { (name, false) };
+                #[cfg(feature = "seismic")]
+                let (s, is_uint, is_seismic) = {
+                    let (ws, is_s) = if let Some(s) = name.strip_prefix("s") {
+                        (s, true)
+                    } else {
+                        (name, false)
+                    };
+                    let (s, is_uint) =
+                        if let Some(s) = ws.strip_prefix('u') { (s, true) } else { (ws, false) };
+                    (s, is_uint, is_s)
+                };
 
                 if let Some(sz) = s.strip_prefix("int") {
                     if let Ok(sz) = sz.parse() {
                         if sz != 0 && sz <= 256 && sz % 8 == 0 {
+                            #[cfg(feature = "seismic")]
+                            if is_seismic {
+                                return if is_uint {
+                                    Ok(DynSolType::Suint(sz))
+                                } else {
+                                    Ok(DynSolType::Sint(sz))
+                                };
+                            }
                             return if is_uint {
                                 Ok(DynSolType::Uint(sz))
                             } else {

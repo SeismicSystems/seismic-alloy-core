@@ -27,6 +27,11 @@ pub use aliases::{
     U16, U160, U256, U32, U512, U64, U8,
 };
 
+#[cfg(feature = "seismic")]
+pub use aliases::{
+    SAddress, SI128, SI16, SI256, SI32, SI64, SI8, SU128, SU16, SU256, SU32, SU64, SU8,
+};
+
 #[macro_use]
 mod bits;
 pub use bits::{
