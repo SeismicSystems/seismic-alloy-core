@@ -1204,6 +1204,9 @@ mod seismic {
     use super::*;
     use alloy_primitives::{Signed as RustSigned, Uint as RustUint};
 
+    /// `Sbool` is our seismic-boolean type. Unlike the legacy `Bool`,
+    /// which uses a plain `bool` in Rust, we store `bool` inside a newtype
+    /// so we can treat it differently if desired (e.g. “shielded bool”).
     #[derive(Clone, Copy, Debug)]
     pub struct Sbool(pub bool);
 
