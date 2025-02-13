@@ -1204,63 +1204,48 @@ mod seismic {
     use super::*;
     use alloy_primitives::{Signed as RustSigned, Uint as RustUint};
 
-    /// Sbool - `sbool`
     #[derive(Clone, Copy, Debug)]
-    pub struct Sbool;
+    pub struct Sbool(pub bool);
 
-    impl SolTypeValue<Sbool> for bool {
-        #[inline]
-        fn stv_to_tokens(&self) -> WordToken {
-            WordToken(Word::with_last_byte(*self as u8))
-        }
-
-        #[inline]
-        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
-            out.push(*self as u8);
-        }
-
-        #[inline]
-        fn stv_eip712_data_word(&self) -> Word {
-            SolTypeValue::<Sbool>::stv_to_tokens(self).0
-        }
-    }
-
-    impl SolTypeValue<Sbool> for SBool {
-        #[inline]
-        fn stv_to_tokens(&self) -> WordToken {
-            <bool as SolTypeValue<Sbool>>::stv_to_tokens(&self.0)
-        }
-
-        #[inline]
-        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
-            <bool as SolTypeValue<Sbool>>::stv_abi_encode_packed_to(&self.0, out)
-        }
-
-        #[inline]
-        fn stv_eip712_data_word(&self) -> Word {
-            <bool as SolTypeValue<Sbool>>::stv_eip712_data_word(&self.0)
-        }
-    }
-
+    // 1) Implement `SolType` for `Sbool` in the usual way
     impl SolType for Sbool {
-        type RustType = bool;
+        // Because `Sbool` is the final, stored type
+        type RustType = Sbool; 
         type Token<'a> = WordToken;
 
         const SOL_NAME: &'static str = "sbool";
         const ENCODED_SIZE: Option<usize> = Some(32);
         const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
 
-        #[inline]
         fn valid_token(token: &Self::Token<'_>) -> bool {
             utils::check_zeroes(&token.0[..31])
         }
 
-        #[inline]
         fn detokenize(token: Self::Token<'_>) -> Self::RustType {
-            token.0 != Word::ZERO
+            // Non-zero last byte => true
+            Sbool(token.0 != Word::ZERO)
         }
     }
 
+    // 2) Implement `SolTypeValue<Sbool>` for `T: Borrow<Sbool>` 
+    //    so references, owned values, etc., can all encode properly.
+    impl<T: Borrow<Sbool>> SolTypeValue<Sbool> for T {
+        #[inline]
+        fn stv_to_tokens(&self) -> WordToken {
+            let inner = self.borrow();
+            WordToken(Word::with_last_byte(inner.0 as u8))
+        }
+
+        #[inline]
+        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
+            out.push(self.borrow().0 as u8);
+        }
+
+        #[inline]
+        fn stv_eip712_data_word(&self) -> Word {
+            Word::with_last_byte(self.borrow().0 as u8)
+        }
+    }
     /// Saddress - `saddress`
     #[derive(Clone, Copy, Debug)]
     pub struct Saddress;
