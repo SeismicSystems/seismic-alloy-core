@@ -18,7 +18,6 @@ These shielded types include:
 - `suint` and the `suint{n}` family
 - `sint` and the `sint{n}` family
 - `sbool`  
-  > **Note:** This repository does not yet support `sbool`, though seismic-solidity does (it's a TODO).
 
 Each of these types behaves similarly to its unshielded counterpart, with one key exception: the values are hidden from the state tree.
 
