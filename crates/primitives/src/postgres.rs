@@ -8,7 +8,6 @@ use bytes::{BufMut, BytesMut};
 use derive_more::Display;
 use postgres_types::{accepts, to_sql_checked, FromSql, IsNull, ToSql, Type, WrongType};
 use std::{
-    error::Error,
     iter,
     str::{from_utf8, FromStr},
 };

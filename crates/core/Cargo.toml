@@ -77,3 +77,10 @@ arbitrary = [
     "alloy-sol-types?/arbitrary",
     "alloy-dyn-abi?/arbitrary",
 ]
+seismic = [
+    "alloy-primitives/seismic",
+    "alloy-dyn-abi?/seismic",
+    "alloy-sol-types?/seismic",
+    "alloy-json-abi?/seismic",
+]
+

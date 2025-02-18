@@ -199,11 +199,11 @@ impl TypedData {
         self.resolver.encode_type(&self.primary_type)
     }
 
-    /// Calculate the EIP-712 signing hash for this value.
+    /// Encode the typed data for signing.
     ///
-    /// This is the hash of the magic bytes 0x1901 concatenated with the domain
-    /// separator and the `hashStruct` result.
-    pub fn eip712_signing_hash(&self) -> Result<B256> {
+    /// This is the same as [`eip712_signing_hash`] but without the final keccak256
+    /// hash.
+    pub fn eip712_encode_for_signing(&self) -> Result<Vec<u8>> {
         let mut buf = [0u8; 66];
         buf[0] = 0x19;
         buf[1] = 0x01;
@@ -216,8 +216,25 @@ impl TypedData {
         } else {
             34
         };
+        Ok(buf[..len].to_vec())
+    }
 
-        Ok(keccak256(&buf[..len]))
+    /// Returns the length of the EIP-712 encoded data for signing.
+    pub fn eip712_encode_for_signing_len(&self) -> usize {
+        if self.primary_type != "EIP712Domain" {
+            66
+        } else {
+            34
+        }
+    }
+
+    /// Calculate the EIP-712 signing hash for this value.
+    ///
+    /// This is the hash of the magic bytes 0x1901 concatenated with the domain
+    /// separator and the `hashStruct` result.
+    pub fn eip712_signing_hash(&self) -> Result<B256> {
+        let buf = self.eip712_encode_for_signing()?;
+        Ok(keccak256(&buf))
     }
 }
 

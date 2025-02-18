@@ -514,10 +514,11 @@ mod tests {
         let end = version.find('+')?;
         let version = &version[..end];
 
-        let mut iter = version.split('.').map(|s| s.parse::<u16>().expect("bad solc version"));
-        let major = iter.next().unwrap();
-        let minor = iter.next().unwrap();
-        let patch = iter.next().unwrap();
+        let mut iter = version.split('.').map(|s| s.split('-').next().unwrap()); // Strip everything after `-`
+
+        let major: u16 = iter.next()?.parse().ok()?;
+        let minor: u16 = iter.next()?.parse().ok()?;
+        let patch: u16 = iter.next()?.parse().ok()?; // Now guaranteed to be clean
         Some((major, minor, patch))
     }
 
