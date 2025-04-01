@@ -5,10 +5,102 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.22](https://github.com/alloy-rs/core/releases/tag/v0.8.22) - 2025-02-27
+
+### Documentation
+
+- [primitives] Report some Bytes methods may panic ([#877](https://github.com/alloy-rs/core/issues/877))
+- [primitives] `random` functions are cryptographically secure ([#872](https://github.com/alloy-rs/core/issues/872))
+
+### Features
+
+- [primitives] Add some more utility methods to PrimitiveSignature ([#888](https://github.com/alloy-rs/core/issues/888))
+- Erc2098 signature representation ([#874](https://github.com/alloy-rs/core/issues/874))
+- Add TxKind::into_to ([#875](https://github.com/alloy-rs/core/issues/875))
+- [primitives] Improve rand implementations, use `thread_rng` when available ([#870](https://github.com/alloy-rs/core/issues/870))
+
+## [0.8.21](https://github.com/alloy-rs/core/releases/tag/v0.8.21) - 2025-02-10
+
+### Miscellaneous Tasks
+
+- Release 0.8.21
+
+## [0.8.20](https://github.com/alloy-rs/core/releases/tag/v0.8.20) - 2025-02-02
+
+### Documentation
+
+- Add 0x to alloy-primitives readme example ([#861](https://github.com/alloy-rs/core/issues/861))
+
+### Features
+
+- Add Sealed::as_sealed_ref ([#859](https://github.com/alloy-rs/core/issues/859))
+- Add Sealed::cloned ([#860](https://github.com/alloy-rs/core/issues/860))
+
+### Miscellaneous Tasks
+
+- Release 0.8.20
+
+## [0.8.19](https://github.com/alloy-rs/core/releases/tag/v0.8.19) - 2025-01-15
+
+### Documentation
+
+- Enable some useful rustdoc features on docs.rs ([#850](https://github.com/alloy-rs/core/issues/850))
+- Hide hex_literal export ([#849](https://github.com/alloy-rs/core/issues/849))
+
+### Miscellaneous Tasks
+
+- Release 0.8.19
+
+## [0.8.18](https://github.com/alloy-rs/core/releases/tag/v0.8.18) - 2025-01-04
+
+### Bug Fixes
+
+- [primitives] Hex macro re-export ([#848](https://github.com/alloy-rs/core/issues/848))
+
+### Miscellaneous Tasks
+
+- Release 0.8.18
+
+## [0.8.17](https://github.com/alloy-rs/core/releases/tag/v0.8.17) - 2025-01-04
+
+### Features
+
+- Support 0x in hex! and similar macros ([#841](https://github.com/alloy-rs/core/issues/841))
+- [primitives] Re-export foldhash ([#839](https://github.com/alloy-rs/core/issues/839))
+- Re-export rayon traits implementations ([#836](https://github.com/alloy-rs/core/issues/836))
+
+### Miscellaneous Tasks
+
+- Release 0.8.17
+
+### Testing
+
+- Re-enable miri on foldhash ([#844](https://github.com/alloy-rs/core/issues/844))
+
+## [0.8.16](https://github.com/alloy-rs/core/releases/tag/v0.8.16) - 2025-01-01
+
+### Bug Fixes
+
+- Re-enable foldhash on zkvm ([#833](https://github.com/alloy-rs/core/issues/833))
+- Allow non-boolean v values for PrimitiveSignature ([#832](https://github.com/alloy-rs/core/issues/832))
+
+### Features
+
+- Re-export `rayon` feature ([#827](https://github.com/alloy-rs/core/issues/827))
+
+### Miscellaneous Tasks
+
+- Release 0.8.16
+- Clippy ([#834](https://github.com/alloy-rs/core/issues/834))
+- Add clone_inner ([#825](https://github.com/alloy-rs/core/issues/825))
+- Shorten map type alias names ([#824](https://github.com/alloy-rs/core/issues/824))
+- [primitives] Remove rustc-hash workaround ([#822](https://github.com/alloy-rs/core/issues/822))
+
 ## [0.8.15](https://github.com/alloy-rs/core/releases/tag/v0.8.15) - 2024-12-09
 
 ### Miscellaneous Tasks
 
+- Release 0.8.15
 - Mark `Signature` as deprecated ([#819](https://github.com/alloy-rs/core/issues/819))
 - AsRef for Log ([#820](https://github.com/alloy-rs/core/issues/820))
 
@@ -28,25 +120,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.8.13](https://github.com/alloy-rs/core/releases/tag/v0.8.13) - 2024-11-26
 
-### Bug Fixes
-
-- `Sealed::hash` serde ([#805](https://github.com/alloy-rs/core/issues/805))
-- [serde] Add alias `v` for `yParity` ([#801](https://github.com/alloy-rs/core/issues/801))
-
-### Features
-
-- Add `AsRef` impl and `hash` method to `Sealed` ([#804](https://github.com/alloy-rs/core/issues/804))
-- Add has_eip155_value convenience function to signature ([#791](https://github.com/alloy-rs/core/issues/791))
-
 ### Miscellaneous Tasks
 
 - Release 0.8.13 ([#813](https://github.com/alloy-rs/core/issues/813))
-- Release 0.8.12 ([#806](https://github.com/alloy-rs/core/issues/806))
-- Release 0.8.11 ([#803](https://github.com/alloy-rs/core/issues/803))
 
 ### Other
 
 - Make Signature::new a const fn ([#810](https://github.com/alloy-rs/core/issues/810))
+
+## [0.8.12](https://github.com/alloy-rs/core/releases/tag/v0.8.12) - 2024-11-12
+
+### Bug Fixes
+
+- `Sealed::hash` serde ([#805](https://github.com/alloy-rs/core/issues/805))
+
+### Features
+
+- Add `AsRef` impl and `hash` method to `Sealed` ([#804](https://github.com/alloy-rs/core/issues/804))
+
+### Miscellaneous Tasks
+
+- Release 0.8.12 ([#806](https://github.com/alloy-rs/core/issues/806))
+
+## [0.8.11](https://github.com/alloy-rs/core/releases/tag/v0.8.11) - 2024-11-05
+
+### Bug Fixes
+
+- [serde] Add alias `v` for `yParity` ([#801](https://github.com/alloy-rs/core/issues/801))
+
+### Features
+
+- Add has_eip155_value convenience function to signature ([#791](https://github.com/alloy-rs/core/issues/791))
+
+### Miscellaneous Tasks
+
+- Release 0.8.11 ([#803](https://github.com/alloy-rs/core/issues/803))
+
+### Other
+
 - Revert "chore: replace Signature with PrimitiveSignature" ([#800](https://github.com/alloy-rs/core/issues/800))
 
 ### Performance

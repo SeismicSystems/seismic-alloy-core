@@ -118,6 +118,13 @@ impl Param {
         Ok(Self { ty: ty.into(), name: name.into(), components, internal_type })
     }
 
+    /// The name of the parameter. This function always returns either an empty
+    /// slice, or a valid Solidity identifier.
+    #[inline]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
     /// The internal type of the parameter.
     #[inline]
     pub const fn internal_type(&self) -> Option<&InternalType> {
@@ -352,7 +359,7 @@ impl<'de> Deserialize<'de> for EventParam {
                 name: inner.name,
                 ty: inner.ty,
                 indexed: inner.indexed.unwrap_or(false),
-                internal_type: inner.internal_type.map(Into::into),
+                internal_type: inner.internal_type,
                 components: inner.components,
             })
         })

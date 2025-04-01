@@ -63,6 +63,11 @@ impl<T> Sealed<T> {
         Self { inner, seal }
     }
 
+    /// Converts from `&Sealed<T>` to `Sealed<&T>`.
+    pub const fn as_sealed_ref(&self) -> Sealed<&T> {
+        Sealed { inner: &self.inner, seal: self.seal }
+    }
+
     /// Decompose into parts.
     #[allow(clippy::missing_const_for_fn)] // false positive
     pub fn into_parts(self) -> (T, B256) {
@@ -73,6 +78,15 @@ impl<T> Sealed<T> {
     #[allow(clippy::missing_const_for_fn)] // false positive
     pub fn split(self) -> (T, B256) {
         self.into_parts()
+    }
+
+    /// Clone the inner item.
+    #[inline(always)]
+    pub fn clone_inner(&self) -> T
+    where
+        T: Clone,
+    {
+        self.inner.clone()
     }
 
     /// Get the inner item.
@@ -106,6 +120,17 @@ impl<T> Sealed<T> {
     #[allow(clippy::missing_const_for_fn)] // false positive
     pub fn unseal(self) -> T {
         self.into_inner()
+    }
+}
+
+impl<T> Sealed<&T> {
+    /// Maps a `Sealed<&T>` to a `Sealed<T>` by cloning the inner value.
+    pub fn cloned(self) -> Sealed<T>
+    where
+        T: Clone,
+    {
+        let Self { inner, seal } = self;
+        Sealed::new_unchecked(inner.clone(), seal)
     }
 }
 

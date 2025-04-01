@@ -15,7 +15,11 @@ exclude.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = [
+    "-Zunstable-options",
+    "--generate-link-to-definition",
+    "--show-type-layout",
+]
 
 [lints]
 workspace = true
@@ -65,6 +69,7 @@ map-fxhash = ["alloy-primitives/map-fxhash"]
 
 getrandom = ["alloy-primitives/getrandom"]
 rand = ["alloy-primitives/rand"]
+rayon = ["alloy-primitives/rayon"]
 rlp = ["alloy-primitives/rlp", "dep:alloy-rlp"]
 serde = ["alloy-primitives/serde"]
 k256 = ["alloy-primitives/k256"]

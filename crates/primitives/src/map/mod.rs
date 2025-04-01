@@ -65,40 +65,7 @@ cfg_if! {
 
         cfg_if! {
             if #[cfg(all(feature = "std", feature = "rand"))] {
-                // use rustc_hash::FxRandomState as FxBuildHasherInner;
-
-                // TODO: Polyfill for https://github.com/rust-lang/rustc-hash/pull/52/
-                #[allow(missing_debug_implementations, missing_copy_implementations)]
-                #[doc(hidden)]
-                #[derive(Clone)]
-                pub struct FxBuildHasherInner(usize);
-
-                impl Default for FxBuildHasherInner {
-                    // Copied from `FxRandomState::new`.
-                    fn default() -> Self {
-                        use rand::Rng;
-                        use std::{cell::Cell, thread_local};
-
-                        thread_local!(static SEED: Cell<usize> = {
-                            Cell::new(rand::thread_rng().gen())
-                        });
-
-                        SEED.with(|seed| {
-                            let s = seed.get();
-                            seed.set(s.wrapping_add(1));
-                            Self(s)
-                        })
-                    }
-                }
-
-                impl core::hash::BuildHasher for FxBuildHasherInner {
-                    type Hasher = rustc_hash::FxHasher;
-
-                    #[inline]
-                    fn build_hasher(&self) -> Self::Hasher {
-                        rustc_hash::FxHasher::with_seed(self.0)
-                    }
-                }
+                use rustc_hash::FxRandomState as FxBuildHasherInner;
             } else {
                 use rustc_hash::FxBuildHasher as FxBuildHasherInner;
             }
@@ -113,10 +80,13 @@ cfg_if! {
     }
 }
 
+#[cfg(feature = "map-foldhash")]
+#[doc(no_inline)]
+pub use foldhash;
+
 // Default hasher.
 cfg_if! {
-    // TODO: Use `foldhash` in zkVM when it's supported.
-    if #[cfg(all(feature = "map-foldhash", not(target_os = "zkvm")))] {
+    if #[cfg(feature = "map-foldhash")] {
         type DefaultHashBuilderInner = foldhash::fast::RandomState;
     } else if #[cfg(feature = "map-fxhash")] {
         type DefaultHashBuilderInner = FxBuildHasher;
@@ -152,12 +122,37 @@ cfg_if! {
     }
 }
 
+/// This module contains the rayon parallel iterator types for hash maps (HashMap<K, V>).
+///
+/// You will rarely need to interact with it directly unless you have need to name one
+/// of the iterator types.
+#[cfg(feature = "rayon")]
+pub mod rayon {
+    use super::*;
+
+    cfg_if! {
+        if #[cfg(any(feature = "map-hashbrown", not(feature = "std")))] {
+            pub use hashbrown::hash_map::rayon::{
+                IntoParIter as IntoIter,
+                ParDrain as Drain,
+                ParIter as Iter,
+                ParIterMut as IterMut,
+                ParKeys as Keys,
+                ParValues as Values,
+                ParValuesMut as ValuesMut
+            };
+            use ::rayon as _;
+        } else {
+            pub use ::rayon::collections::hash_map::*;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore = "foldhash queries time (orlp/foldhash#4)")]
     fn default_hasher_builder_traits() {
         let hash_builder = <DefaultHashBuilder as Default>::default();
         let _hash_builder2 = <DefaultHashBuilder as Clone>::clone(&hash_builder);

@@ -5,6 +5,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.22](https://github.com/alloy-rs/core/releases/tag/v0.8.22) - 2025-02-27
+
+### Miscellaneous Tasks
+
+- Simplify uninit_array usage ([#889](https://github.com/alloy-rs/core/issues/889))
+
+## [0.8.21](https://github.com/alloy-rs/core/releases/tag/v0.8.21) - 2025-02-10
+
+### Bug Fixes
+
+- [sol-macro] Call proc_macro_error handler manually ([#866](https://github.com/alloy-rs/core/issues/866))
+
+### Features
+
+- Add helpers for revertreason ([#867](https://github.com/alloy-rs/core/issues/867))
+
+### Miscellaneous Tasks
+
+- Release 0.8.21
+
+## [0.8.20](https://github.com/alloy-rs/core/releases/tag/v0.8.20) - 2025-02-02
+
+### Documentation
+
+- Add 0x to alloy-primitives readme example ([#861](https://github.com/alloy-rs/core/issues/861))
+
+### Miscellaneous Tasks
+
+- Release 0.8.20
+
+## [0.8.19](https://github.com/alloy-rs/core/releases/tag/v0.8.19) - 2025-01-15
+
+### Documentation
+
+- Enable some useful rustdoc features on docs.rs ([#850](https://github.com/alloy-rs/core/issues/850))
+
+### Features
+
+- [sol-types] Improve ABI decoding error messages ([#851](https://github.com/alloy-rs/core/issues/851))
+
+### Miscellaneous Tasks
+
+- Release 0.8.19
+
+## [0.8.18](https://github.com/alloy-rs/core/releases/tag/v0.8.18) - 2025-01-04
+
+### Miscellaneous Tasks
+
+- Release 0.8.18
+
+## [0.8.17](https://github.com/alloy-rs/core/releases/tag/v0.8.17) - 2025-01-04
+
+### Documentation
+
+- Typos ([#847](https://github.com/alloy-rs/core/issues/847))
+
+### Features
+
+- [sol-macro] Translate contract types to address ([#842](https://github.com/alloy-rs/core/issues/842))
+- Support 0x in hex! and similar macros ([#841](https://github.com/alloy-rs/core/issues/841))
+- [sol-macro] Evaluate array sizes ([#840](https://github.com/alloy-rs/core/issues/840))
+
+### Miscellaneous Tasks
+
+- Release 0.8.17
+
+### Testing
+
+- [sol-macro] Add a test for namespaced types ([#843](https://github.com/alloy-rs/core/issues/843))
+
+## [0.8.16](https://github.com/alloy-rs/core/releases/tag/v0.8.16) - 2025-01-01
+
+### Bug Fixes
+
+- [syn-solidity] Correctly parse invalid bytes* etc as custom ([#830](https://github.com/alloy-rs/core/issues/830))
+
+### Miscellaneous Tasks
+
+- Release 0.8.16
+
+## [0.8.15](https://github.com/alloy-rs/core/releases/tag/v0.8.15) - 2024-12-09
+
+### Miscellaneous Tasks
+
+- Release 0.8.15
+
 ## [0.8.14](https://github.com/alloy-rs/core/releases/tag/v0.8.14) - 2024-11-28
 
 ### Dependencies
@@ -28,7 +114,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Miscellaneous Tasks
 
 - Release 0.8.13 ([#813](https://github.com/alloy-rs/core/issues/813))
+
+## [0.8.12](https://github.com/alloy-rs/core/releases/tag/v0.8.12) - 2024-11-12
+
+### Miscellaneous Tasks
+
 - Release 0.8.12 ([#806](https://github.com/alloy-rs/core/issues/806))
+
+## [0.8.11](https://github.com/alloy-rs/core/releases/tag/v0.8.11) - 2024-11-05
+
+### Miscellaneous Tasks
+
 - Release 0.8.11 ([#803](https://github.com/alloy-rs/core/issues/803))
 
 ## [0.8.10](https://github.com/alloy-rs/core/releases/tag/v0.8.10) - 2024-10-28

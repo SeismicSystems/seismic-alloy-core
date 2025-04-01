@@ -476,7 +476,6 @@ fn enum_field_of_struct() {
 }
 
 #[test]
-#[cfg(any())] // TODO: https://github.com/alloy-rs/core/issues/599
 fn same_names_different_namespaces() {
     sol! {
         library RouterErrors {
@@ -490,6 +489,11 @@ fn same_names_different_namespaces() {
             error ETHTransferFailed();
         }
     }
+
+    assert_ne!(
+        std::any::TypeId::of::<RouterErrors::InvalidMsgValue>(),
+        std::any::TypeId::of::<Errors::InvalidMsgValue>(),
+    );
 }
 
 #[test]
@@ -599,7 +603,6 @@ fn raw_identifiers() {
 // Translate contract types to `address`
 // https://github.com/alloy-rs/core/issues/347
 #[test]
-#[cfg(any())]
 fn contract_type() {
     sol! {
         interface IERC20 {}
@@ -812,20 +815,20 @@ fn decoder_fixed_array_before_dynamic() {
     }
     let full_report = FullReport {
         report_context: [
-            b256!("0006015a2de20abc8c880eb052a09c069e4edf697529d12eeae88b7b6867fc81"),
-            b256!("00000000000000000000000000000000000000000000000000000000080f7906"),
-            b256!("0000000000000000000000000000000000000000000000000000000000000000"),
+            b256!("0x0006015a2de20abc8c880eb052a09c069e4edf697529d12eeae88b7b6867fc81"),
+            b256!("0x00000000000000000000000000000000000000000000000000000000080f7906"),
+            b256!("0x0000000000000000000000000000000000000000000000000000000000000000"),
         ],
         report_blob: hex!("0002191c50b7bdaf2cb8672453141946eea123f8baeaa8d2afa4194b6955e68300000000000000000000000000000000000000000000000000000000655ac7af00000000000000000000000000000000000000000000000000000000655ac7af000000000000000000000000000000000000000000000000000000000000138800000000000000000000000000000000000000000000000000000000000a1f6800000000000000000000000000000000000000000000000000000000655c192f000000000000000000000000000000000000000000000000d130d9ecefeaae30").into(),
         raw_rs: vec![
-            b256!("d1e3d8b8c581a7ed9cfc41316f1bb8598d98237fc8278a01a9c6a323c4b5c331"),
-            b256!("38ef50778560ec2bb08b23960e3d74f1ffe83b9240a39555c6eb817e3f68302c"),
+            b256!("0xd1e3d8b8c581a7ed9cfc41316f1bb8598d98237fc8278a01a9c6a323c4b5c331"),
+            b256!("0x38ef50778560ec2bb08b23960e3d74f1ffe83b9240a39555c6eb817e3f68302c"),
         ],
         raw_ss: vec![
-            b256!("7fb9c59cc499a4672f1481a526d01aa8c01380dcfa0ea855041254d3bcf45536"),
-            b256!("2ce612a86846a7cbb640ddcd3abdecf56618c7b24cf96242643d5c355dee5f0e"),
+            b256!("0x7fb9c59cc499a4672f1481a526d01aa8c01380dcfa0ea855041254d3bcf45536"),
+            b256!("0x2ce612a86846a7cbb640ddcd3abdecf56618c7b24cf96242643d5c355dee5f0e"),
         ],
-        raw_vs: b256!("0001000000000000000000000000000000000000000000000000000000000000"),
+        raw_vs: b256!("0x0001000000000000000000000000000000000000000000000000000000000000"),
     };
 
     let encoded = FullReport::abi_encode(&full_report);
@@ -1120,7 +1123,7 @@ fn event_indexed_udvt() {
     );
     assert_eq!(
         Initialize::SIGNATURE_HASH,
-        b256!("dd466e674ea557f56295e2d0218a125ea4b4f0f6f3307b95f85e6110838d6438"),
+        b256!("0xdd466e674ea557f56295e2d0218a125ea4b4f0f6f3307b95f85e6110838d6438"),
     );
 
     let _ = Initialize {
@@ -1230,4 +1233,46 @@ fn mapping_getters() {
     assert_eq!(TestIbc::channelsCall::SIGNATURE, "channels(uint32)");
     let _ =
         TestIbc::channelsReturn { _0: 0u8, _1: 0u32, _2: 0u32, _3: bytes![], _4: String::new() };
+}
+
+// https://github.com/alloy-rs/core/issues/829
+#[test]
+fn bytes64() {
+    sol! {
+        struct bytes64 {
+            bytes32 a;
+            bytes32 b;
+        }
+
+        function f(bytes64 x) public returns(bytes64 y) {
+            bytes64 z = x;
+            y = z;
+        }
+    }
+
+    let x = bytes64 { a: B256::ZERO, b: B256::ZERO };
+    assert_eq!(bytes64::abi_encode_packed(&x), alloy_primitives::B512::ZERO.as_slice());
+}
+
+#[test]
+fn array_sizes() {
+    sol! {
+        uint constant x = 1;
+        uint constant y = x + 1;
+
+        contract C {
+            uint constant z = y * 2;
+
+            struct S {
+                uint[x] a;
+                uint[y] b;
+                uint[z] c;
+                uint[z * 2] d;
+            }
+
+            function f(S memory s);
+        }
+    }
+
+    assert_eq!(C::fCall::SIGNATURE, "f((uint256[1],uint256[2],uint256[4],uint256[8]))");
 }
