@@ -49,7 +49,8 @@ use syn::parse_macro_input;
 ///   format](#json-abi).
 ///
 /// Note:
-/// - relative file system paths are rooted at the `CARGO_MANIFEST_DIR` environment variable
+/// - relative file system paths are rooted at the `CARGO_MANIFEST_DIR` environment variable by
+///   default; you can specify absolute paths using the `concat!` and `env!` macros,
 /// - no casing convention is enforced for any identifier,
 /// - unnamed arguments will be given a name based on their index in the list, e.g. `_0`, `_1`...
 /// - a current limitation for certain items is that custom types, like structs, must be defined in
@@ -106,6 +107,9 @@ use syn::parse_macro_input;
 /// `#[cfg_attr]` will **NOT** work, as it is parsed and extracted from the input separately.
 /// This is a limitation of the proc-macro API.
 ///
+/// Wherever a string literal is expected, common standard library macros that operate on string
+/// literals are also supported, such as `concat!` and `env!`.
+///
 /// List of all `#[sol(...)]` supported values:
 /// - `rpc [ = <bool = false>]` (contracts and alike only): generates a structs with methods to
 ///   construct `eth_call`s to an on-chain contract through Ethereum JSON RPC, similar to the
@@ -143,9 +147,10 @@ use syn::parse_macro_input;
 ///   the required dependency [`alloy-sol-types`].
 /// - `alloy_contract = <path = ::alloy_contract>` (inner attribute only): specifies the path to the
 ///   optional dependency [`alloy-contract`]. This is only used by the `rpc` attribute.
-/// - `all_derives [ = <bool = false>]`: adds all possible `#[derive(...)]` attributes to all
-///   generated types. May significantly increase compile times due to all the extra generated code.
-///   This is the default behavior of [`abigen`]
+/// - `all_derives [ = <bool = false>]`: adds all possible standard library `#[derive(...)]`
+///   attributes to all generated types. May significantly increase compile times due to all the
+///   extra generated code. This is the default behavior of [`abigen`]
+/// - `extra_derives(<paths...>)`: adds extra `#[derive(...)]` attributes to all generated types.
 /// - `extra_methods [ = <bool = false>]`: adds extra implementations and methods to all applicable
 ///   generated types, such as `From` impls and `as_<variant>` methods. May significantly increase
 ///   compile times due to all the extra generated code. This is the default behavior of [`abigen`]
@@ -235,6 +240,9 @@ use syn::parse_macro_input;
 /// Note that only valid JSON is supported, and not the human-readable ABI
 /// format, also used by [`abigen!`][abigen]. This should instead be easily converted to
 /// [normal Solidity input](#solidity).
+///
+/// Both the raw JSON input and the file system path can be specified with standard library macros
+/// like `concat!` and `env!`.
 ///
 /// Prefer using [Solidity input](#solidity) when possible, as the JSON ABI
 /// format omits some information which is useful to this macro, such as enum
