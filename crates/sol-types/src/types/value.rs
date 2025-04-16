@@ -2,7 +2,7 @@ use super::SolType;
 use crate::{
     abi::TokenSeq,
     private::SolTypeValue,
-    sol_data::{self, ByteCount, Sbool, SupportedFixedBytes},
+    sol_data::{self, ByteCount, SupportedFixedBytes},
     Result, Word,
 };
 use alloc::{borrow::Cow, string::String, vec::Vec};
@@ -270,7 +270,7 @@ impl_sol_value! {
 
 #[cfg(feature = "seismic")]
 impl_sol_value! {
-    [] Sbool => sol_data::Sbool [];
+    [] crate::types::data_type::Sbool => sol_data::Sbool [];
     [] SAddress => sol_data::Saddress [];
     []     SU8 => sol_data::Suint<8> [];
     []     SU16 => sol_data::Suint<16> [];
