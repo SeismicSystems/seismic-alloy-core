@@ -63,6 +63,9 @@ pub use signature::{normalize_v, to_eip155_v, PrimitiveSignature, SignatureError
 #[allow(deprecated)]
 pub use signature::{Parity, Signature};
 
+mod state;
+pub use state::{FlaggedStorage, FlaggedStorageGeneric};
+
 pub mod utils;
 pub use utils::{eip191_hash_message, keccak256, Keccak256};
 
