@@ -5,7 +5,6 @@ use ruint::UintTryFrom;
 
 use crate::{FixedBytes, U256};
 
-
 /// A storage value that can be either private or public.
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -20,10 +19,7 @@ pub struct FlaggedStorage {
 impl From<U256> for FlaggedStorage {
     fn from(value: U256) -> Self {
         // by default, assume values are public (as original revm tests expect this)
-        FlaggedStorage {
-            value,
-            is_private: false,
-        }
+        FlaggedStorage { value, is_private: false }
     }
 }
 
@@ -47,20 +43,14 @@ impl From<&FlaggedStorage> for U256 {
 
 impl FlaggedStorage {
     /// The zero value for FlaggedStorage.
-    pub const ZERO: Self = Self {
-        value: U256::ZERO,
-        is_private: false,
-    };
+    pub const ZERO: Self = Self { value: U256::ZERO, is_private: false };
 
     /// Create a new FlaggedStorage value from a given value and visibility.
     pub fn new<T>(value: T, is_private: bool) -> Self
     where
         U256: UintTryFrom<T>,
     {
-        Self {
-            value: U256::from(value),
-            is_private,
-        }
+        Self { value: U256::from(value), is_private }
     }
 
     /// Create a new FlaggedStorage value from a tuple of (value, is_private).
@@ -68,10 +58,7 @@ impl FlaggedStorage {
     where
         U256: UintTryFrom<T>,
     {
-        Self {
-            value: U256::from(value),
-            is_private,
-        }
+        Self { value: U256::from(value), is_private }
     }
 
     /// Create a new FlaggedStorage value from a given value.
@@ -90,10 +77,7 @@ impl FlaggedStorage {
     pub fn collect_value<S: core::hash::BuildHasher + Default>(
         container: std::collections::HashMap<crate::B256, FlaggedStorage, S>,
     ) -> std::collections::HashMap<crate::B256, U256, S> {
-        container
-            .into_iter()
-            .map(|(key, flagged_storage)| (key, flagged_storage.value))
-            .collect()
+        container.into_iter().map(|(key, flagged_storage)| (key, flagged_storage.value)).collect()
     }
 
     /// Check if the storage is private.
@@ -108,10 +92,7 @@ impl FlaggedStorage {
 
     /// Set the visibility of the storage.
     pub fn set_visibility(&self, is_private: bool) -> Self {
-        FlaggedStorage {
-            value: self.value,
-            is_private,
-        }
+        FlaggedStorage { value: self.value, is_private }
     }
 
     /// Mark the storage as private.
