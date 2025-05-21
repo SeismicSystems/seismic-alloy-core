@@ -1,6 +1,6 @@
 //! Type aliases for common primitive types.
 
-use crate::{FixedBytes, Signed, Uint};
+use crate::{FixedBytes, FlaggedStorage, Signed, Uint};
 
 pub use ruint::aliases::{U0, U1, U1024, U2048, U320, U384, U4096, U448};
 
@@ -229,8 +229,9 @@ pub type ChainId = u64;
 /// An account storage key.
 pub type StorageKey = B256;
 
-/// An account storage value.
-pub type StorageValue = U256;
+/// An account storage value
+/// (In Ethereum, it's a U256)
+pub type StorageValue = FlaggedStorage;
 
 /// Solidity contract functions are addressed using the first four bytes of the
 /// Keccak-256 hash of their signature.

@@ -19,6 +19,9 @@ use tiny_keccak as _;
 #[cfg(feature = "postgres")]
 pub mod postgres;
 
+pub mod flagged_storage;
+pub use flagged_storage::FlaggedStorage;
+
 pub mod aliases;
 #[doc(no_inline)]
 pub use aliases::{
