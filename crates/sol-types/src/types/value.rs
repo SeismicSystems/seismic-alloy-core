@@ -2,11 +2,14 @@ use super::SolType;
 use crate::{
     abi::TokenSeq,
     private::SolTypeValue,
-    sol_data::{self, ByteCount, Sbool, SupportedFixedBytes},
+    sol_data::{self, ByteCount, SupportedFixedBytes},
     Result, Word,
 };
 use alloc::{borrow::Cow, string::String, vec::Vec};
 use alloy_primitives::{aliases::*, Address, Bytes, FixedBytes, Function, I256, U256};
+
+#[cfg(feature = "seismic")]
+use alloy_sol_types::Sbool;
 
 /// A Solidity value.
 ///
