@@ -8,6 +8,9 @@ use alloy_primitives::{hex, Address, Function, I256, U256};
 #[cfg(feature = "seismic")]
 use alloy_primitives::aliases::{SAddress, SInt, SUInt};
 
+#[cfg(feature = "seismic")]
+use alloy_primitives::aliases::Sbool;
+
 impl DynSolType {
     /// Coerce a [`serde_json::Value`] to a [`DynSolValue`] via this type.
     pub fn coerce_json(&self, value: &serde_json::Value) -> Result<DynSolValue> {
