@@ -225,6 +225,14 @@ impl TypedData {
 
         Ok(keccak256(&buf[..len]))
     }
+
+    pub fn eip712_encode_for_signing_len(&self) -> Result<usize> {
+        if self.primary_type != "EIP712Domain" {
+            66
+        } else {
+            34
+        }
+    }
 }
 
 // Adapted tests from https://github.com/MetaMask/eth-sig-util/blob/dd8bd0e1ca7ca3ed81631b279b8e3a63a2b16b7f/src/sign-typed-data.test.ts
