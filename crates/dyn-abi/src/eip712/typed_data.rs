@@ -222,7 +222,8 @@ impl TypedData {
         } else {
             34
         };
-        Ok(buf[..len].to_vec())
+
+        Ok(keccak256(&buf[..len]))
     }
 }
 
