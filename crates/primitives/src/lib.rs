@@ -19,8 +19,8 @@ use tiny_keccak as _;
 #[cfg(feature = "postgres")]
 pub mod postgres;
 
-pub mod storage;
-pub use storage::{FlaggedStorage, PrivateSlot, StorageSlot};
+#[cfg(feature = "diesel")]
+pub mod diesel;
 
 pub mod aliases;
 #[doc(no_inline)]
@@ -62,12 +62,12 @@ mod signed;
 pub use signed::{BigIntConversionError, ParseSignedError, Sign, Signed};
 
 mod signature;
-pub use signature::{normalize_v, to_eip155_v, PrimitiveSignature, SignatureError};
 #[allow(deprecated)]
-pub use signature::{Parity, Signature};
+pub use signature::PrimitiveSignature;
+pub use signature::{normalize_v, to_eip155_v, Signature, SignatureError};
 
 pub mod utils;
-pub use utils::{eip191_hash_message, keccak256, Keccak256};
+pub use utils::{eip191_hash_message, keccak256, Keccak256, KECCAK256_EMPTY};
 
 #[doc(hidden)] // Use `hex` directly instead!
 pub mod hex_literal;
@@ -128,4 +128,10 @@ pub mod private {
 
     #[cfg(feature = "arbitrary")]
     pub use {arbitrary, derive_arbitrary, proptest, proptest_derive};
+
+    #[cfg(feature = "diesel")]
+    pub use diesel;
 }
+
+pub mod storage;
+pub use storage::{FlaggedStorage, PrivateSlot, StorageSlot};

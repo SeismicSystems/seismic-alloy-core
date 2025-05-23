@@ -1,9 +1,7 @@
 use crate::{dynamic::ty::as_tuple, DynSolType, DynSolValue, Result};
 use alloc::vec::Vec;
-#[cfg(feature = "seismic")]
-use alloy_primitives::aliases::{SAddress, SInt, SUInt};
-use alloy_primitives::{Address, Function, Sign, I256, U256};
-use alloy_sol_types::{sol_data::Sbool, Word};
+use alloy_primitives::{hex, Address, Function, Sign, I256, U256};
+use alloy_sol_types::Word;
 use core::fmt;
 use parser::{
     new_input,
@@ -21,6 +19,11 @@ use winnow::{
     token::take_while,
     ModalParser, ModalResult, Parser,
 };
+
+#[cfg(feature = "seismic")]
+use alloy_primitives::aliases::{SAddress, SInt, SUInt};
+#[cfg(feature = "seismic")]
+use alloy_sol_types::sol_data::Sbool;
 
 impl DynSolType {
     /// Coerces a string into a [`DynSolValue`] via this type.

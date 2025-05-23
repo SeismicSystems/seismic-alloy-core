@@ -178,12 +178,61 @@ macro_rules! wrap_fixed_bytes {
             }
         }
 
+        impl $crate::private::core::ops::BitAnd<&Self> for $name {
+            type Output = Self;
+
+            #[inline]
+            fn bitand(self, rhs: &Self) -> Self {
+                Self(self.0.bitand(&rhs.0))
+            }
+        }
+
+        impl $crate::private::core::ops::BitAndAssign<&Self> for $name {
+            #[inline]
+            fn bitand_assign(&mut self, rhs: &Self) {
+                self.0.bitand_assign(&rhs.0)
+            }
+        }
+
+        impl $crate::private::core::ops::BitOr<&Self> for $name {
+            type Output = Self;
+
+            #[inline]
+            fn bitor(self, rhs: &Self) -> Self {
+                Self(self.0.bitor(&rhs.0))
+            }
+        }
+
+        impl $crate::private::core::ops::BitOrAssign<&Self> for $name {
+            #[inline]
+            fn bitor_assign(&mut self, rhs: &Self) {
+                self.0.bitor_assign(&rhs.0)
+            }
+        }
+
+        impl $crate::private::core::ops::BitXor<&Self> for $name {
+            type Output = Self;
+
+            #[inline]
+            fn bitxor(self, rhs: &Self) -> Self {
+                Self(self.0.bitxor(&rhs.0))
+            }
+        }
+
+        impl $crate::private::core::ops::BitXorAssign<&Self> for $name {
+            #[inline]
+            fn bitxor_assign(&mut self, rhs: &Self) {
+                self.0.bitxor_assign(&rhs.0)
+            }
+        }
+
         $crate::impl_fb_traits!($name, $n);
         $crate::impl_rlp!($name, $n);
         $crate::impl_serde!($name);
         $crate::impl_allocative!($name);
         $crate::impl_arbitrary!($name, $n);
         $crate::impl_rand!($name);
+        $crate::impl_diesel!($name, $n);
 
         impl $name {
             /// Array of Zero bytes.
@@ -496,6 +545,15 @@ macro_rules! impl_rand {
             Self($crate::FixedBytes::random_with(rng))
         }
 
+        /// Tries to create a new fixed byte array with the given random number generator.
+        #[inline]
+        #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+        pub fn try_random_with<R: $crate::private::rand::TryRngCore + ?Sized>(
+            rng: &mut R,
+        ) -> $crate::private::Result<Self, R::Error> {
+            $crate::FixedBytes::try_random_with(rng).map(Self)
+        }
+
         /// Fills this fixed byte array with the given random number generator.
         #[inline]
         #[doc(alias = "randomize_using")]
@@ -503,12 +561,22 @@ macro_rules! impl_rand {
         pub fn randomize_with<R: $crate::private::rand::RngCore + ?Sized>(&mut self, rng: &mut R) {
             self.0.randomize_with(rng);
         }
+
+        /// Tries to fill this fixed byte array with the given random number generator.
+        #[inline]
+        #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+        pub fn try_randomize_with<R: $crate::private::rand::TryRngCore + ?Sized>(
+            &mut self,
+            rng: &mut R,
+        ) -> $crate::private::Result<(), R::Error> {
+            self.0.try_randomize_with(rng)
+        }
     };
 
     ($t:ty) => {
         #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-        impl $crate::private::rand::distributions::Distribution<$t>
-            for $crate::private::rand::distributions::Standard
+        impl $crate::private::rand::distr::Distribution<$t>
+            for $crate::private::rand::distr::StandardUniform
         {
             #[inline]
             fn sample<R: $crate::private::rand::Rng + ?Sized>(&self, rng: &mut R) -> $t {
@@ -673,6 +741,119 @@ macro_rules! impl_arbitrary {
 #[macro_export]
 #[cfg(not(feature = "arbitrary"))]
 macro_rules! impl_arbitrary {
+    ($t:ty, $n:literal) => {};
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(feature = "diesel")]
+macro_rules! impl_diesel {
+    ($t:ty, $n:literal) => {
+        const _: () = {
+            use $crate::private::diesel::{
+                backend::Backend,
+                deserialize::{FromSql, Result as DeserResult},
+                expression::AsExpression,
+                internal::derives::as_expression::Bound,
+                query_builder::bind_collector::RawBytesBindCollector,
+                serialize::{Output, Result as SerResult, ToSql},
+                sql_types::{Binary, Nullable, SingleValue},
+                Queryable,
+            };
+
+            impl<Db> ToSql<Binary, Db> for $t
+            where
+                for<'c> Db: Backend<BindCollector<'c> = RawBytesBindCollector<Db>>,
+            {
+                fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Db>) -> SerResult {
+                    <$crate::FixedBytes<$n> as ToSql<Binary, Db>>::to_sql(&self.0, out)
+                }
+            }
+
+            impl<Db> FromSql<Binary, Db> for $t
+            where
+                Db: Backend,
+                *const [u8]: FromSql<Binary, Db>,
+            {
+                fn from_sql(bytes: Db::RawValue<'_>) -> DeserResult<Self> {
+                    <$crate::FixedBytes<$n> as FromSql<Binary, Db>>::from_sql(bytes).map(Self)
+                }
+            }
+
+            // Note: the following impls are equivalent to the expanded derive macro produced by
+            // #[derive(diesel::AsExpression)]
+            impl<Db> ToSql<Nullable<Binary>, Db> for $t
+            where
+                for<'c> Db: Backend<BindCollector<'c> = RawBytesBindCollector<Db>>,
+            {
+                fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Db>) -> SerResult {
+                    <$crate::FixedBytes<$n> as ToSql<Nullable<Binary>, Db>>::to_sql(&self.0, out)
+                }
+            }
+
+            impl AsExpression<Binary> for $t {
+                type Expression = Bound<Binary, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl AsExpression<Nullable<Binary>> for $t {
+                type Expression = Bound<Nullable<Binary>, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl AsExpression<Binary> for &$t {
+                type Expression = Bound<Binary, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl AsExpression<Nullable<Binary>> for &$t {
+                type Expression = Bound<Nullable<Binary>, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl AsExpression<Binary> for &&$t {
+                type Expression = Bound<Binary, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl AsExpression<Nullable<Binary>> for &&$t {
+                type Expression = Bound<Nullable<Binary>, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            // Note: the following impl is equivalent to the expanded derive macro produced by
+            // #[derive(diesel::Queryable)]
+            impl<Db, St> Queryable<St, Db> for $t
+            where
+                Db: Backend,
+                St: SingleValue,
+                Self: FromSql<St, Db>,
+            {
+                type Row = Self;
+                fn build(row: Self::Row) -> DeserResult<Self> {
+                    Ok(row)
+                }
+            }
+        };
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(not(feature = "diesel"))]
+macro_rules! impl_diesel {
     ($t:ty, $n:literal) => {};
 }
 

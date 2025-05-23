@@ -401,7 +401,7 @@ impl SolType for String {
 }
 
 /// Array - `T[]`
-pub struct Array<T: SolType>(PhantomData<T>);
+pub struct Array<T>(PhantomData<T>);
 
 impl<T, U> SolTypeValue<Array<U>> for [T]
 where

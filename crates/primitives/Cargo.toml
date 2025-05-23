@@ -94,6 +94,9 @@ allocative = { workspace = true, optional = true }
 # postgres
 postgres-types = { workspace = true, optional = true }
 
+# diesel
+diesel = { workspace = true, optional = true }
+
 [dev-dependencies]
 bcs.workspace = true
 bincode.workspace = true
@@ -113,7 +116,7 @@ std = [
     "keccak-asm?/std",
     "proptest?/std",
     "rand?/std",
-    "rand?/std_rng",
+    "rand?/thread_rng",
     "rustc-hash?/std",
     "serde?/std",
     "sha3?/std",
@@ -139,7 +142,7 @@ map-fxhash = ["map", "dep:rustc-hash"]
 
 getrandom = ["dep:getrandom"]
 k256 = ["dep:k256"]
-rand = ["dep:rand", "getrandom", "ruint/rand", "rustc-hash?/rand"]
+rand = ["dep:rand", "getrandom", "ruint/rand-09", "rustc-hash?/rand"]
 rayon = ["dep:rayon", "hashbrown?/rayon", "indexmap?/rayon"]
 rlp = ["dep:alloy-rlp", "ruint/alloy-rlp"]
 serde = [
@@ -164,6 +167,7 @@ arbitrary = [
     "indexmap?/arbitrary",
 ]
 postgres = ["std", "dep:postgres-types", "ruint/postgres"]
+diesel = ["std", "dep:diesel", "ruint/diesel"]
 
 # `const-hex` compatibility feature for `hex`.
 # Should not be needed most of the time.
