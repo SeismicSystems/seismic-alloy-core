@@ -224,24 +224,6 @@ impl TypedData {
         };
         Ok(buf[..len].to_vec())
     }
-
-    /// Returns the length of the EIP-712 encoded data for signing.
-    pub fn eip712_encode_for_signing_len(&self) -> usize {
-        if self.primary_type != "EIP712Domain" {
-            66
-        } else {
-            34
-        }
-    }
-
-    /// Calculate the EIP-712 signing hash for this value.
-    ///
-    /// This is the hash of the magic bytes 0x1901 concatenated with the domain
-    /// separator and the `hashStruct` result.
-    pub fn eip712_signing_hash(&self) -> Result<B256> {
-        let buf = self.eip712_encode_for_signing()?;
-        Ok(keccak256(&buf))
-    }
 }
 
 // Adapted tests from https://github.com/MetaMask/eth-sig-util/blob/dd8bd0e1ca7ca3ed81631b279b8e3a63a2b16b7f/src/sign-typed-data.test.ts
