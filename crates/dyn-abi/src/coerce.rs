@@ -23,7 +23,7 @@ use winnow::{
 #[cfg(feature = "seismic")]
 use alloy_primitives::aliases::{SAddress, SInt, SUInt};
 #[cfg(feature = "seismic")]
-use alloy_sol_types::sol_data::Sbool;
+use alloy_sol_types::Sbool;
 
 impl DynSolType {
     /// Coerces a string into a [`DynSolValue`] via this type.
