@@ -44,6 +44,20 @@ impl From<&FlaggedStorage> for U256 {
     }
 }
 
+// Compare FlaggedStorage == U256
+impl PartialEq<U256> for FlaggedStorage {
+    fn eq(&self, other: &U256) -> bool {
+        &self.value == other && !self.is_private
+    }
+}
+
+// Compare U256 == FlaggedStorage
+impl PartialEq<FlaggedStorage> for U256 {
+    fn eq(&self, other: &FlaggedStorage) -> bool {
+        self == &other.value && !other.is_private
+    }
+}
+
 impl FlaggedStorage {
     /// The default word for a flagged storage slot
     /// when no state has been set. Importantly, this slot is public by default
@@ -112,5 +126,23 @@ impl FlaggedStorage {
     /// Check if the storage is zero.
     pub fn is_zero(&self) -> bool {
         self.is_public() && self.value.is_zero()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::U256;
+
+    #[test]
+    fn test_eq() {
+        let flagged_a = FlaggedStorage::new(U256::from(1), false);
+        let flagged_b = FlaggedStorage::new(U256::from(1), true);
+        let c = U256::from(1);
+
+        assert_eq!(flagged_a, c);
+        assert_eq!(c, flagged_a);
+        assert_ne!(c, flagged_b);
+        assert_ne!(flagged_b, c);
     }
 }
