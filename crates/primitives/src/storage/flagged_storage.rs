@@ -172,6 +172,21 @@ mod rlp {
     unsafe impl MaxEncodedLenAssoc for FlaggedStorage {
         const LEN: usize = <U256 as MaxEncodedLenAssoc>::LEN + 1;
     }
+
+    #[test]
+    fn rlp_encode_decode() {
+        let buf = &mut vec![];
+        let flagged_a = FlaggedStorage::new(U256::from(1), false);
+        flagged_a.encode(buf);
+        let decoded = FlaggedStorage::decode(&mut buf.as_slice()).unwrap();
+        assert_eq!(flagged_a, decoded);
+
+        let buf = &mut vec![];
+        let flagged_b = FlaggedStorage::new(U256::from(1), true);
+        flagged_b.encode(buf);
+        let decoded = FlaggedStorage::decode(&mut buf.as_slice()).unwrap();
+        assert_eq!(flagged_b, decoded);
+    }
 }
 
 #[cfg(test)]
