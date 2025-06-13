@@ -129,6 +129,51 @@ impl FlaggedStorage {
     }
 }
 
+#[cfg(feature = "rlp")]
+mod rlp {
+    use super::{FlaggedStorage, U256};
+
+    use alloy_rlp::{Decodable, Encodable, Result as RlpResult};
+    use bytes::BufMut;
+
+    impl Encodable for FlaggedStorage {
+        #[inline]
+        fn length(&self) -> usize {
+            self.value.length() + self.is_private.length()
+        }
+
+        #[inline]
+        fn encode(&self, out: &mut dyn BufMut) {
+            self.value.encode(out);
+            self.is_private.encode(out);
+        }
+    }
+
+    impl Decodable for FlaggedStorage {
+        #[inline]
+        fn decode(buf: &mut &[u8]) -> RlpResult<Self> {
+            let value = U256::decode(buf)?;
+            let is_private = bool::decode(buf)?;
+            Ok(Self { value, is_private })
+        }
+    }
+
+    use alloy_rlp::{MaxEncodedLen, MaxEncodedLenAssoc};
+    // SAFETY: Assumes U256 and bool both have fixed max encoded lengths
+    unsafe impl
+        MaxEncodedLen<
+            {
+                <U256 as MaxEncodedLenAssoc>::LEN + 1 // bool encodes to 1 byte
+            },
+        > for FlaggedStorage
+    {
+    }
+
+    unsafe impl MaxEncodedLenAssoc for FlaggedStorage {
+        const LEN: usize = <U256 as MaxEncodedLenAssoc>::LEN + 1;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
