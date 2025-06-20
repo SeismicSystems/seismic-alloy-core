@@ -63,6 +63,11 @@ impl<T> Sealed<T> {
         Self { inner, seal }
     }
 
+    /// Converts from `&Sealed<T>` to `Sealed<&T>`.
+    pub const fn as_sealed_ref(&self) -> Sealed<&T> {
+        Sealed { inner: &self.inner, seal: self.seal }
+    }
+
     /// Decompose into parts.
     #[allow(clippy::missing_const_for_fn)] // false positive
     pub fn into_parts(self) -> (T, B256) {
@@ -75,10 +80,28 @@ impl<T> Sealed<T> {
         self.into_parts()
     }
 
+    /// Clone the inner item.
+    #[inline(always)]
+    pub fn clone_inner(&self) -> T
+    where
+        T: Clone,
+    {
+        self.inner.clone()
+    }
+
     /// Get the inner item.
     #[inline(always)]
     pub const fn inner(&self) -> &T {
         &self.inner
+    }
+
+    /// Returns mutable access to the inner type.
+    ///
+    /// Caution: Modifying the inner type can cause side-effects on the `seal` hash.
+    #[inline(always)]
+    #[doc(hidden)]
+    pub fn inner_mut(&mut self) -> &mut T {
+        &mut self.inner
     }
 
     /// Get the hash.
@@ -91,6 +114,12 @@ impl<T> Sealed<T> {
     #[inline(always)]
     pub const fn hash(&self) -> B256 {
         self.seal
+    }
+
+    /// Get the hash.
+    #[inline(always)]
+    pub const fn hash_ref(&self) -> &B256 {
+        &self.seal
     }
 
     /// Unseal the inner item, discarding the hash.
@@ -106,6 +135,17 @@ impl<T> Sealed<T> {
     #[allow(clippy::missing_const_for_fn)] // false positive
     pub fn unseal(self) -> T {
         self.into_inner()
+    }
+}
+
+impl<T> Sealed<&T> {
+    /// Maps a `Sealed<&T>` to a `Sealed<T>` by cloning the inner value.
+    pub fn cloned(self) -> Sealed<T>
+    where
+        T: Clone,
+    {
+        let Self { inner, seal } = self;
+        Sealed::new_unchecked(inner.clone(), seal)
     }
 }
 

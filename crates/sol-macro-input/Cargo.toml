@@ -13,10 +13,19 @@ license.workspace = true
 repository.workspace = true
 exclude.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = [
+    "-Zunstable-options",
+    "--generate-link-to-definition",
+    "--show-type-layout",
+]
+
 [dependencies]
 dunce = "1.0.4"
 heck = "0.5.0"
 hex.workspace = true
+macro-string = "0.1"
 proc-macro2.workspace = true
 syn.workspace = true
 syn-solidity.workspace = true
@@ -27,5 +36,5 @@ alloy-json-abi = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 
 [features]
-json = ["dep:alloy-json-abi", "dep:serde_json"]
+json = ["dep:alloy-json-abi", "dep:serde_json", "alloy-json-abi/serde_json"]
 seismic = ["alloy-json-abi?/seismic"]

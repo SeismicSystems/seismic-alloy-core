@@ -17,13 +17,14 @@ These shielded types include:
 - `saddress`
 - `suint` and the `suint{n}` family
 - `sint` and the `sint{n}` family
-- `sbool`  
+- `sbool`
 
 Each of these types behaves similarly to its unshielded counterpart, with one key exception: the values are hidden from the state tree.
 
 ## Structure
 
 Seismic's forks of the [reth](https://github.com/paradigmxyz/reth) stack all have the same branch structure:
+
 - `main` or `master`: this branch only consists of commits from the upstream repository. However it will rarely be up-to-date with upstream. The latest commit from this branch reflects how recently Seismic has merged in upstream commits to the seismic branch
 - `seismic`: the default and production branch for these repositories. This includes all Seismic-specific code essential to make our network run
 

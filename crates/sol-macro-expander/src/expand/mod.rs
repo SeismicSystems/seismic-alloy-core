@@ -1,9 +1,6 @@
 //! Functions which generate Rust code from the Solidity AST.
 
-use crate::{
-    expand::ty::expand_rust_type,
-    utils::{self, ExprArray},
-};
+use crate::utils::{self, ExprArray};
 use alloy_sol_macro_input::{ContainsSolAttrs, SolAttrs};
 use ast::{
     visit_mut, EventParameter, File, Item, ItemError, ItemEvent, ItemFunction, Parameters,
@@ -25,15 +22,13 @@ use syn::{ext::IdentExt, parse_quote, Attribute, Error, Result};
 #[macro_use]
 mod macros;
 
-pub mod ty;
-pub use ty::expand_type;
-
 mod contract;
 mod r#enum;
 mod error;
 mod event;
 mod function;
 mod r#struct;
+mod ty;
 mod udt;
 mod var_def;
 
@@ -41,13 +36,23 @@ mod var_def;
 mod to_abi;
 
 /// The limit for the number of times to resolve a type.
-const RESOLVE_LIMIT: usize = 32;
+const RESOLVE_LIMIT: usize = 128;
 
 /// The [`sol!`] expansion implementation.
 ///
 /// [`sol!`]: https://docs.rs/alloy-sol-macro/latest/alloy_sol_macro/index.html
 pub fn expand(ast: File) -> Result<TokenStream> {
-    ExpCtxt::new(&ast).expand()
+    utils::pme_compat_result(|| ExpCtxt::new(&ast).expand())
+}
+
+/// Expands a Rust type from a Solidity type.
+pub fn expand_type(ty: &Type, crates: &ExternCrates) -> TokenStream {
+    utils::pme_compat(|| {
+        let dummy_file = File { attrs: Vec::new(), items: Vec::new() };
+        let mut cx = ExpCtxt::new(&dummy_file);
+        cx.crates = crates.clone();
+        cx.expand_type(ty)
+    })
 }
 
 /// Mapping namespace -> ident -> T
@@ -302,8 +307,7 @@ impl ExpCtxt<'_> {
         let mut result = Ok(());
 
         let mut selectors = vec![HashMap::new(); 3];
-        let all_items = std::mem::take(&mut self.all_items);
-        for (namespace, items) in &all_items.0 {
+        for (namespace, items) in &self.all_items.clone().0 {
             self.with_namespace(namespace.clone(), |this| {
                 selectors.iter_mut().for_each(|s| s.clear());
                 for (_, &item) in items {
@@ -348,7 +352,6 @@ impl ExpCtxt<'_> {
                 }
             })
         }
-        self.all_items = all_items;
 
         result
     }
@@ -650,8 +653,9 @@ impl<'ast> ExpCtxt<'ast> {
         name
     }
 
-    /// Extends `attrs` with all possible derive attributes for the given type
-    /// if `#[sol(all_derives)]` was passed.
+    /// Extends `attrs` with:
+    /// - all derives specified by the user in `#[sol(extra_derives(...))]`,
+    /// - all possible derive attributes for the given type if `#[sol(all_derives)]` was passed.
     ///
     /// The following traits are only implemented on tuples of arity 12 or less:
     /// - [PartialEq](https://doc.rust-lang.org/stable/std/cmp/trait.PartialEq.html)
@@ -683,6 +687,12 @@ impl<'ast> ExpCtxt<'ast> {
         I: IntoIterator<Item = T>,
         T: Borrow<Type>,
     {
+        if let Some(extra) = &self.attrs.extra_derives {
+            if !extra.is_empty() {
+                attrs.push(parse_quote! { #[derive(#(#extra),*)] });
+            }
+        }
+
         let Some(true) = self.attrs.all_derives else {
             return;
         };
@@ -691,8 +701,8 @@ impl<'ast> ExpCtxt<'ast> {
         let mut derive_others = true;
         for ty in types {
             let ty = ty.borrow();
-            derive_default = derive_default && ty::can_derive_default(self, ty);
-            derive_others = derive_others && ty::can_derive_builtin_traits(self, ty);
+            derive_default = derive_default && self.can_derive_default(ty);
+            derive_others = derive_others && self.can_derive_builtin_traits(ty);
         }
         if derive_default {
             derives.push("Default");
@@ -735,7 +745,7 @@ impl<'ast> ExpCtxt<'ast> {
 ///
 /// These should be added to import lists at the top of anonymous `const _: () = { ... }` blocks,
 /// and in case of top-level structs they should be inlined into all `path`s.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ExternCrates {
     /// The path to the `alloy_sol_types` crate.
     pub sol_types: syn::Path,
@@ -773,10 +783,11 @@ fn expand_fields<'a, P>(
 ) -> impl Iterator<Item = TokenStream> + 'a {
     params.iter().enumerate().map(|(i, var)| {
         let name = anon_name((i, var.name.as_ref()));
-        let ty = expand_rust_type(&var.ty, &cx.crates);
+        let ty = cx.expand_rust_type(&var.ty);
         let attrs = &var.attrs;
         quote! {
             #(#attrs)*
+            #[allow(missing_docs)]
             pub #name: #ty
         }
     })
@@ -796,11 +807,57 @@ pub fn anon_name<T: Into<Ident> + Clone>((i, name): (usize, Option<&T>)) -> Iden
     }
 }
 
+/// Utility type to determining how a solidity type should be expanded.
+enum FieldKind {
+    /// The type should be expanded as is. i.e a struct with named/unnamed fields.
+    ///
+    /// e.g
+    /// ```ignore
+    /// sol! {
+    ///   error MyError(uint256, string);
+    /// }
+    /// ```
+    /// Expands to:
+    ///
+    /// ```ignore
+    /// struct MyError {
+    ///    pub _0: U256,
+    ///    pub _1: String,
+    /// }
+    Original,
+    /// The types should be deconstructed and expanded into a unit/tuple struct depending on the
+    /// number of params.
+    ///
+    /// e.g
+    /// ```ignore
+    /// sol! {
+    ///  error MyError(uint256 value);
+    ///  error UnitError();
+    /// }
+    /// ```
+    ///
+    /// Expands to:
+    ///
+    /// ```ignore
+    /// struct MyError(pub U256);
+    /// struct UnitError();
+    /// ```
+    Deconstruct,
+}
+
+impl FieldKind {
+    /// Returns whether the field kind is `Deconstruct`.
+    fn is_deconstruct(&self) -> bool {
+        matches!(self, Self::Deconstruct)
+    }
+}
+
 /// Expands `From` impls for a list of types and the corresponding tuple.
 fn expand_from_into_tuples<P>(
     name: &Ident,
     fields: &Parameters<P>,
     cx: &ExpCtxt<'_>,
+    field_kind: FieldKind,
 ) -> TokenStream {
     let names = fields.names().enumerate().map(anon_name);
 
@@ -808,6 +865,15 @@ fn expand_from_into_tuples<P>(
     let idxs = (0..fields.len()).map(syn::Index::from);
 
     let (sol_tuple, rust_tuple) = expand_tuple_types(fields.types(), cx);
+
+    let (from_sol_type, from_rust_tuple) = if fields.is_empty() && field_kind.is_deconstruct() {
+        (quote!(()), quote!(Self))
+    } else if fields.len() == 1 && fields[0].name.is_none() && field_kind.is_deconstruct() {
+        let idxs2 = (0..fields.len()).map(syn::Index::from);
+        (quote!((#(value.#idxs),*,)), quote!(Self(#(tuple.#idxs2),*)))
+    } else {
+        (quote!((#(value.#names,)*)), quote!(Self { #(#names2: tuple.#idxs),* }))
+    };
 
     quote! {
         #[doc(hidden)]
@@ -827,7 +893,7 @@ fn expand_from_into_tuples<P>(
         #[doc(hidden)]
         impl ::core::convert::From<#name> for UnderlyingRustTuple<'_> {
             fn from(value: #name) -> Self {
-                (#(value.#names,)*)
+                #from_sol_type
             }
         }
 
@@ -835,9 +901,7 @@ fn expand_from_into_tuples<P>(
         #[doc(hidden)]
         impl ::core::convert::From<UnderlyingRustTuple<'_>> for #name {
             fn from(tuple: UnderlyingRustTuple<'_>) -> Self {
-                Self {
-                    #(#names2: tuple.#idxs),*
-                }
+                #from_rust_tuple
             }
         }
     }
@@ -852,10 +916,10 @@ fn expand_tuple_types<'a, I: IntoIterator<Item = &'a Type>>(
     let mut rust = TokenStream::new();
     let comma = Punct::new(',', Spacing::Alone);
     for ty in types {
-        ty::rec_expand_type(ty, &cx.crates, &mut sol);
+        cx.expand_type_to(ty, &mut sol);
         sol.append(comma.clone());
 
-        ty::rec_expand_rust_type(ty, &cx.crates, &mut rust);
+        cx.expand_rust_type_to(ty, &mut rust);
         rust.append(comma.clone());
     }
     let wrap_in_parens =
@@ -864,14 +928,25 @@ fn expand_tuple_types<'a, I: IntoIterator<Item = &'a Type>>(
 }
 
 /// Expand the body of a `tokenize` function.
-fn expand_tokenize<P>(params: &Parameters<P>, cx: &ExpCtxt<'_>) -> TokenStream {
-    tokenize_(params.iter().enumerate().map(|(i, p)| (i, &p.ty, p.name.as_ref())), cx)
+fn expand_tokenize<P>(
+    params: &Parameters<P>,
+    cx: &ExpCtxt<'_>,
+    field_kind: FieldKind,
+) -> TokenStream {
+    tokenize_(
+        params.iter().enumerate().map(|(i, p)| (i, &p.ty, p.name.as_ref())),
+        cx,
+        params.len(),
+        field_kind,
+    )
 }
 
 /// Expand the body of a `tokenize` function.
 fn expand_event_tokenize<'a>(
     params: impl IntoIterator<Item = &'a EventParameter>,
     cx: &ExpCtxt<'_>,
+    params_len: usize,
+    field_kind: FieldKind,
 ) -> TokenStream {
     tokenize_(
         params
@@ -880,18 +955,28 @@ fn expand_event_tokenize<'a>(
             .filter(|(_, p)| !p.is_indexed())
             .map(|(i, p)| (i, &p.ty, p.name.as_ref())),
         cx,
+        params_len,
+        field_kind,
     )
 }
 
 fn tokenize_<'a>(
     iter: impl Iterator<Item = (usize, &'a Type, Option<&'a SolIdent>)>,
     cx: &'a ExpCtxt<'_>,
+    params_len: usize,
+    field_kind: FieldKind,
 ) -> TokenStream {
     let statements = iter.into_iter().map(|(i, ty, name)| {
-        let ty = expand_type(ty, &cx.crates);
-        let name = name.cloned().unwrap_or_else(|| generate_name(i).into());
-        quote! {
-            <#ty as alloy_sol_types::SolType>::tokenize(&self.#name)
+        let ty = cx.expand_type(ty);
+        if params_len == 1 && name.is_none() && field_kind.is_deconstruct() {
+            quote! {
+                <#ty as alloy_sol_types::SolType>::tokenize(&self.0)
+            }
+        } else {
+            let name = name.cloned().unwrap_or_else(|| generate_name(i).into());
+            quote! {
+                <#ty as alloy_sol_types::SolType>::tokenize(&self.#name)
+            }
         }
     });
     quote! {

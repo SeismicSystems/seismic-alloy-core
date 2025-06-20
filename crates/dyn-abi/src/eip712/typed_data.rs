@@ -115,6 +115,7 @@ impl<'de> Deserialize<'de> for TypedData {
 
         #[derive(Deserialize)]
         #[serde(untagged)]
+        #[allow(clippy::large_enum_variant)]
         enum StrOrVal {
             Str(String),
             Val(TypedDataHelper),
@@ -160,20 +161,20 @@ impl TypedData {
         ty.coerce_json(&self.message)
     }
 
-    /// Calculate the Keccak-256 hash of [`encodeType`] for this value.
+    /// Calculates the [EIP-712 `typeHash`](https://eips.ethereum.org/EIPS/eip-712#rationale-for-typehash)
+    /// for this value.
+    ///
+    /// This is defined as the Keccak-256 hash of the [`encodeType`](Self::encode_type) string.
     ///
     /// Fails if this type is not a struct.
-    ///
-    /// [`encodeType`]: https://eips.ethereum.org/EIPS/eip-712#definition-of-encodetype
     pub fn type_hash(&self) -> Result<B256> {
         self.encode_type().map(keccak256)
     }
 
-    /// Calculate the [`hashStruct`] for this value.
+    /// Calculates the [`hashStruct`](https://eips.ethereum.org/EIPS/eip-712#definition-of-hashstruct)
+    /// for this value.
     ///
     /// Fails if this type is not a struct.
-    ///
-    /// [`hashStruct`]: https://eips.ethereum.org/EIPS/eip-712#definition-of-hashstruct
     pub fn hash_struct(&self) -> Result<B256> {
         let mut type_hash = self.type_hash()?.to_vec();
         type_hash.extend(self.encode_data()?);
@@ -199,11 +200,16 @@ impl TypedData {
         self.resolver.encode_type(&self.primary_type)
     }
 
-    /// Encode the typed data for signing.
+    /// Calculate the [EIP-712 signing hash](https://eips.ethereum.org/EIPS/eip-712#specification-of-the-eth_signtypeddata-json-rpc)
+    /// for this value.
+    /// Note that this does not **sign** the hash, only calculates it.
     ///
-    /// This is the same as [`eip712_signing_hash`] but without the final keccak256
-    /// hash.
-    pub fn eip712_encode_for_signing(&self) -> Result<Vec<u8>> {
+    /// This is the hash of the magic bytes 0x1901 concatenated with the domain
+    /// separator and the `hashStruct` result:
+    /// `keccak256("\x19\x01" ‖ domainSeparator ‖ hashStruct(message))`
+    #[doc(alias = "sign_typed_data")]
+    #[doc(alias = "hash_typed_data")]
+    pub fn eip712_signing_hash(&self) -> Result<B256> {
         let mut buf = [0u8; 66];
         buf[0] = 0x19;
         buf[1] = 0x01;
@@ -216,25 +222,8 @@ impl TypedData {
         } else {
             34
         };
-        Ok(buf[..len].to_vec())
-    }
 
-    /// Returns the length of the EIP-712 encoded data for signing.
-    pub fn eip712_encode_for_signing_len(&self) -> usize {
-        if self.primary_type != "EIP712Domain" {
-            66
-        } else {
-            34
-        }
-    }
-
-    /// Calculate the EIP-712 signing hash for this value.
-    ///
-    /// This is the hash of the magic bytes 0x1901 concatenated with the domain
-    /// separator and the `hashStruct` result.
-    pub fn eip712_signing_hash(&self) -> Result<B256> {
-        let buf = self.eip712_encode_for_signing()?;
-        Ok(keccak256(&buf))
+        Ok(keccak256(&buf[..len]))
     }
 }
 
@@ -244,6 +233,7 @@ mod tests {
     use super::*;
     use crate::Error;
     use alloc::string::ToString;
+    use alloy_primitives::hex;
     use alloy_sol_types::sol;
     use serde_json::json;
 

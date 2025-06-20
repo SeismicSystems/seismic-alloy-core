@@ -10,7 +10,8 @@ use core::{
 
 mod units;
 pub use units::{
-    format_ether, format_units, parse_ether, parse_units, ParseUnits, Unit, UnitsError,
+    format_ether, format_units, format_units_with, parse_ether, parse_units, DecimalSeparator,
+    ParseUnits, Unit, UnitsError,
 };
 
 #[doc(hidden)]
@@ -23,6 +24,10 @@ pub type Units = Unit;
 
 /// The prefix used for hashing messages according to EIP-191.
 pub const EIP191_PREFIX: &str = "\x19Ethereum Signed Message:\n";
+
+/// The [Keccak-256](keccak256) hash of the empty string `""`.
+pub const KECCAK256_EMPTY: B256 =
+    b256!("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470");
 
 /// Tries to create a [`Vec`] containing the arguments.
 #[macro_export]
@@ -315,13 +320,16 @@ mod tests {
             eip191_msg,
             [EIP191_PREFIX.as_bytes(), msg.len().to_string().as_bytes(), msg.as_bytes()].concat()
         );
-        assert_eq!(hash, b256!("a1de988600a42c4b4ab089b619297c17d53cffae5d5120d82d8a92d0bb3b78f2"));
+        assert_eq!(
+            hash,
+            b256!("0xa1de988600a42c4b4ab089b619297c17d53cffae5d5120d82d8a92d0bb3b78f2")
+        );
         assert_eq!(eip191_hash_message(msg), hash);
     }
 
     #[test]
     fn keccak256_hasher() {
-        let expected = b256!("47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad");
+        let expected = b256!("0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad");
         assert_eq!(keccak256("hello world"), expected);
 
         let mut hasher = Keccak256::new();

@@ -15,7 +15,11 @@ exclude.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = [
+    "-Zunstable-options",
+    "--generate-link-to-definition",
+    "--show-type-layout",
+]
 
 [lints]
 workspace = true
@@ -26,7 +30,6 @@ alloy-sol-type-parser.workspace = true
 alloy-sol-types.workspace = true
 alloy-primitives.workspace = true
 
-hex.workspace = true
 itoa.workspace = true
 winnow.workspace = true
 
@@ -50,7 +53,7 @@ proptest = { workspace = true, optional = true }
 alloy-dyn-abi = { path = ".", version = ">=0", features = ["std", "seismic"] }
 criterion.workspace = true
 ethabi = "18"
-rand = "0.8"
+rand = { workspace = true, features = ["thread_rng"] }
 serde_json.workspace = true
 
 [features]
@@ -60,7 +63,6 @@ std = [
     "alloy-sol-types/std",
     "alloy-sol-type-parser/std",
     "alloy-primitives/std",
-    "hex/std",
     "serde?/std",
     "serde_json?/std",
 ]
