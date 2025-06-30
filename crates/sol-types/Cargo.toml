@@ -15,7 +15,11 @@ exclude.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = [
+    "-Zunstable-options",
+    "--generate-link-to-definition",
+    "--show-type-layout",
+]
 
 [lints]
 workspace = true
@@ -24,16 +28,13 @@ workspace = true
 alloy-primitives.workspace = true
 alloy-sol-macro.workspace = true
 
-hex.workspace = true
-
-# arbitrary
-arbitrary = { workspace = true, optional = true }
-
 # json
 alloy-json-abi = { workspace = true, optional = true }
 
 # eip712-serde
 serde = { workspace = true, optional = true, features = ["derive"] }
+
+arbitrary = { workspace = true, optional = true }
 
 [dev-dependencies]
 alloy-primitives = { workspace = true, features = [
@@ -47,17 +48,14 @@ paste.workspace = true
 pretty_assertions.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
-
 proptest.workspace = true
 rustversion = "1.0"
 trybuild = "1.0"
 
 [features]
 default = ["std", "seismic"]
-std = ["alloy-primitives/std", "hex/std", "alloy-json-abi?/std", "serde?/std"]
+std = ["alloy-primitives/std", "alloy-json-abi?/std", "serde?/std"]
 json = ["dep:alloy-json-abi", "alloy-sol-macro/json"]
 eip712-serde = ["dep:serde", "alloy-primitives/serde"]
 seismic = ["alloy-primitives/seismic", "alloy-sol-macro/seismic"]
-arbitrary = ["alloy-primitives/arbitrary",
-    "dep:arbitrary",
-]
+arbitrary = ["dep:arbitrary", "alloy-primitives/arbitrary"]

@@ -32,12 +32,12 @@ assert_eq!(&MySolType::sol_type_name(), "bool[2]");
 
 // SolTypes are used to transform Rust into ABI blobs, and back.
 let encoded: Vec<u8> = MySolType::abi_encode(&data);
-let decoded: [bool; 2] = MySolType::abi_decode(&encoded, validate)?;
+let decoded: [bool; 2] = MySolType::abi_decode(&encoded)?;
 assert_eq!(data, decoded);
 
 // This is more easily done with the `SolValue` trait:
 let encoded: Vec<u8> = data.abi_encode();
-let decoded: [bool; 2] = <[bool; 2]>::abi_decode(&encoded, validate)?;
+let decoded: [bool; 2] = <[bool; 2]>::abi_decode(&encoded)?;
 assert_eq!(data, decoded);
 # Ok::<_, alloy_sol_types::Error>(())
 ```
@@ -115,7 +115,7 @@ assert_eq!(mvt.abi_encode(), sol_data::Uint::<256>::abi_encode(&U256::from(1)));
 ## Tokenization/Detokenization
 
 The process of converting from a Rust type to a to an abi token is called
-"Tokenization". Typical users will not access tokenizaiton directly.
+"Tokenization". Typical users will not access tokenization directly.
 Power users should use the [`SolType::tokenize()`] and
 [`SolType::detokenize()`] methods.
 

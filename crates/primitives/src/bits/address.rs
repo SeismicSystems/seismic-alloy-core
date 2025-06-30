@@ -69,7 +69,7 @@ wrap_fixed_bytes!(
     /// use alloy_primitives::{address, Address};
     ///
     /// let checksummed = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
-    /// let expected = address!("d8da6bf26964af9d7eed9e03e53415d37aa96045");
+    /// let expected = address!("0xd8da6bf26964af9d7eed9e03e53415d37aa96045");
     /// let address = Address::parse_checksummed(checksummed, None).expect("valid checksum");
     /// assert_eq!(address, expected);
     ///
@@ -124,8 +124,8 @@ impl Address {
     ///
     /// ```
     /// # use alloy_primitives::{address, b256, Address};
-    /// let word = b256!("000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045");
-    /// assert_eq!(Address::from_word(word), address!("d8da6bf26964af9d7eed9e03e53415d37aa96045"));
+    /// let word = b256!("0x000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045");
+    /// assert_eq!(Address::from_word(word), address!("0xd8da6bf26964af9d7eed9e03e53415d37aa96045"));
     /// ```
     #[inline]
     #[must_use]
@@ -140,8 +140,8 @@ impl Address {
     /// ```
     /// # use alloy_primitives::{address, b256, Address};
     /// assert_eq!(
-    ///     address!("d8da6bf26964af9d7eed9e03e53415d37aa96045").into_word(),
-    ///     b256!("000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045"),
+    ///     address!("0xd8da6bf26964af9d7eed9e03e53415d37aa96045").into_word(),
+    ///     b256!("0x000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045"),
     /// );
     /// ```
     #[inline]
@@ -172,7 +172,7 @@ impl Address {
     /// # use alloy_primitives::{address, Address};
     /// let checksummed = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
     /// let address = Address::parse_checksummed(checksummed, None).unwrap();
-    /// let expected = address!("d8da6bf26964af9d7eed9e03e53415d37aa96045");
+    /// let expected = address!("0xd8da6bf26964af9d7eed9e03e53415d37aa96045");
     /// assert_eq!(address, expected);
     /// ```
     pub fn parse_checksummed<S: AsRef<str>>(
@@ -209,7 +209,7 @@ impl Address {
     ///
     /// ```
     /// # use alloy_primitives::{address, Address};
-    /// let address = address!("d8da6bf26964af9d7eed9e03e53415d37aa96045");
+    /// let address = address!("0xd8da6bf26964af9d7eed9e03e53415d37aa96045");
     ///
     /// let checksummed: String = address.to_checksum(None);
     /// assert_eq!(checksummed, "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045");
@@ -243,7 +243,7 @@ impl Address {
     ///
     /// ```
     /// # use alloy_primitives::{address, Address};
-    /// let address = address!("d8da6bf26964af9d7eed9e03e53415d37aa96045");
+    /// let address = address!("0xd8da6bf26964af9d7eed9e03e53415d37aa96045");
     /// let mut buf = [0; 42];
     ///
     /// let checksummed: &mut str = address.to_checksum_raw(&mut buf, None);
@@ -274,7 +274,7 @@ impl Address {
     ///
     /// ```
     /// # use alloy_primitives::{address, Address, AddressChecksumBuffer};
-    /// let address = address!("d8da6bf26964af9d7eed9e03e53415d37aa96045");
+    /// let address = address!("0xd8da6bf26964af9d7eed9e03e53415d37aa96045");
     ///
     /// let mut buffer: AddressChecksumBuffer = address.to_checksum_buffer(None);
     /// assert_eq!(buffer.as_str(), "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045");
@@ -320,7 +320,7 @@ impl Address {
         for (i, out) in buf[2..].iter_mut().enumerate() {
             // This is made branchless for easier vectorization.
             // Get the i-th nibble of the hash.
-            let hash_nibble = hash[i / 2] >> (4 * (1 - i % 2)) & 0xf;
+            let hash_nibble = (hash[i / 2] >> (4 * (1 - i % 2))) & 0xf;
             // Make the character ASCII uppercase if it's a hex letter and the hash nibble is >= 8.
             // We can use a simpler comparison for checking if the character is a hex letter because
             // we know `out` is a hex-encoded character (`b'0'..=b'9' | b'a'..=b'f'`).
@@ -336,12 +336,12 @@ impl Address {
     ///
     /// ```
     /// # use alloy_primitives::{address, Address};
-    /// let sender = address!("b20a608c624Ca5003905aA834De7156C68b2E1d0");
+    /// let sender = address!("0xb20a608c624Ca5003905aA834De7156C68b2E1d0");
     ///
-    /// let expected = address!("00000000219ab540356cBB839Cbe05303d7705Fa");
+    /// let expected = address!("0x00000000219ab540356cBB839Cbe05303d7705Fa");
     /// assert_eq!(sender.create(0), expected);
     ///
-    /// let expected = address!("e33c6e89e69d085897f98e92b06ebd541d1daa99");
+    /// let expected = address!("0xe33c6e89e69d085897f98e92b06ebd541d1daa99");
     /// assert_eq!(sender.create(1), expected);
     /// ```
     #[cfg(feature = "rlp")]
@@ -388,10 +388,10 @@ impl Address {
     ///
     /// ```
     /// # use alloy_primitives::{address, b256, bytes, Address};
-    /// let address = address!("8ba1f109551bD432803012645Ac136ddd64DBA72");
-    /// let salt = b256!("7c5ea36004851c764c44143b1dcb59679b11c9a68e5f41497f6cf3d480715331");
+    /// let address = address!("0x8ba1f109551bD432803012645Ac136ddd64DBA72");
+    /// let salt = b256!("0x7c5ea36004851c764c44143b1dcb59679b11c9a68e5f41497f6cf3d480715331");
     /// let init_code = bytes!("6394198df16000526103ff60206004601c335afa6040516060f3");
-    /// let expected = address!("533ae9d683B10C02EbDb05471642F85230071FC3");
+    /// let expected = address!("0x533ae9d683B10C02EbDb05471642F85230071FC3");
     /// assert_eq!(address.create2_from_code(salt, init_code), expected);
     /// ```
     #[must_use]
@@ -419,10 +419,11 @@ impl Address {
     ///
     /// ```
     /// # use alloy_primitives::{address, b256, Address};
-    /// let address = address!("5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
-    /// let salt = b256!("2b2f5776e38002e0c013d0d89828fdb06fee595ea2d5ed4b194e3883e823e350");
-    /// let init_code_hash = b256!("96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f");
-    /// let expected = address!("0d4a11d5EEaaC28EC3F61d100daF4d40471f1852");
+    /// let address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
+    /// let salt = b256!("0x2b2f5776e38002e0c013d0d89828fdb06fee595ea2d5ed4b194e3883e823e350");
+    /// let init_code_hash =
+    ///     b256!("0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f");
+    /// let expected = address!("0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852");
     /// assert_eq!(address.create2(salt, init_code_hash), expected);
     /// ```
     #[must_use]
@@ -446,6 +447,47 @@ impl Address {
         bytes[53..85].copy_from_slice(init_code_hash);
         let hash = keccak256(bytes);
         Self::from_word(hash)
+    }
+
+    /// Computes the address created by the `EOFCREATE` opcode, where `self` is the sender.
+    ///
+    /// The address is calculated as `keccak256(0xff || sender32 || salt)[12:]`, where sender32 is
+    /// the sender address left-padded to 32 bytes with zeros.
+    ///
+    /// See [EIP-7620](https://eips.ethereum.org/EIPS/eip-7620) for more details.
+    ///
+    /// <div class="warning">
+    /// This function's stability is not guaranteed. It may change in the future as the EIP is
+    /// not yet accepted.
+    /// </div>
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use alloy_primitives::{address, b256, Address};
+    /// let address = address!("0xb20a608c624Ca5003905aA834De7156C68b2E1d0");
+    /// let salt = b256!("0x7c5ea36004851c764c44143b1dcb59679b11c9a68e5f41497f6cf3d480715331");
+    /// // Create an address using CREATE_EOF
+    /// let eof_address = address.create_eof(salt);
+    /// ```
+    #[must_use]
+    #[doc(alias = "eof_create")]
+    pub fn create_eof<S>(&self, salt: S) -> Self
+    where
+        // not `AsRef` because `[u8; N]` does not implement `AsRef<[u8; N]>`
+        S: Borrow<[u8; 32]>,
+    {
+        self._create_eof(salt.borrow())
+    }
+
+    // non-generic inner function
+    fn _create_eof(&self, salt: &[u8; 32]) -> Self {
+        let mut buffer = [0; 65];
+        buffer[0] = 0xff;
+        // 1..13 is zero pad (already initialized to 0)
+        buffer[13..33].copy_from_slice(self.as_slice());
+        buffer[33..].copy_from_slice(salt);
+        Self::from_word(keccak256(buffer))
     }
 
     /// Instantiate by hashing public key bytes.
@@ -751,6 +793,39 @@ mod tests {
 
             assert_eq!(expected, from.create2(salt, init_code_hash));
             assert_eq!(expected, from.create2_from_code(salt, init_code));
+        }
+    }
+
+    #[test]
+    fn create_eof() {
+        // Test cases with (from_address, salt, expected_result)
+        let tests = [
+            (
+                "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                "02b6826e9392ee6bf6479e413c570846ab0107ec",
+            ),
+            (
+                "0000000000000000000000000000000000000000",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                "47f3f8F550f58348651C4c3E8cCD414b35d2E9fC",
+            ),
+            (
+                "deadbeef00000000000000000000000000000000",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                "D146E87a5EA438103eF31cB75B432EecF0c855cc",
+            ),
+        ];
+
+        for (from, salt, expected) in tests {
+            let from = from.parse::<Address>().unwrap();
+
+            let salt = hex::decode(salt).unwrap();
+            let salt: [u8; 32] = salt.try_into().unwrap();
+
+            let expected = expected.parse::<Address>().unwrap();
+
+            assert_eq!(expected, from.create_eof(salt));
         }
     }
 

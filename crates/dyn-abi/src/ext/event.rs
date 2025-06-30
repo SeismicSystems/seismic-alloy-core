@@ -53,7 +53,7 @@ pub trait EventExt: Sealed {
     ///
     /// This function will return an error if the decoded data does not match
     /// the expected input types.
-    fn decode_log_parts<I>(&self, topics: I, data: &[u8], validate: bool) -> Result<DecodedEvent>
+    fn decode_log_parts<I>(&self, topics: I, data: &[u8]) -> Result<DecodedEvent>
     where
         I: IntoIterator<Item = B256>;
 
@@ -61,17 +61,17 @@ pub trait EventExt: Sealed {
     ///
     /// See [`decode_log`](EventExt::decode_log).
     #[inline]
-    fn decode_log(&self, log: &LogData, validate: bool) -> Result<DecodedEvent> {
-        self.decode_log_parts(log.topics().iter().copied(), &log.data, validate)
+    fn decode_log(&self, log: &LogData) -> Result<DecodedEvent> {
+        self.decode_log_parts(log.topics().iter().copied(), &log.data)
     }
 }
 
 impl EventExt for Event {
-    fn decode_log_parts<I>(&self, topics: I, data: &[u8], validate: bool) -> Result<DecodedEvent>
+    fn decode_log_parts<I>(&self, topics: I, data: &[u8]) -> Result<DecodedEvent>
     where
         I: IntoIterator<Item = B256>,
     {
-        self.resolve()?.decode_log_parts(topics, data, validate)
+        self.resolve()?.decode_log_parts(topics, data)
     }
 }
 
@@ -86,23 +86,14 @@ mod tests {
     fn empty() {
         let mut event = Event { name: "MyEvent".into(), inputs: vec![], anonymous: false };
 
-        // skips over hash
-        let values = event.decode_log_parts(None, &[], false).unwrap();
-        assert!(values.indexed.is_empty());
-        assert!(values.body.is_empty());
-
-        // but if we validate, we get an error
-        let err = event.decode_log_parts(None, &[], true).unwrap_err();
-        assert_eq!(err, Error::TopicLengthMismatch { expected: 1, actual: 0 });
-
-        let values = event.decode_log_parts(Some(keccak256("MyEvent()")), &[], true).unwrap();
+        let values = event.decode_log_parts(Some(keccak256("MyEvent()")), &[]).unwrap();
         assert!(values.indexed.is_empty());
         assert!(values.body.is_empty());
         event.anonymous = true;
-        let values = event.decode_log_parts(None, &[], false).unwrap();
+        let values = event.decode_log_parts(None, &[]).unwrap();
         assert!(values.indexed.is_empty());
         assert!(values.body.is_empty());
-        let values = event.decode_log_parts(None, &[], true).unwrap();
+        let values = event.decode_log_parts(None, &[]).unwrap();
         assert!(values.indexed.is_empty());
         assert!(values.body.is_empty());
     }
@@ -125,12 +116,10 @@ mod tests {
         let result = event
             .decode_log_parts(
                 [
-                    b256!("0000000000000000000000000000000000000000000000000000000000000000"),
-                    b256!("0000000000000000000000000000000000000000000000000000000000000002"),
-                    b256!("0000000000000000000000001111111111111111111111111111111111111111"),
-                    b256!("00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
-                    b256!("00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
-                    b256!("00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc"),
+                    event.selector(),
+                    b256!("0x0000000000000000000000000000000000000000000000000000000000000002"),
+                    b256!("0x0000000000000000000000001111111111111111111111111111111111111111"),
+                    b256!("0x00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
                 ],
                 &hex!(
                     "
@@ -138,7 +127,6 @@ mod tests {
                     0000000000000000000000002222222222222222222222222222222222222222
                 "
                 ),
-                false,
             )
             .unwrap();
 
@@ -151,7 +139,7 @@ mod tests {
                     )),
                     256
                 ),
-                DynSolValue::Address(address!("2222222222222222222222222222222222222222")),
+                DynSolValue::Address(address!("0x2222222222222222222222222222222222222222")),
             ]
         );
         assert_eq!(
@@ -163,9 +151,9 @@ mod tests {
                     )),
                     256
                 ),
-                DynSolValue::Address(address!("1111111111111111111111111111111111111111")),
+                DynSolValue::Address(address!("0x1111111111111111111111111111111111111111")),
                 DynSolValue::FixedBytes(
-                    b256!("00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                    b256!("0x00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
                     32
                 ),
             ]
@@ -189,8 +177,8 @@ mod tests {
 
         let log = LogData::new_unchecked(
             vec![
-                b256!("cf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7"),
-                b256!("0000000000000000000000000000000000000000000000000000000000012321"),
+                b256!("0xcf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7"),
+                b256!("0x0000000000000000000000000000000000000000000000000000000000012321"),
             ],
             bytes!(
                 "
@@ -200,10 +188,8 @@ mod tests {
             ),
         );
 
-        wrong_event.decode_log(&log, false).unwrap();
-        // TODO: How do we verify here?
-        // wrong_event.decode_log_object(&log, true).unwrap_err();
-        correct_event.decode_log(&log, false).unwrap();
-        correct_event.decode_log(&log, true).unwrap();
+        wrong_event.decode_log(&log).unwrap();
+        correct_event.decode_log(&log).unwrap();
+        correct_event.decode_log(&log).unwrap();
     }
 }

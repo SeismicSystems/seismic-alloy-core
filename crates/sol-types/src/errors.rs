@@ -9,7 +9,7 @@
 
 use crate::abi;
 use alloc::{borrow::Cow, boxed::Box, collections::TryReserveError, string::String};
-use alloy_primitives::{LogData, B256};
+use alloy_primitives::{hex, LogData, B256};
 use core::fmt;
 
 /// ABI result type.
@@ -90,13 +90,22 @@ impl fmt::Display for Error {
             Self::TypeCheckFail { expected_type, data } => {
                 write!(f, "type check failed for {expected_type:?} with data: {data}",)
             }
-            Self::Overrun => f.write_str("buffer overrun while deserializing"),
-            Self::Reserve(e) => e.fmt(f),
-            Self::BufferNotEmpty => f.write_str("buffer not empty after deserialization"),
-            Self::ReserMismatch => f.write_str("reserialization did not match original"),
-            Self::RecursionLimitExceeded(limit) => {
-                write!(f, "recursion limit of {limit} exceeded during decoding")
+            Self::Overrun
+            | Self::BufferNotEmpty
+            | Self::ReserMismatch
+            | Self::RecursionLimitExceeded(_) => {
+                f.write_str("ABI decoding failed: ")?;
+                match *self {
+                    Self::Overrun => f.write_str("buffer overrun while deserializing"),
+                    Self::BufferNotEmpty => f.write_str("buffer not empty after deserialization"),
+                    Self::ReserMismatch => f.write_str("reserialization did not match original"),
+                    Self::RecursionLimitExceeded(limit) => {
+                        write!(f, "recursion limit of {limit} exceeded during decoding")
+                    }
+                    _ => unreachable!(),
+                }
             }
+            Self::Reserve(e) => e.fmt(f),
             Self::InvalidEnumValue { name, value, max } => {
                 write!(f, "`{value}` is not a valid {name} enum value (max: `{max}`)")
             }

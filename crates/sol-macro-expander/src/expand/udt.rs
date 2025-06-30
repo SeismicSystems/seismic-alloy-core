@@ -1,7 +1,6 @@
 //! [`ItemUdt`] expansion.
 
-use super::{ty::expand_rust_type, ExpCtxt};
-use crate::expand::expand_type;
+use super::ExpCtxt;
 use alloy_sol_macro_input::ContainsSolAttrs;
 use ast::ItemUdt;
 use proc_macro2::TokenStream;
@@ -14,8 +13,8 @@ pub(super) fn expand(cx: &ExpCtxt<'_>, udt: &ItemUdt) -> Result<TokenStream> {
     let (sol_attrs, mut attrs) = udt.split_attrs()?;
     cx.type_derives(&mut attrs, std::iter::once(ty), true);
 
-    let underlying_sol = expand_type(ty, &cx.crates);
-    let underlying_rust = expand_rust_type(ty, &cx.crates);
+    let underlying_sol = cx.expand_type(ty);
+    let underlying_rust = cx.expand_rust_type(ty);
 
     let type_check_body = if let Some(lit_str) = sol_attrs.type_check {
         let func_path: syn::Path = lit_str.parse()?;
@@ -70,13 +69,13 @@ pub(super) fn expand(cx: &ExpCtxt<'_>, udt: &ItemUdt) -> Result<TokenStream> {
 
                 /// Convert from the underlying value type.
                 #[inline]
-                pub const fn from(value: #underlying_rust) -> Self {
+                pub const fn from_underlying(value: #underlying_rust) -> Self {
                     Self(value)
                 }
 
                 /// Return the underlying value.
                 #[inline]
-                pub const fn into(self) -> #underlying_rust {
+                pub const fn into_underlying(self) -> #underlying_rust {
                     self.0
                 }
 
@@ -92,6 +91,20 @@ pub(super) fn expand(cx: &ExpCtxt<'_>, udt: &ItemUdt) -> Result<TokenStream> {
                 #[inline]
                 pub fn abi_encode_packed(&self) -> alloy_sol_types::private::Vec<u8> {
                     <Self as alloy_sol_types::SolType>::abi_encode_packed(&self.0)
+                }
+            }
+
+            #[automatically_derived]
+            impl From<#underlying_rust> for #name {
+                fn from(value: #underlying_rust) -> Self {
+                    Self::from_underlying(value)
+                }
+            }
+
+            #[automatically_derived]
+            impl From<#name> for #underlying_rust {
+                fn from(value: #name) -> Self {
+                    value.into_underlying()
                 }
             }
 

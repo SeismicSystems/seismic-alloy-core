@@ -5,10 +5,283 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2](https://github.com/alloy-rs/core/releases/tag/v1.1.2) - 2025-05-20
+
+### Dependencies
+
+- Enhance eip712 string parser to canonicalize inputs ([#950](https://github.com/alloy-rs/core/issues/950))
+
+## [1.1.1](https://github.com/alloy-rs/core/releases/tag/v1.1.1) - 2025-05-19
+
+### Features
+
+- Added standalone format_units_with ([#947](https://github.com/alloy-rs/core/issues/947))
+
+### Miscellaneous Tasks
+
+- Release 1.1.1
+- Re-use alloy_primitives::hex ([#952](https://github.com/alloy-rs/core/issues/952))
+
+### Other
+
+- Remove unnecessary bound on `sol_data::Array` ([#951](https://github.com/alloy-rs/core/issues/951))
+
+## [1.1.0](https://github.com/alloy-rs/core/releases/tag/v1.1.0) - 2025-04-30
+
+### Bug Fixes
+
+- Array size evaluation with modulo operator ([#930](https://github.com/alloy-rs/core/issues/930))
+
+### Documentation
+
+- Improve eip712 docs and discoverability ([#940](https://github.com/alloy-rs/core/issues/940))
+- Update getrandom js feature
+
+### Features
+
+- [primitives] Add BitX<&Self> for wrap_fixed_bytes ([#945](https://github.com/alloy-rs/core/issues/945))
+- [primitives] Add BitX<&Self> for FixedBytes ([#943](https://github.com/alloy-rs/core/issues/943))
+- [`sol!`] Ignore unlinked bytecode ([#935](https://github.com/alloy-rs/core/issues/935))
+- Add validated variants to ABI decoding methods ([#928](https://github.com/alloy-rs/core/issues/928))
+- [primitives] Add `Address::create_eof` ([#932](https://github.com/alloy-rs/core/issues/932))
+- Added format_units_with ([#936](https://github.com/alloy-rs/core/issues/936))
+- Add `KECCAK256_EMPTY` from `revm::primitives` ([#931](https://github.com/alloy-rs/core/issues/931))
+- Convert between `Signed` of different length ([#923](https://github.com/alloy-rs/core/issues/923))
+
+### Miscellaneous Tasks
+
+- Release 1.1.0
+
+## [1.0.0](https://github.com/alloy-rs/core/releases/tag/v1.0.0) - 2025-04-03
+
+### Bug Fixes
+
+- [`sol-expander`] Rename from/into + impl From ([#905](https://github.com/alloy-rs/core/issues/905))
+- [`sol!`] Pass correct call_struct to call_builder in expansion ([#901](https://github.com/alloy-rs/core/issues/901))
+- [sol-macro] Rm fake transport from contract expansion ([#865](https://github.com/alloy-rs/core/issues/865))
+- [primitives] Remove undefined behavior in FixedBytes ([#919](https://github.com/alloy-rs/core/issues/919))
+- Do not rely on bytes dependency in `wrap_fixed_bytes!` ([#918](https://github.com/alloy-rs/core/issues/918))
+
+### Dependencies
+
+- [deps] Bump getrandom to 0.3, rand to 0.9 ([#869](https://github.com/alloy-rs/core/issues/869))
+
+### Features
+
+- [primitives] Supporting diesel @ 2.2 ([#915](https://github.com/alloy-rs/core/issues/915))
+- 1.0-rc.1
+- Bump ruint, adjust rand feature
+- [sol-macro] Improve call return encoding ([#909](https://github.com/alloy-rs/core/issues/909))
+- [primitives] Remove `From<String> for Bytes` ([#907](https://github.com/alloy-rs/core/issues/907))
+- [`sol!`] Gen unit/tuple structs for errors, calls, events with 0/1 param ([#883](https://github.com/alloy-rs/core/issues/883))
+- [sol-macro] Function calls should directly yield result  ([#855](https://github.com/alloy-rs/core/issues/855))
+- [sol-types] Rm `validate: bool`  ([#863](https://github.com/alloy-rs/core/issues/863))
+- Add inner mut ([#921](https://github.com/alloy-rs/core/issues/921))
+
+### Miscellaneous Tasks
+
+- Release 1.0.0
+- Release 1.0.0-rc.1
+- Release 0.8.25
+- Remove deprecated `Signature` ([#899](https://github.com/alloy-rs/core/issues/899))
+- Add hash_ref function to sealed.rs ([#920](https://github.com/alloy-rs/core/issues/920))
+
+### Other
+
+- Merge branch 'main' into v1.0-rc
+- Merge branch 'main' into v1.0-rc
+
+### Testing
+
+- Missing import
+- [dyn-abi] Remove dev-dependency on self
+
+## [0.8.24](https://github.com/alloy-rs/core/releases/tag/v0.8.24) - 2025-03-21
+
+### Features
+
+- [`json-abi`] Config to generate types in interface ([#911](https://github.com/alloy-rs/core/issues/911))
+- [sol-macro] Add `#![sol(extra_derives(...)]` ([#910](https://github.com/alloy-rs/core/issues/910))
+
+### Miscellaneous Tasks
+
+- Release 0.8.24
+- [meta] Update .gitignore
+- Restore clippy allow
+- [meta] Update CODEOWNERS
+
+### Other
+
+- Make PrimitiveSignature::new a const fn ([#913](https://github.com/alloy-rs/core/issues/913))
+
+### Testing
+
+- Add a test for namespaced types
+
+## [0.8.23](https://github.com/alloy-rs/core/releases/tag/v0.8.23) - 2025-03-13
+
+### Bug Fixes
+
+- [`sol-expander`] Map `self` to `this` in codegen ([#903](https://github.com/alloy-rs/core/issues/903))
+
+### Features
+
+- [sol-macro] Allow standard library macros for string literals ([#898](https://github.com/alloy-rs/core/issues/898))
+- [`primitives`] Impl Display for PrimitiveSig ([#892](https://github.com/alloy-rs/core/issues/892))
+
+### Miscellaneous Tasks
+
+- Release 0.8.23
+- Clippy ([#894](https://github.com/alloy-rs/core/issues/894))
+- [primitives] Make TxKind::into_to const ([#890](https://github.com/alloy-rs/core/issues/890))
+
+### Testing
+
+- Move 'self' keyword test ([#906](https://github.com/alloy-rs/core/issues/906))
+
+## [0.8.22](https://github.com/alloy-rs/core/releases/tag/v0.8.22) - 2025-02-27
+
+### Dependencies
+
+- [deps] Bump derive_more to 2 ([#871](https://github.com/alloy-rs/core/issues/871))
+
+### Documentation
+
+- [primitives] Report some Bytes methods may panic ([#877](https://github.com/alloy-rs/core/issues/877))
+- [primitives] `random` functions are cryptographically secure ([#872](https://github.com/alloy-rs/core/issues/872))
+
+### Features
+
+- [primitives] Add some more utility methods to PrimitiveSignature ([#888](https://github.com/alloy-rs/core/issues/888))
+- Erc2098 signature representation ([#874](https://github.com/alloy-rs/core/issues/874))
+- Add TxKind::into_to ([#875](https://github.com/alloy-rs/core/issues/875))
+- [primitives] Improve rand implementations, use `thread_rng` when available ([#870](https://github.com/alloy-rs/core/issues/870))
+
+### Miscellaneous Tasks
+
+- Release 0.8.22
+- Simplify uninit_array usage ([#889](https://github.com/alloy-rs/core/issues/889))
+
+## [0.8.21](https://github.com/alloy-rs/core/releases/tag/v0.8.21) - 2025-02-10
+
+### Bug Fixes
+
+- [sol-macro] Call proc_macro_error handler manually ([#866](https://github.com/alloy-rs/core/issues/866))
+
+### Features
+
+- Add helpers for revertreason ([#867](https://github.com/alloy-rs/core/issues/867))
+- [`sol-macro-expander`] Increase resolve limit to 128 ([#864](https://github.com/alloy-rs/core/issues/864))
+
+### Miscellaneous Tasks
+
+- Release 0.8.21
+
+## [0.8.20](https://github.com/alloy-rs/core/releases/tag/v0.8.20) - 2025-02-02
+
+### Dependencies
+
+- [deps] Bump winnow 0.7 ([#862](https://github.com/alloy-rs/core/issues/862))
+
+### Documentation
+
+- Add 0x to alloy-primitives readme example ([#861](https://github.com/alloy-rs/core/issues/861))
+
+### Features
+
+- Add Sealed::as_sealed_ref ([#859](https://github.com/alloy-rs/core/issues/859))
+- Add Sealed::cloned ([#860](https://github.com/alloy-rs/core/issues/860))
+
+### Miscellaneous Tasks
+
+- Release 0.8.20
+- Clippy ([#858](https://github.com/alloy-rs/core/issues/858))
+
+## [0.8.19](https://github.com/alloy-rs/core/releases/tag/v0.8.19) - 2025-01-15
+
+### Documentation
+
+- Enable some useful rustdoc features on docs.rs ([#850](https://github.com/alloy-rs/core/issues/850))
+- Hide hex_literal export ([#849](https://github.com/alloy-rs/core/issues/849))
+
+### Features
+
+- [json-abi] Add Param.name() accessor ([#856](https://github.com/alloy-rs/core/issues/856))
+- [sol-types] Improve ABI decoding error messages ([#851](https://github.com/alloy-rs/core/issues/851))
+
+### Miscellaneous Tasks
+
+- Release 0.8.19
+
+## [0.8.18](https://github.com/alloy-rs/core/releases/tag/v0.8.18) - 2025-01-04
+
+### Bug Fixes
+
+- [primitives] Hex macro re-export ([#848](https://github.com/alloy-rs/core/issues/848))
+
+### Miscellaneous Tasks
+
+- Release 0.8.18
+
+## [0.8.17](https://github.com/alloy-rs/core/releases/tag/v0.8.17) - 2025-01-04
+
+### Bug Fixes
+
+- Coerce pow overflow ([#838](https://github.com/alloy-rs/core/issues/838))
+
+### Documentation
+
+- Typos ([#847](https://github.com/alloy-rs/core/issues/847))
+- [sol-macro] Document visibility and state mutability ([#846](https://github.com/alloy-rs/core/issues/846))
+
+### Features
+
+- [sol-macro] Translate contract types to address ([#842](https://github.com/alloy-rs/core/issues/842))
+- Support 0x in hex! and similar macros ([#841](https://github.com/alloy-rs/core/issues/841))
+- [sol-macro] Evaluate array sizes ([#840](https://github.com/alloy-rs/core/issues/840))
+- [primitives] Re-export foldhash ([#839](https://github.com/alloy-rs/core/issues/839))
+- Re-export rayon traits implementations ([#836](https://github.com/alloy-rs/core/issues/836))
+
+### Miscellaneous Tasks
+
+- Release 0.8.17
+
+### Testing
+
+- [sol-macro] Add a test for missing_docs ([#845](https://github.com/alloy-rs/core/issues/845))
+- Re-enable miri on foldhash ([#844](https://github.com/alloy-rs/core/issues/844))
+- [sol-macro] Add a test for namespaced types ([#843](https://github.com/alloy-rs/core/issues/843))
+
+## [0.8.16](https://github.com/alloy-rs/core/releases/tag/v0.8.16) - 2025-01-01
+
+### Bug Fixes
+
+- Re-enable foldhash on zkvm ([#833](https://github.com/alloy-rs/core/issues/833))
+- Allow non-boolean v values for PrimitiveSignature ([#832](https://github.com/alloy-rs/core/issues/832))
+- [syn-solidity] Correctly parse invalid bytes* etc as custom ([#830](https://github.com/alloy-rs/core/issues/830))
+
+### Features
+
+- [dyn-abi] Support parse scientific number ([#835](https://github.com/alloy-rs/core/issues/835))
+- Re-export `rayon` feature ([#827](https://github.com/alloy-rs/core/issues/827))
+
+### Miscellaneous Tasks
+
+- Release 0.8.16
+- Clippy ([#834](https://github.com/alloy-rs/core/issues/834))
+- Add clone_inner ([#825](https://github.com/alloy-rs/core/issues/825))
+- Shorten map type alias names ([#824](https://github.com/alloy-rs/core/issues/824))
+- [primitives] Remove rustc-hash workaround ([#822](https://github.com/alloy-rs/core/issues/822))
+
+### Other
+
+- Move deny to ci ([#821](https://github.com/alloy-rs/core/issues/821))
+
 ## [0.8.15](https://github.com/alloy-rs/core/releases/tag/v0.8.15) - 2024-12-09
 
 ### Miscellaneous Tasks
 
+- Release 0.8.15
 - Mark `Signature` as deprecated ([#819](https://github.com/alloy-rs/core/issues/819))
 - AsRef for Log ([#820](https://github.com/alloy-rs/core/issues/820))
 - Update release.toml ([#817](https://github.com/alloy-rs/core/issues/817))

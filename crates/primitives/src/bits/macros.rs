@@ -4,6 +4,10 @@
 /// This functionally creates a new named `FixedBytes` that cannot be
 /// type-confused for another named `FixedBytes`.
 ///
+/// **NOTE:** This macro currently requires:
+/// - `#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]` at the top level of the crate.
+/// - The `derive_more` crate in scope.
+///
 /// # Examples
 ///
 /// ```
@@ -174,12 +178,61 @@ macro_rules! wrap_fixed_bytes {
             }
         }
 
+        impl $crate::private::core::ops::BitAnd<&Self> for $name {
+            type Output = Self;
+
+            #[inline]
+            fn bitand(self, rhs: &Self) -> Self {
+                Self(self.0.bitand(&rhs.0))
+            }
+        }
+
+        impl $crate::private::core::ops::BitAndAssign<&Self> for $name {
+            #[inline]
+            fn bitand_assign(&mut self, rhs: &Self) {
+                self.0.bitand_assign(&rhs.0)
+            }
+        }
+
+        impl $crate::private::core::ops::BitOr<&Self> for $name {
+            type Output = Self;
+
+            #[inline]
+            fn bitor(self, rhs: &Self) -> Self {
+                Self(self.0.bitor(&rhs.0))
+            }
+        }
+
+        impl $crate::private::core::ops::BitOrAssign<&Self> for $name {
+            #[inline]
+            fn bitor_assign(&mut self, rhs: &Self) {
+                self.0.bitor_assign(&rhs.0)
+            }
+        }
+
+        impl $crate::private::core::ops::BitXor<&Self> for $name {
+            type Output = Self;
+
+            #[inline]
+            fn bitxor(self, rhs: &Self) -> Self {
+                Self(self.0.bitxor(&rhs.0))
+            }
+        }
+
+        impl $crate::private::core::ops::BitXorAssign<&Self> for $name {
+            #[inline]
+            fn bitxor_assign(&mut self, rhs: &Self) {
+                self.0.bitxor_assign(&rhs.0)
+            }
+        }
+
         $crate::impl_fb_traits!($name, $n);
         $crate::impl_rlp!($name, $n);
         $crate::impl_serde!($name);
         $crate::impl_allocative!($name);
         $crate::impl_arbitrary!($name, $n);
         $crate::impl_rand!($name);
+        $crate::impl_diesel!($name, $n);
 
         impl $name {
             /// Array of Zero bytes.
@@ -426,13 +479,11 @@ macro_rules! impl_fb_traits {
 #[cfg(feature = "getrandom")]
 macro_rules! impl_getrandom {
     () => {
-        /// Instantiates a new fixed byte array with cryptographically random
-        /// content.
+        /// Creates a new fixed byte array with the default cryptographic random number
+        /// generator.
         ///
-        /// # Panics
-        ///
-        /// Panics if the underlying call to `getrandom_uninit`
-        /// fails.
+        /// This is `rand::thread_rng` if the "rand" and "std" features are enabled, otherwise
+        /// it uses `getrandom::getrandom`. Both are cryptographically secure.
         #[inline]
         #[track_caller]
         #[cfg_attr(docsrs, doc(cfg(feature = "getrandom")))]
@@ -440,37 +491,30 @@ macro_rules! impl_getrandom {
             Self($crate::FixedBytes::random())
         }
 
-        /// Tries to create a new fixed byte array with cryptographically random
-        /// content.
+        /// Tries to create a new fixed byte array with the default cryptographic random number
+        /// generator.
         ///
-        /// # Errors
-        ///
-        /// This function only propagates the error from the underlying call to
-        /// `getrandom_uninit`.
+        /// See [`random`](Self::random) for more details.
         #[inline]
         #[cfg_attr(docsrs, doc(cfg(feature = "getrandom")))]
         pub fn try_random() -> $crate::private::Result<Self, $crate::private::getrandom::Error> {
             $crate::FixedBytes::try_random().map(Self)
         }
 
-        /// Fills this fixed byte array with cryptographically random content.
+        /// Fills this fixed byte array with the default cryptographic random number generator.
         ///
-        /// # Panics
-        ///
-        /// Panics if the underlying call to `getrandom_uninit` fails.
+        /// See [`random`](Self::random) for more details.
         #[inline]
         #[track_caller]
         #[cfg_attr(docsrs, doc(cfg(feature = "getrandom")))]
         pub fn randomize(&mut self) {
-            self.try_randomize().unwrap()
+            self.0.randomize();
         }
 
-        /// Tries to fill this fixed byte array with cryptographically random content.
+        /// Tries to fill this fixed byte array with the default cryptographic random number
+        /// generator.
         ///
-        /// # Errors
-        ///
-        /// This function only propagates the error from the underlying call to
-        /// `getrandom_uninit`.
+        /// See [`random`](Self::random) for more details.
         #[inline]
         #[cfg_attr(docsrs, doc(cfg(feature = "getrandom")))]
         pub fn try_randomize(
@@ -497,23 +541,42 @@ macro_rules! impl_rand {
         #[inline]
         #[doc(alias = "random_using")]
         #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-        pub fn random_with<R: $crate::private::rand::Rng + ?Sized>(rng: &mut R) -> Self {
+        pub fn random_with<R: $crate::private::rand::RngCore + ?Sized>(rng: &mut R) -> Self {
             Self($crate::FixedBytes::random_with(rng))
+        }
+
+        /// Tries to create a new fixed byte array with the given random number generator.
+        #[inline]
+        #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+        pub fn try_random_with<R: $crate::private::rand::TryRngCore + ?Sized>(
+            rng: &mut R,
+        ) -> $crate::private::Result<Self, R::Error> {
+            $crate::FixedBytes::try_random_with(rng).map(Self)
         }
 
         /// Fills this fixed byte array with the given random number generator.
         #[inline]
         #[doc(alias = "randomize_using")]
         #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-        pub fn randomize_with<R: $crate::private::rand::Rng + ?Sized>(&mut self, rng: &mut R) {
+        pub fn randomize_with<R: $crate::private::rand::RngCore + ?Sized>(&mut self, rng: &mut R) {
             self.0.randomize_with(rng);
+        }
+
+        /// Tries to fill this fixed byte array with the given random number generator.
+        #[inline]
+        #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+        pub fn try_randomize_with<R: $crate::private::rand::TryRngCore + ?Sized>(
+            &mut self,
+            rng: &mut R,
+        ) -> $crate::private::Result<(), R::Error> {
+            self.0.try_randomize_with(rng)
         }
     };
 
     ($t:ty) => {
         #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-        impl $crate::private::rand::distributions::Distribution<$t>
-            for $crate::private::rand::distributions::Standard
+        impl $crate::private::rand::distr::Distribution<$t>
+            for $crate::private::rand::distr::StandardUniform
         {
             #[inline]
             fn sample<R: $crate::private::rand::Rng + ?Sized>(&self, rng: &mut R) -> $t {
@@ -551,7 +614,7 @@ macro_rules! impl_rlp {
             }
 
             #[inline]
-            fn encode(&self, out: &mut dyn bytes::BufMut) {
+            fn encode(&self, out: &mut dyn $crate::private::alloy_rlp::BufMut) {
                 $crate::private::alloy_rlp::Encodable::encode(&self.0, out)
             }
         }
@@ -599,7 +662,10 @@ macro_rules! impl_serde {
         #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
         impl $crate::private::serde::Serialize for $t {
             #[inline]
-            fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+            fn serialize<S: $crate::private::serde::Serializer>(
+                &self,
+                serializer: S,
+            ) -> Result<S::Ok, S::Error> {
                 $crate::private::serde::Serialize::serialize(&self.0, serializer)
             }
         }
@@ -678,6 +744,119 @@ macro_rules! impl_arbitrary {
     ($t:ty, $n:literal) => {};
 }
 
+#[doc(hidden)]
+#[macro_export]
+#[cfg(feature = "diesel")]
+macro_rules! impl_diesel {
+    ($t:ty, $n:literal) => {
+        const _: () = {
+            use $crate::private::diesel::{
+                backend::Backend,
+                deserialize::{FromSql, Result as DeserResult},
+                expression::AsExpression,
+                internal::derives::as_expression::Bound,
+                query_builder::bind_collector::RawBytesBindCollector,
+                serialize::{Output, Result as SerResult, ToSql},
+                sql_types::{Binary, Nullable, SingleValue},
+                Queryable,
+            };
+
+            impl<Db> ToSql<Binary, Db> for $t
+            where
+                for<'c> Db: Backend<BindCollector<'c> = RawBytesBindCollector<Db>>,
+            {
+                fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Db>) -> SerResult {
+                    <$crate::FixedBytes<$n> as ToSql<Binary, Db>>::to_sql(&self.0, out)
+                }
+            }
+
+            impl<Db> FromSql<Binary, Db> for $t
+            where
+                Db: Backend,
+                *const [u8]: FromSql<Binary, Db>,
+            {
+                fn from_sql(bytes: Db::RawValue<'_>) -> DeserResult<Self> {
+                    <$crate::FixedBytes<$n> as FromSql<Binary, Db>>::from_sql(bytes).map(Self)
+                }
+            }
+
+            // Note: the following impls are equivalent to the expanded derive macro produced by
+            // #[derive(diesel::AsExpression)]
+            impl<Db> ToSql<Nullable<Binary>, Db> for $t
+            where
+                for<'c> Db: Backend<BindCollector<'c> = RawBytesBindCollector<Db>>,
+            {
+                fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Db>) -> SerResult {
+                    <$crate::FixedBytes<$n> as ToSql<Nullable<Binary>, Db>>::to_sql(&self.0, out)
+                }
+            }
+
+            impl AsExpression<Binary> for $t {
+                type Expression = Bound<Binary, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl AsExpression<Nullable<Binary>> for $t {
+                type Expression = Bound<Nullable<Binary>, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl AsExpression<Binary> for &$t {
+                type Expression = Bound<Binary, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl AsExpression<Nullable<Binary>> for &$t {
+                type Expression = Bound<Nullable<Binary>, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl AsExpression<Binary> for &&$t {
+                type Expression = Bound<Binary, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            impl AsExpression<Nullable<Binary>> for &&$t {
+                type Expression = Bound<Nullable<Binary>, Self>;
+                fn as_expression(self) -> Self::Expression {
+                    Bound::new(self)
+                }
+            }
+
+            // Note: the following impl is equivalent to the expanded derive macro produced by
+            // #[derive(diesel::Queryable)]
+            impl<Db, St> Queryable<St, Db> for $t
+            where
+                Db: Backend,
+                St: SingleValue,
+                Self: FromSql<St, Db>,
+            {
+                type Row = Self;
+                fn build(row: Self::Row) -> DeserResult<Self> {
+                    Ok(row)
+                }
+            }
+        };
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(not(feature = "diesel"))]
+macro_rules! impl_diesel {
+    ($t:ty, $n:literal) => {};
+}
+
 macro_rules! fixed_bytes_macros {
     ($d:tt $($(#[$attr:meta])* macro $name:ident($ty:ident $($rest:tt)*);)*) => {$(
         /// Converts a sequence of string literals containing hex-encoded data
@@ -686,8 +865,6 @@ macro_rules! fixed_bytes_macros {
         )]
         ///
         /// If the input is empty, a zero-initialized array is returned.
-        ///
-        /// Note that the strings cannot be prefixed with `0x`.
         ///
         /// See [`hex!`](crate::hex!) for more information.
         ///
@@ -700,7 +877,7 @@ macro_rules! fixed_bytes_macros {
         #[doc = concat!("assert_eq!(ZERO, ", stringify!($ty), "::ZERO);")]
         ///
         /// # stringify!(
-        #[doc = concat!("let byte_array: ", stringify!($ty), " = ", stringify!($name), "!(\"0123abcd…\");")]
+        #[doc = concat!("let byte_array: ", stringify!($ty), " = ", stringify!($name), "!(\"0x0123abcd…\");")]
         /// # );
         /// ```
         $(#[$attr])*
@@ -710,8 +887,8 @@ macro_rules! fixed_bytes_macros {
                 $crate::$ty::ZERO
             };
 
-            ($d ($d s:literal)+) => {
-                $crate::$ty::new($crate::hex!($d ($d s)+))
+            ($d ($d t:tt)+) => {
+                $crate::$ty::new($crate::hex!($d ($d t)+))
             };
         }
     )*};
@@ -738,8 +915,6 @@ fixed_bytes_macros! { $
 ///
 /// If the input is empty, an empty instance is returned.
 ///
-/// Note that the strings cannot be prefixed with `0x`.
-///
 /// See [`hex!`](crate::hex!) for more information.
 ///
 /// # Examples
@@ -747,7 +922,7 @@ fixed_bytes_macros! { $
 /// ```
 /// use alloy_primitives::{bytes, Bytes};
 ///
-/// static MY_BYTES: Bytes = bytes!("0123abcd");
+/// static MY_BYTES: Bytes = bytes!("0x0123" "0xabcd");
 /// assert_eq!(MY_BYTES, Bytes::from(&[0x01, 0x23, 0xab, 0xcd]));
 /// ```
 #[macro_export]
@@ -756,22 +931,16 @@ macro_rules! bytes {
         $crate::Bytes::new()
     };
 
-    ($($s:literal)+) => {{
-        // force const eval
-        const STATIC_BYTES: &'static [u8] = &$crate::hex!($($s)+);
-        $crate::Bytes::from_static(STATIC_BYTES)
+    ($($s:literal)+) => {const {
+        $crate::Bytes::from_static(&$crate::hex!($($s)+))
     }};
 
-    [$($inner:literal),+ $(,)?] => {{
-        // force const eval
-        const STATIC_BYTES: &'static [u8] = &[$($inner),+];
-        $crate::Bytes::from_static(STATIC_BYTES)
+    [$($inner:expr),+ $(,)?] => {const {
+        $crate::Bytes::from_static(&[$($inner),+])
     }};
 
-    [$inner:literal; $size:literal] => {{
-        // force const eval
-        const STATIC_BYTES: &'static [u8; $size] = &[$inner; $size];
-        $crate::Bytes::from_static(STATIC_BYTES)
+    [$inner:expr; $size:literal] => {const {
+        $crate::Bytes::from_static(&[$inner; $size])
     }};
 }
 
@@ -800,20 +969,20 @@ mod tests {
         const A0: Address = address!();
         assert_eq!(A0, Address::ZERO);
 
-        const A1: Address = address!("0102030405060708090a0b0c0d0e0f1011121314");
-        const A2: Address = Address(fixed_bytes!("0102030405060708090a0b0c0d0e0f1011121314"));
-        const A3: Address = Address(FixedBytes(hex!("0102030405060708090a0b0c0d0e0f1011121314")));
+        const A1: Address = address!("0x0102030405060708090a0b0c0d0e0f1011121314");
+        const A2: Address = Address(fixed_bytes!("0x0102030405060708090a0b0c0d0e0f1011121314"));
+        const A3: Address = Address(FixedBytes(hex!("0x0102030405060708090a0b0c0d0e0f1011121314")));
         assert_eq!(A1, A2);
         assert_eq!(A1, A3);
-        assert_eq!(A1, hex!("0102030405060708090a0b0c0d0e0f1011121314"));
+        assert_eq!(A1, hex!("0x0102030405060708090a0b0c0d0e0f1011121314"));
 
-        static B: Bytes = bytes!("112233");
+        static B: Bytes = bytes!("0x112233");
         assert_eq!(B[..], [0x11, 0x22, 0x33]);
 
         static EMPTY_BYTES1: Bytes = bytes!();
         static EMPTY_BYTES2: Bytes = bytes!("");
-        assert_eq!(EMPTY_BYTES1, EMPTY_BYTES2);
-        assert_eq!(EMPTY_BYTES1, Bytes::new());
         assert!(EMPTY_BYTES1.is_empty());
+        assert_eq!(EMPTY_BYTES1, Bytes::new());
+        assert_eq!(EMPTY_BYTES1, EMPTY_BYTES2);
     }
 }

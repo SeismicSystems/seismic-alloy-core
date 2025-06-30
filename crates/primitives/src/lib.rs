@@ -19,17 +19,15 @@ use tiny_keccak as _;
 #[cfg(feature = "postgres")]
 pub mod postgres;
 
+#[cfg(feature = "diesel")]
+pub mod diesel;
+
 pub mod aliases;
 #[doc(no_inline)]
 pub use aliases::{
     BlockHash, BlockNumber, BlockTimestamp, ChainId, Selector, StorageKey, StorageValue, TxHash,
     TxIndex, TxNonce, TxNumber, B128, B256, B512, B64, I128, I16, I160, I256, I32, I64, I8, U128,
     U16, U160, U256, U32, U512, U64, U8,
-};
-
-#[cfg(feature = "seismic")]
-pub use aliases::{
-    SAddress, SI128, SI16, SI256, SI32, SI64, SI8, SU128, SU16, SU256, SU32, SU64, SU8,
 };
 
 #[macro_use]
@@ -59,18 +57,20 @@ mod signed;
 pub use signed::{BigIntConversionError, ParseSignedError, Sign, Signed};
 
 mod signature;
-pub use signature::{normalize_v, to_eip155_v, PrimitiveSignature, SignatureError};
 #[allow(deprecated)]
-pub use signature::{Parity, Signature};
+pub use signature::PrimitiveSignature;
+pub use signature::{normalize_v, to_eip155_v, Signature, SignatureError};
 
 pub mod utils;
-pub use utils::{eip191_hash_message, keccak256, Keccak256};
+pub use utils::{eip191_hash_message, keccak256, Keccak256, KECCAK256_EMPTY};
+
+#[doc(hidden)] // Use `hex` directly instead!
+pub mod hex_literal;
 
 #[doc(no_inline)]
 pub use {
     ::bytes,
     ::hex,
-    hex_literal::{self, hex},
     ruint::{self, uint, Uint},
 };
 
@@ -123,4 +123,16 @@ pub mod private {
 
     #[cfg(feature = "arbitrary")]
     pub use {arbitrary, derive_arbitrary, proptest, proptest_derive};
+
+    #[cfg(feature = "diesel")]
+    pub use diesel;
 }
+
+#[cfg(feature = "seismic")]
+pub mod storage;
+#[cfg(feature = "seismic")]
+pub use aliases::{
+    SAddress, SI128, SI16, SI256, SI32, SI64, SI8, SU128, SU16, SU256, SU32, SU64, SU8,
+};
+#[cfg(feature = "seismic")]
+pub use storage::{FlaggedStorage, PrivateSlot, StorageSlot};

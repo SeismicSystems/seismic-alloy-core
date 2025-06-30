@@ -5,6 +5,98 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1](https://github.com/alloy-rs/core/releases/tag/v1.1.1) - 2025-05-19
+
+### Miscellaneous Tasks
+
+- Release 1.1.1
+
+## [1.1.0](https://github.com/alloy-rs/core/releases/tag/v1.1.0) - 2025-04-30
+
+### Miscellaneous Tasks
+
+- Release 1.1.0
+
+## [1.0.0](https://github.com/alloy-rs/core/releases/tag/v1.0.0) - 2025-04-03
+
+### Miscellaneous Tasks
+
+- Release 1.0.0
+- Release 1.0.0-rc.1
+- Release 0.8.25
+
+### Other
+
+- Merge branch 'main' into v1.0-rc
+
+## [0.8.24](https://github.com/alloy-rs/core/releases/tag/v0.8.24) - 2025-03-21
+
+### Miscellaneous Tasks
+
+- Release 0.8.24
+
+## [0.8.23](https://github.com/alloy-rs/core/releases/tag/v0.8.23) - 2025-03-13
+
+### Miscellaneous Tasks
+
+- Release 0.8.23
+
+## [0.8.22](https://github.com/alloy-rs/core/releases/tag/v0.8.22) - 2025-02-27
+
+### Miscellaneous Tasks
+
+- Release 0.8.22
+
+## [0.8.21](https://github.com/alloy-rs/core/releases/tag/v0.8.21) - 2025-02-10
+
+### Miscellaneous Tasks
+
+- Release 0.8.21
+
+## [0.8.20](https://github.com/alloy-rs/core/releases/tag/v0.8.20) - 2025-02-02
+
+### Miscellaneous Tasks
+
+- Release 0.8.20
+
+## [0.8.19](https://github.com/alloy-rs/core/releases/tag/v0.8.19) - 2025-01-15
+
+### Documentation
+
+- Enable some useful rustdoc features on docs.rs ([#850](https://github.com/alloy-rs/core/issues/850))
+
+### Miscellaneous Tasks
+
+- Release 0.8.19
+
+## [0.8.18](https://github.com/alloy-rs/core/releases/tag/v0.8.18) - 2025-01-04
+
+### Miscellaneous Tasks
+
+- Release 0.8.18
+
+## [0.8.17](https://github.com/alloy-rs/core/releases/tag/v0.8.17) - 2025-01-04
+
+### Miscellaneous Tasks
+
+- Release 0.8.17
+
+## [0.8.16](https://github.com/alloy-rs/core/releases/tag/v0.8.16) - 2025-01-01
+
+### Features
+
+- Re-export `rayon` feature ([#827](https://github.com/alloy-rs/core/issues/827))
+
+### Miscellaneous Tasks
+
+- Release 0.8.16
+
+## [0.8.15](https://github.com/alloy-rs/core/releases/tag/v0.8.15) - 2024-12-09
+
+### Miscellaneous Tasks
+
+- Release 0.8.15
+
 ## [0.8.14](https://github.com/alloy-rs/core/releases/tag/v0.8.14) - 2024-11-28
 
 ### Miscellaneous Tasks
@@ -109,59 +201,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.7](https://github.com/alloy-rs/core/releases/tag/v0.7.7) - 2024-07-08
 
+### Bug Fixes
+
+- [sol-macro] Json feature ([#629](https://github.com/alloy-rs/core/issues/629))
+
 ### Documentation
 
 - [primitives] Fix rustdoc for Signature ([#680](https://github.com/alloy-rs/core/issues/680))
 - Add per-crate changelogs ([#669](https://github.com/alloy-rs/core/issues/669))
+- Update alloy-core homepage link
+- Unhide and mention `sol!` wrappers ([#615](https://github.com/alloy-rs/core/issues/615))
+- Update alloy_core::sol reference to real sol ([#529](https://github.com/alloy-rs/core/issues/529))
+
+### Features
+
+- [core] Re-export `uint!` ([#537](https://github.com/alloy-rs/core/issues/537))
+- [sol-macro] Provide a way to override import paths for dependencies ([#527](https://github.com/alloy-rs/core/issues/527))
+- Add `alloy-core` prelude crate ([#521](https://github.com/alloy-rs/core/issues/521))
 
 ### Miscellaneous Tasks
 
 - Release 0.7.7
 - Use workspace.lints ([#676](https://github.com/alloy-rs/core/issues/676))
-
-## [0.7.4](https://github.com/alloy-rs/core/releases/tag/v0.7.4) - 2024-05-14
-
-### Bug Fixes
-
-- [sol-macro] Json feature ([#629](https://github.com/alloy-rs/core/issues/629))
-
-## [0.7.3](https://github.com/alloy-rs/core/releases/tag/v0.7.3) - 2024-05-14
-
-### Documentation
-
-- Update alloy-core homepage link
+- [core] Add comments to `cfg(doc)` ([#538](https://github.com/alloy-rs/core/issues/538))
+- Remove unused imports ([#534](https://github.com/alloy-rs/core/issues/534))
 
 ### Refactor
 
 - Move `expand` from `sol-macro` to its own crate ([#626](https://github.com/alloy-rs/core/issues/626))
-
-## [0.7.2](https://github.com/alloy-rs/core/releases/tag/v0.7.2) - 2024-05-02
-
-### Documentation
-
-- Unhide and mention `sol!` wrappers ([#615](https://github.com/alloy-rs/core/issues/615))
-
-## [0.6.4](https://github.com/alloy-rs/core/releases/tag/v0.6.4) - 2024-02-29
-
-### Features
-
-- [core] Re-export `uint!` ([#537](https://github.com/alloy-rs/core/issues/537))
-
-### Miscellaneous Tasks
-
-- [core] Add comments to `cfg(doc)` ([#538](https://github.com/alloy-rs/core/issues/538))
-- Remove unused imports ([#534](https://github.com/alloy-rs/core/issues/534))
-
-## [0.6.3](https://github.com/alloy-rs/core/releases/tag/v0.6.3) - 2024-02-15
-
-### Documentation
-
-- Update alloy_core::sol reference to real sol ([#529](https://github.com/alloy-rs/core/issues/529))
-
-### Features
-
-- [sol-macro] Provide a way to override import paths for dependencies ([#527](https://github.com/alloy-rs/core/issues/527))
-- Add `alloy-core` prelude crate ([#521](https://github.com/alloy-rs/core/issues/521))
 
 [`dyn-abi`]: https://crates.io/crates/alloy-dyn-abi
 [dyn-abi]: https://crates.io/crates/alloy-dyn-abi

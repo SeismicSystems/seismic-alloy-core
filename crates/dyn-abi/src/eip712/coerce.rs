@@ -3,10 +3,13 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
+use alloy_primitives::{hex, Address, Function, I256, U256};
+
 #[cfg(feature = "seismic")]
 use alloy_primitives::aliases::{SAddress, SInt, SUInt};
-use alloy_primitives::{Address, Function, I256, U256};
-use alloy_sol_types::sol_data::Sbool;
+
+#[cfg(feature = "seismic")]
+use alloy_sol_types::Sbool;
 
 impl DynSolType {
     /// Coerce a [`serde_json::Value`] to a [`DynSolValue`] via this type.
@@ -199,7 +202,7 @@ pub(crate) fn custom_struct(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::{borrow::ToOwned, string::ToString};
+    use alloc::{borrow::ToOwned, boxed::Box, string::ToString};
     use serde_json::json;
 
     #[test]

@@ -36,6 +36,9 @@ pub use types::{
     SolType, SolValue, TopicList,
 };
 
+#[cfg(feature = "seismic")]
+pub use types::data_type::{Saddress, Sbool, Sint, Suint};
+
 pub mod utils;
 
 mod eip712;
