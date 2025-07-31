@@ -1,14 +1,12 @@
 //! Abstraction for ethereum storage slots
 //! Particularly to enable a privacy flag
-#[cfg(feature = "arbitrary")]
-use proptest_derive::Arbitrary;
 use ruint::UintTryFrom;
 
 use crate::{FixedBytes, U256};
 
 /// A storage value that can be either private or public.
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(proptest_derive::Arbitrary, derive_arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FlaggedStorage {
     /// The value of the storage.
