@@ -74,6 +74,26 @@ impl FlaggedStorage {
         }
     }
 
+    /// Create a public FlaggedStorage from a value
+    pub fn public<T>(value: T) -> Self
+    where U256: UintTryFrom<T>,
+    {
+        Self {
+            value: U256::from(value),
+            is_private: false,
+        }
+    }
+
+    /// Create a private FlaggedStorage from a value
+    pub fn private<T>(value: T) -> Self
+    where U256: UintTryFrom<T>,
+    {
+        Self {
+            value: U256::from(value),
+            is_private: true,
+        }
+    }
+
     /// Collect the values from a HashMap of FlaggedStorage values.
     #[cfg(feature = "std")]
     pub fn collect_value<S: core::hash::BuildHasher + Default>(
