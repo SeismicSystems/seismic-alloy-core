@@ -41,7 +41,7 @@ impl DynSolType {
                 custom_struct(name, prop_names, tuple, value)
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Suint(_) | Self::Sint(_) | Self::Sbool => {
+            Self::Saddress | Self::Suint(_) | Self::Sint(_) | Self::Sbool | Self::Sbytes(_) => {
                 self.coerce_json_simple(value).ok_or_else(err)
             }
         }
@@ -65,6 +65,8 @@ impl DynSolType {
             Self::Suint(n) => uint(*n, value).map(|x| DynSolValue::Suint(SUInt(x), *n)),
             #[cfg(feature = "seismic")]
             Self::Sbool => bool(value).map(|x| DynSolValue::Sbool(Sbool(x))),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(n) => fixed_bytes(*n, value).map(|x| DynSolValue::Sbytes(x, *n)),
             _ => unreachable!(),
         }
     }

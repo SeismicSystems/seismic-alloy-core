@@ -1550,6 +1550,55 @@ mod seismic {
         248 => SI248, SU248, 4;
         256 => SI256, SU256, 4;
     );
+
+    /// Seismic Shielded Fixed Bytes - `sbytesN`
+    #[derive(Clone, Copy, Debug)]
+    pub struct Sbytes<const N: usize>;
+
+    impl<T: Borrow<[u8; N]>, const N: usize> SolTypeValue<Sbytes<N>> for T
+    where
+        ByteCount<N>: SupportedFixedBytes,
+    {
+        #[inline]
+        fn stv_to_tokens(&self) -> <Sbytes<N> as SolType>::Token<'_> {
+            let mut word = Word::ZERO;
+            word[..N].copy_from_slice(self.borrow());
+            word.into()
+        }
+
+        #[inline]
+        fn stv_eip712_data_word(&self) -> Word {
+            SolTypeValue::<Sbytes<N>>::stv_to_tokens(self).0
+        }
+
+        #[inline]
+        fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
+            out.extend_from_slice(self.borrow().as_slice());
+        }
+    }
+
+    impl<const N: usize> SolType for Sbytes<N>
+    where
+        ByteCount<N>: SupportedFixedBytes,
+    {
+        type RustType = RustFixedBytes<N>;
+        type Token<'a> = WordToken;
+
+        const SOL_NAME: &'static str =
+            NameBuffer::new().write_byte(b's').write_str(<ByteCount<N>>::NAME).as_str();
+        const ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(N);
+
+        #[inline]
+        fn valid_token(token: &Self::Token<'_>) -> bool {
+            utils::check_zeroes(&token.0[N..])
+        }
+
+        #[inline]
+        fn detokenize(token: Self::Token<'_>) -> Self::RustType {
+            token.0[..N].try_into().unwrap()
+        }
+    }
 }
 
 #[cfg(feature = "seismic")]
@@ -1805,8 +1854,10 @@ mod tests {
         let token = WordToken::new(word);
         macro_rules! test {
             ($($n:literal => $x:expr),+ $(,)?) => {$(
-                assert_eq!(<Uint<$n>>::detokenize(token), $x);
-                assert_eq!(<Int<$n>>::detokenize(token), $x);
+                let x: <Uint<$n> as SolType>::RustType = $x;
+                assert_eq!(<Uint<$n>>::detokenize(token), x);
+                let x: <Int<$n> as SolType>::RustType = $x;
+                assert_eq!(<Int<$n>>::detokenize(token), x);
             )+};
         }
         #[rustfmt::skip]
