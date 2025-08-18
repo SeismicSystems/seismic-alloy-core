@@ -518,7 +518,7 @@ impl DynSolValue {
             DynSolType::Sbool => any::<bool>().prop_map(|x| Self::Sbool(Sbool(x))).sboxed(),
             #[cfg(feature = "seismic")]
             &DynSolType::Sbytes(sz) => {
-                any::<B256>().prop_map(move |x| Self::Sbytes((adjust_fb(x, sz)), sz)).sboxed()
+                any::<B256>().prop_map(move |x| Self::Sbytes(adjust_fb(x, sz), sz)).sboxed()
             }
         }
     }
