@@ -452,9 +452,7 @@ impl DynSolValue {
             #[cfg(feature = "seismic")]
             DynSolType::Sbool => u.arbitrary().map(Self::Sbool),
             #[cfg(feature = "seismic")]
-            &DynSolType::Sbytes(sz) => {
-                u.arbitrary().map(|x| Self::Sbytes(adjust_fb(x, sz), sz))
-            }
+            &DynSolType::Sbytes(sz) => u.arbitrary().map(|x| Self::Sbytes(adjust_fb(x, sz), sz)),
         }
     }
 

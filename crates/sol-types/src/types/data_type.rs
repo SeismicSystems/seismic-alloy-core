@@ -1584,10 +1584,8 @@ mod seismic {
         type RustType = RustFixedBytes<N>;
         type Token<'a> = WordToken;
 
-        const SOL_NAME: &'static str = NameBuffer::new()
-            .write_byte(b's')
-            .write_str(<ByteCount<N>>::NAME)
-            .as_str();
+        const SOL_NAME: &'static str =
+            NameBuffer::new().write_byte(b's').write_str(<ByteCount<N>>::NAME).as_str();
         const ENCODED_SIZE: Option<usize> = Some(32);
         const PACKED_ENCODED_SIZE: Option<usize> = Some(N);
 

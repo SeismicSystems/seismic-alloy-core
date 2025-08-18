@@ -404,7 +404,11 @@ impl DynSolValue {
         {
             let is_sword = matches!(
                 self,
-                Self::Saddress(_) | Self::Sint(..) | Self::Suint(..) | Self::Sbool(_) | Self::Sbytes(..)
+                Self::Saddress(_)
+                    | Self::Sint(..)
+                    | Self::Suint(..)
+                    | Self::Sbool(_)
+                    | Self::Sbytes(..)
             );
             if is_sword {
                 return true;
@@ -624,7 +628,11 @@ impl DynSolValue {
             Self::Bytes(_) | Self::String(_) | Self::Array(_) => true,
             as_fixed_seq!(tuple) => tuple.iter().any(Self::is_dynamic),
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) | Self::Sbool(_) | Self::Sbytes(_, _) => false,
+            Self::Saddress(_)
+            | Self::Sint(_, _)
+            | Self::Suint(_, _)
+            | Self::Sbool(_)
+            | Self::Sbytes(_, _) => false,
         }
     }
 
@@ -705,7 +713,11 @@ impl DynSolValue {
             Self::Array(vals) => 1 + vals.iter().map(Self::total_words).sum::<usize>(),
 
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) | Self::Sbool(_) | Self::Sbytes(_, _) => 0,
+            Self::Saddress(_)
+            | Self::Sint(_, _)
+            | Self::Suint(_, _)
+            | Self::Sbool(_)
+            | Self::Sbytes(_, _) => 0,
         }
     }
 
@@ -739,9 +751,11 @@ impl DynSolValue {
                 }
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) | Self::Sbool(_) | Self::Sbytes(_, _) => {
-                enc.append_word(unsafe { self.as_word().unwrap_unchecked() })
-            }
+            Self::Saddress(_)
+            | Self::Sint(_, _)
+            | Self::Suint(_, _)
+            | Self::Sbool(_)
+            | Self::Sbytes(_, _) => enc.append_word(unsafe { self.as_word().unwrap_unchecked() }),
         }
     }
 
@@ -770,7 +784,11 @@ impl DynSolValue {
                 Self::encode_seq_to(array, enc);
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sint(_, _) | Self::Suint(_, _) | Self::Sbool(_) | Self::Sbytes(_, _) => {}
+            Self::Saddress(_)
+            | Self::Sint(_, _)
+            | Self::Suint(_, _)
+            | Self::Sbool(_)
+            | Self::Sbytes(_, _) => {}
         }
     }
 

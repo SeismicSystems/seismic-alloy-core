@@ -44,7 +44,6 @@ impl DynSolType {
             Self::Saddress | Self::Suint(_) | Self::Sint(_) | Self::Sbool | Self::Sbytes(_) => {
                 self.coerce_json_simple(value).ok_or_else(err)
             }
-
         }
     }
 
