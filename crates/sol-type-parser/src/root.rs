@@ -108,7 +108,7 @@ impl<'a> RootType<'a> {
         match self.0 {
             "address" | "bool" | "string" | "bytes" | "uint" | "int" | "function" => Ok(()),
             #[cfg(feature = "seismic")]
-            "saddress" | "sint" | "suint" | "sbool" => Ok(()),
+            "saddress" | "sint" | "suint" | "sbool" | "sbytes" => Ok(()),
             name => {
                 if let Some(sz) = name.strip_prefix("bytes") {
                     if let Ok(sz) = sz.parse::<usize>() {
