@@ -26,9 +26,9 @@ workspace = true
 
 [dependencies]
 alloy-json-abi.workspace = true
-alloy-sol-type-parser.workspace = true
 alloy-sol-types.workspace = true
 alloy-primitives.workspace = true
+alloy-sol-type-parser.workspace = true
 
 itoa.workspace = true
 winnow.workspace = true
@@ -46,7 +46,6 @@ serde_json = { workspace = true, optional = true }
 
 # arbitrary
 arbitrary = { workspace = true, optional = true }
-derive_arbitrary = { workspace = true, optional = true }
 proptest = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -68,6 +67,7 @@ std = [
 ]
 eip712 = [
     "alloy-sol-types/eip712-serde",
+    "alloy-sol-type-parser/eip712",
     "dep:derive_more",
     "dep:serde",
     "dep:serde_json",
@@ -76,7 +76,6 @@ arbitrary = [
     "std",
     "alloy-sol-types/arbitrary",
     "dep:arbitrary",
-    "dep:derive_arbitrary",
     "dep:proptest",
 ]
 seismic = [

@@ -27,7 +27,7 @@ use hex::FromHex;
     IndexMut,
     IntoIterator,
 )]
-#[cfg_attr(feature = "arbitrary", derive(derive_arbitrary::Arbitrary, proptest_derive::Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary, proptest_derive::Arbitrary))]
 #[cfg_attr(feature = "allocative", derive(allocative::Allocative))]
 #[cfg_attr(feature = "diesel", derive(diesel::AsExpression, diesel::FromSqlRow))]
 #[cfg_attr(feature = "diesel", diesel(sql_type = diesel::sql_types::Binary))]
@@ -596,7 +596,7 @@ impl<const N: usize> FixedBytes<N> {
     /// Returns a mutable slice containing the entire array. Equivalent to
     /// `&mut s[..]`.
     #[inline]
-    pub fn as_mut_slice(&mut self) -> &mut [u8] {
+    pub const fn as_mut_slice(&mut self) -> &mut [u8] {
         &mut self.0
     }
 

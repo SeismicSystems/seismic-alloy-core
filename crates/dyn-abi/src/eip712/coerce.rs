@@ -3,7 +3,7 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
-use alloy_primitives::{hex, Address, Function, I256, U256};
+use alloy_primitives::{Address, Function, I256, U256, hex};
 
 #[cfg(feature = "seismic")]
 use alloy_primitives::aliases::{SAddress, SInt, SUInt};

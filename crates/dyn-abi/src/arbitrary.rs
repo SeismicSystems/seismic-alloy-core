@@ -10,17 +10,19 @@
 #![allow(clippy::arc_with_non_send_sync)]
 
 use crate::{DynSolType, DynSolValue};
-#[cfg(feature = "seismic")]
-use alloy_primitives::aliases::{SAddress, SInt, SUInt};
-use alloy_primitives::{Address, Function, B256, I256, U256};
-use alloy_sol_types::sol_data::Sbool;
-use arbitrary::{size_hint, Unstructured};
+use alloy_primitives::{Address, B256, Function, I256, U256};
+use arbitrary::{Unstructured, size_hint};
 use core::ops::RangeInclusive;
 use proptest::{
-    collection::{vec as vec_strategy, VecStrategy},
+    collection::{VecStrategy, vec as vec_strategy},
     prelude::*,
     strategy::{Flatten, Map, Recursive, TupleUnion, WA},
 };
+
+#[cfg(feature = "seismic")]
+use alloy_primitives::aliases::{SAddress, SInt, SUInt};
+#[cfg(feature = "seismic")]
+use alloy_sol_types::sol_data::Sbool;
 
 const DEPTH: u32 = 16;
 const DESIRED_SIZE: u32 = 64;
@@ -130,7 +132,7 @@ impl AString {
     }
 }
 
-#[derive(Debug, derive_arbitrary::Arbitrary)]
+#[derive(Debug, arbitrary::Arbitrary)]
 enum Choice {
     Bool,
     Int,

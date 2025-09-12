@@ -48,7 +48,7 @@ where
     Ok(unsafe { array_assume_init(array) })
 }
 
-/// [`MaybeUninit::slice_assume_init_mut`]
+/// `MaybeUninit::slice_assume_init_mut`
 #[inline(always)]
 unsafe fn slice_assume_init_mut<T>(slice: &mut [MaybeUninit<T>]) -> &mut [T] {
     // SAFETY: similar to safety notes for `slice_get_ref`, but we have a
@@ -77,5 +77,9 @@ pub(crate) unsafe fn array_assume_init<T, const N: usize>(array: [MaybeUninit<T>
 /// [`MaybeUninit::transpose`]
 #[inline(always)]
 unsafe fn transpose<T, const N: usize>(array: [MaybeUninit<T>; N]) -> MaybeUninit<[T; N]> {
-    mem::transmute_copy::<[MaybeUninit<T>; N], MaybeUninit<[T; N]>>(&mem::ManuallyDrop::new(&array))
+    unsafe {
+        mem::transmute_copy::<[MaybeUninit<T>; N], MaybeUninit<[T; N]>>(&mem::ManuallyDrop::new(
+            &array,
+        ))
+    }
 }

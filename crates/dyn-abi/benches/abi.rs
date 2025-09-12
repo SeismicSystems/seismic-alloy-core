@@ -1,10 +1,10 @@
 #![allow(unknown_lints, clippy::incompatible_msrv, missing_docs)]
 
 use alloy_dyn_abi::{DynSolType, DynSolValue};
-use alloy_primitives::{hex, Uint, U256};
-use alloy_sol_types::{sol, sol_data, SolType, SolValue};
+use alloy_primitives::{U256, Uint, hex};
+use alloy_sol_types::{SolType, SolValue, sol, sol_data};
 use criterion::{
-    criterion_group, criterion_main, measurement::WallTime, BenchmarkGroup, Criterion,
+    BenchmarkGroup, Criterion, criterion_group, criterion_main, measurement::WallTime,
 };
 use std::{hint::black_box, time::Duration};
 
@@ -140,10 +140,10 @@ fn encode_single_input() -> String {
 
 fn encode_struct_input() -> Input {
     Input {
-        tokenIn: hex!("C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").into(),
-        tokenOut: hex!("955d5c14C8D4944dA1Ea7836bd44D54a8eC35Ba1").into(),
+        tokenIn: hex!("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").into(),
+        tokenOut: hex!("0x955d5c14C8D4944dA1Ea7836bd44D54a8eC35Ba1").into(),
         fee: Uint::from(10000),
-        recipient: hex!("299A299A22F8C7397d9DB3702439069d951AeA74").into(),
+        recipient: hex!("0x299A299A22F8C7397d9DB3702439069d951AeA74").into(),
         deadline: U256::from(1685523099_u64),
         amountIn: U256::from(10000000000000000000_u128),
         amountOutMinimum: U256::from(836797564735606450550734848_u128),
@@ -154,10 +154,10 @@ fn encode_struct_input() -> Input {
 fn encode_struct_input_tokens() -> [ethabi::Token; 8] {
     let input = encode_struct_input();
     [
-        ethabi::Token::Address(input.tokenIn.0 .0.into()),
-        ethabi::Token::Address(input.tokenOut.0 .0.into()),
+        ethabi::Token::Address(input.tokenIn.0.0.into()),
+        ethabi::Token::Address(input.tokenOut.0.0.into()),
         ethabi::Token::Uint(input.fee.to::<u64>().into()),
-        ethabi::Token::Address(input.recipient.0 .0.into()),
+        ethabi::Token::Address(input.recipient.0.0.into()),
         ethabi::Token::Uint(ethabi::Uint::from_big_endian(&input.deadline.to_be_bytes_vec())),
         ethabi::Token::Uint(ethabi::Uint::from_big_endian(&input.amountIn.to_be_bytes_vec())),
         ethabi::Token::Uint(ethabi::Uint::from_big_endian(
