@@ -661,7 +661,9 @@ impl DynSolType {
             Self::Tuple(tuple) => tuple.iter().any(Self::is_dynamic),
             Self::FixedArray(inner, _) => inner.is_dynamic(),
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Sint(..) | Self::Suint(..) | Self::Sbool | Self::Sbytes(..) => false,
+            Self::Saddress | Self::Sint(..) | Self::Suint(..) | Self::Sbool | Self::Sbytes(..) => {
+                false
+            }
             #[cfg(feature = "eip712")]
             Self::CustomStruct { tuple, .. } => tuple.iter().any(Self::is_dynamic),
         }

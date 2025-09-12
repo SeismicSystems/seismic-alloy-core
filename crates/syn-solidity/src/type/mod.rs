@@ -311,7 +311,7 @@ impl Type {
                                 return Err(Error::new(
                                     span,
                                     "sintX must be a multiple of 8 up to 256",
-                                ))
+                                ));
                             }
                             Some(size) => Some(Self::Sint(span, size)),
                         }
@@ -322,7 +322,7 @@ impl Type {
                                 return Err(Error::new(
                                     span,
                                     "suintX must be a multiple of 8 up to 256",
-                                ))
+                                ));
                             }
                             Some(size) => Some(Self::Suint(span, size)),
                         }

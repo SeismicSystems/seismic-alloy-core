@@ -1,12 +1,12 @@
 use super::ty::as_tuple;
 use crate::{DynSolType, DynToken, Word};
 use alloc::{borrow::Cow, boxed::Box, string::String, vec::Vec};
+use alloy_primitives::{Address, Function, I256, U256};
 #[cfg(feature = "seismic")]
 use alloy_primitives::{
-    aliases::{SInt, SUInt},
     SAddress, SI256, SU256,
+    aliases::{SInt, SUInt},
 };
-use alloy_primitives::{Address, Function, I256, U256};
 use alloy_sol_types::{abi::Encoder, sol_data::Sbool, utils::words_for_len};
 
 #[cfg(feature = "eip712")]
