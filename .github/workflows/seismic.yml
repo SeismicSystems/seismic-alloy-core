@@ -37,7 +37,7 @@ jobs:
       - name: cargo build without flags
         run: cargo build
       - name: cargo build with foundry flags
-        run: cargo build --features arbitrary --features arbitrary,eip712,seismic
+        run: cargo build --features arbitrary,eip712,seismic
 
   warnings:
     runs-on: ubuntu-latest
