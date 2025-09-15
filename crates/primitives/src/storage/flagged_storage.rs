@@ -120,6 +120,24 @@ impl FlaggedStorage {
     pub fn equals_u256(&self, other: &U256) -> bool {
         self.value == *other && !self.is_private
     }
+
+    fn same_value(&self, other: &U256) -> bool {
+        &self.value == other
+    }
+
+    fn same_private(&self, other: bool) -> bool {
+        self.is_private == other
+    }
+
+    /// Same as == but with references
+    pub fn const_eq(&self, other: &Self) -> bool {
+        self.same_value(&other.value) && self.same_private(other.is_private)
+    }
+
+    /// Same as == FlaggedStorage::ZERO
+    pub fn const_is_zero(&self) -> bool {
+        self.const_eq(&FlaggedStorage::ZERO)
+    }
 }
 
 #[cfg(feature = "rlp")]
