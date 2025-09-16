@@ -5,6 +5,7 @@ use proptest_derive::Arbitrary;
 use ruint::UintTryFrom;
 
 use crate::{FixedBytes, U256};
+use core::fmt;
 
 /// A storage value that can be either private or public.
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -133,6 +134,16 @@ impl FlaggedStorage {
     /// Same as == FlaggedStorage::ZERO
     pub const fn const_is_zero(&self) -> bool {
         self.const_eq(&FlaggedStorage::ZERO)
+    }
+}
+
+impl fmt::Display for FlaggedStorage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_private {
+            write!(f, "{} (private)", self.value)
+        } else {
+            write!(f, "{} (public)", self.value)
+        }
     }
 }
 
