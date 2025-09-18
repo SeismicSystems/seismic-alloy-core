@@ -33,6 +33,13 @@ impl From<FlaggedStorage> for FixedBytes<32> {
     }
 }
 
+impl Into<FlaggedStorage> for FixedBytes<32> {
+    fn into(self) -> FlaggedStorage {
+        let value: U256 = self.into();
+        FlaggedStorage::new_from_value(value)
+    }
+}
+
 impl From<FlaggedStorage> for U256 {
     fn from(storage: FlaggedStorage) -> U256 {
         storage.value
