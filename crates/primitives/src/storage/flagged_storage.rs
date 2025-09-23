@@ -1,8 +1,8 @@
 //! Abstraction for ethereum storage slots
 //! Particularly to enable a privacy flag
-use ruint::UintTryFrom;
 #[cfg(feature = "arbitrary")]
 use proptest_derive::Arbitrary;
+use ruint::UintTryFrom;
 
 use crate::{FixedBytes, U256};
 use core::fmt;
@@ -57,6 +57,22 @@ impl FlaggedStorage {
     /// The default word for a flagged storage slot
     /// when no state has been set. Importantly, this slot is public by default
     pub const ZERO: Self = Self { value: U256::ZERO, is_private: false };
+
+    /// Create a private flagged storage value
+    pub fn public<T>(value: T) -> Self
+    where
+        U256: UintTryFrom<T>,
+    {
+        Self::new(value, false)
+    }
+
+    /// Create a private flagged storage value
+    pub fn private<T>(value: T) -> Self
+    where
+        U256: UintTryFrom<T>,
+    {
+        Self::new(value, true)
+    }
 
     /// Create a new FlaggedStorage value from a given value and visibility.
     pub fn new<T>(value: T, is_private: bool) -> Self
