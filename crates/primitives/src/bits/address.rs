@@ -1,4 +1,4 @@
-use crate::{aliases::U160, utils::keccak256, FixedBytes};
+use crate::{FixedBytes, aliases::U160, utils::keccak256};
 use alloc::{
     borrow::Borrow,
     string::{String, ToString},
@@ -96,7 +96,7 @@ impl From<U160> for Address {
 impl From<Address> for U160 {
     #[inline]
     fn from(value: Address) -> Self {
-        Self::from_be_bytes(value.0 .0)
+        Self::from_be_bytes(value.0.0)
     }
 }
 
@@ -348,7 +348,7 @@ impl Address {
     #[inline]
     #[must_use]
     pub fn create(&self, nonce: u64) -> Self {
-        use alloy_rlp::{Encodable, EMPTY_LIST_CODE, EMPTY_STRING_CODE};
+        use alloy_rlp::{EMPTY_LIST_CODE, EMPTY_STRING_CODE, Encodable};
 
         // max u64 encoded length is `1 + u64::BYTES`
         const MAX_LEN: usize = 1 + (1 + 20) + 9;
@@ -572,7 +572,7 @@ impl AddressChecksumBuffer {
 
     /// Returns the checksum of a formatted address.
     #[inline]
-    pub fn as_mut_str(&mut self) -> &mut str {
+    pub const fn as_mut_str(&mut self) -> &mut str {
         unsafe { str::from_utf8_unchecked_mut(self.0.assume_init_mut()) }
     }
 
@@ -741,43 +741,43 @@ mod tests {
                 "0000000000000000000000000000000000000000",
                 "0000000000000000000000000000000000000000000000000000000000000000",
                 "00",
-                "4D1A2e2bB4F88F0250f26Ffff098B0b30B26BF38",
+                "0x4D1A2e2bB4F88F0250f26Ffff098B0b30B26BF38",
             ),
             (
                 "deadbeef00000000000000000000000000000000",
                 "0000000000000000000000000000000000000000000000000000000000000000",
                 "00",
-                "B928f69Bb1D91Cd65274e3c79d8986362984fDA3",
+                "0xB928f69Bb1D91Cd65274e3c79d8986362984fDA3",
             ),
             (
                 "deadbeef00000000000000000000000000000000",
                 "000000000000000000000000feed000000000000000000000000000000000000",
                 "00",
-                "D04116cDd17beBE565EB2422F2497E06cC1C9833",
+                "0xD04116cDd17beBE565EB2422F2497E06cC1C9833",
             ),
             (
                 "0000000000000000000000000000000000000000",
                 "0000000000000000000000000000000000000000000000000000000000000000",
                 "deadbeef",
-                "70f2b2914A2a4b783FaEFb75f459A580616Fcb5e",
+                "0x70f2b2914A2a4b783FaEFb75f459A580616Fcb5e",
             ),
             (
                 "00000000000000000000000000000000deadbeef",
                 "00000000000000000000000000000000000000000000000000000000cafebabe",
                 "deadbeef",
-                "60f3f640a8508fC6a86d45DF051962668E1e8AC7",
+                "0x60f3f640a8508fC6a86d45DF051962668E1e8AC7",
             ),
             (
                 "00000000000000000000000000000000deadbeef",
                 "00000000000000000000000000000000000000000000000000000000cafebabe",
                 "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-                "1d8bfDC5D46DC4f61D6b6115972536eBE6A8854C",
+                "0x1d8bfDC5D46DC4f61D6b6115972536eBE6A8854C",
             ),
             (
                 "0000000000000000000000000000000000000000",
                 "0000000000000000000000000000000000000000000000000000000000000000",
                 "",
-                "E33C0C7F7df4809055C3ebA6c09CFe4BaF1BD9e0",
+                "0xE33C0C7F7df4809055C3ebA6c09CFe4BaF1BD9e0",
             ),
         ];
         for (from, salt, init_code, expected) in tests {

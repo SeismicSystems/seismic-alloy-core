@@ -5,10 +5,12 @@ use proptest_derive::Arbitrary;
 use ruint::UintTryFrom;
 
 use crate::{FixedBytes, U256};
+use core::fmt;
 
 /// A storage value that can be either private or public.
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FlaggedStorage {
     /// The value of the storage.
@@ -32,6 +34,13 @@ impl From<FlaggedStorage> for FixedBytes<32> {
     }
 }
 
+impl Into<FlaggedStorage> for FixedBytes<32> {
+    fn into(self) -> FlaggedStorage {
+        let value: U256 = self.into();
+        FlaggedStorage::new_from_value(value)
+    }
+}
+
 impl From<FlaggedStorage> for U256 {
     fn from(storage: FlaggedStorage) -> U256 {
         storage.value
@@ -48,6 +57,22 @@ impl FlaggedStorage {
     /// The default word for a flagged storage slot
     /// when no state has been set. Importantly, this slot is public by default
     pub const ZERO: Self = Self { value: U256::ZERO, is_private: false };
+
+    /// Create a private flagged storage value
+    pub fn public<T>(value: T) -> Self
+    where
+        U256: UintTryFrom<T>,
+    {
+        Self::new(value, false)
+    }
+
+    /// Create a private flagged storage value
+    pub fn private<T>(value: T) -> Self
+    where
+        U256: UintTryFrom<T>,
+    {
+        Self::new(value, true)
+    }
 
     /// Create a new FlaggedStorage value from a given value and visibility.
     pub fn new<T>(value: T, is_private: bool) -> Self
@@ -119,6 +144,30 @@ impl FlaggedStorage {
     /// because it ends up conflicting with other PartialEq<U256> impls
     pub fn equals_u256(&self, other: &U256) -> bool {
         self.value == *other && !self.is_private
+    }
+
+    const fn same_private(&self, other: bool) -> bool {
+        self.is_private == other
+    }
+
+    /// Same as == but with references
+    pub const fn const_eq(&self, other: &Self) -> bool {
+        self.value.const_eq(&other.value) && self.same_private(other.is_private)
+    }
+
+    /// Same as == FlaggedStorage::ZERO
+    pub const fn const_is_zero(&self) -> bool {
+        self.const_eq(&FlaggedStorage::ZERO)
+    }
+}
+
+impl fmt::Display for FlaggedStorage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_private {
+            write!(f, "{} (private)", self.value)
+        } else {
+            write!(f, "{} (public)", self.value)
+        }
     }
 }
 

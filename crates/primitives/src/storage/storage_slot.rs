@@ -1,6 +1,6 @@
 //! Storage slot trait
 
-use crate::{storage::FlaggedStorage, U256};
+use crate::{U256, storage::FlaggedStorage};
 
 /// A word of data that can be stored in a storage slot
 pub trait StorageSlot:

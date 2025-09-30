@@ -1,4 +1,4 @@
-use crate::{kw, sol_path, SolPath, Spanned};
+use crate::{SolPath, Spanned, kw, sol_path};
 use proc_macro2::Span;
 use std::{
     fmt,
@@ -7,10 +7,10 @@ use std::{
     num::{IntErrorKind, NonZeroU16},
 };
 use syn::{
+    Error, Ident, Result, Token,
     ext::IdentExt,
     parse::{Lookahead1, Parse, ParseStream},
     token::{Bracket, Paren},
-    Error, Ident, Result, Token,
 };
 
 mod array;
@@ -311,7 +311,7 @@ impl Type {
                                 return Err(Error::new(
                                     span,
                                     "sintX must be a multiple of 8 up to 256",
-                                ))
+                                ));
                             }
                             Some(size) => Some(Self::Sint(span, size)),
                         }
@@ -322,7 +322,7 @@ impl Type {
                                 return Err(Error::new(
                                     span,
                                     "suintX must be a multiple of 8 up to 256",
-                                ))
+                                ));
                             }
                             Some(size) => Some(Self::Suint(span, size)),
                         }
@@ -338,7 +338,7 @@ impl Type {
                     match parse_size(s, span)? {
                         None => Self::custom(ident),
                         Some(Some(size)) if size.get() > 32 => {
-                            return Err(Error::new(span, "fixed bytes range is 1-32"))
+                            return Err(Error::new(span, "fixed bytes range is 1-32"));
                         }
                         Some(Some(size)) => Self::FixedBytes(span, size),
                         Some(None) => Self::Bytes(span),
@@ -347,7 +347,7 @@ impl Type {
                     match parse_size(s, span)? {
                         None => Self::custom(ident),
                         Some(Some(size)) if size.get() > 256 || size.get() % 8 != 0 => {
-                            return Err(Error::new(span, "intX must be a multiple of 8 up to 256"))
+                            return Err(Error::new(span, "intX must be a multiple of 8 up to 256"));
                         }
                         Some(size) => Self::Int(span, size),
                     }
@@ -355,7 +355,10 @@ impl Type {
                     match parse_size(s, span)? {
                         None => Self::custom(ident),
                         Some(Some(size)) if size.get() > 256 || size.get() % 8 != 0 => {
-                            return Err(Error::new(span, "uintX must be a multiple of 8 up to 256"))
+                            return Err(Error::new(
+                                span,
+                                "uintX must be a multiple of 8 up to 256",
+                            ));
                         }
                         Some(size) => Self::Uint(span, size),
                     }
