@@ -55,11 +55,17 @@ keccak-asm = { workspace = true, optional = true }
 sha3 = { workspace = true, optional = true }
 tiny-keccak = { workspace = true, features = ["keccak"] }
 
+# borsh
+borsh = { workspace = true, optional = true, features = ["derive"] }
+
 # rlp
 alloy-rlp = { workspace = true, optional = true }
 
 # serde
 serde = { workspace = true, optional = true, features = ["derive"] }
+
+# rkyv
+rkyv = { workspace = true, optional = true }
 
 # getrandom
 getrandom = { workspace = true, optional = true }
@@ -124,9 +130,10 @@ std = [
     "sha3?/std",
 ]
 nightly = [
+    "foldhash?/nightly",
+    "hashbrown?/nightly",
     "hex/nightly",
     "ruint/nightly",
-    "hashbrown?/nightly",
     "rustc-hash?/nightly",
 ]
 
@@ -146,6 +153,7 @@ getrandom = ["dep:getrandom"]
 k256 = ["dep:k256"]
 rand = ["dep:rand", "getrandom", "ruint/rand-09", "rustc-hash?/rand"]
 rayon = ["dep:rayon", "hashbrown?/rayon", "indexmap?/rayon"]
+rkyv = ["dep:rkyv", "ruint/rkyv"]
 rlp = ["dep:alloy-rlp", "ruint/alloy-rlp"]
 serde = [
     "dep:serde",
@@ -156,6 +164,7 @@ serde = [
     "indexmap?/serde",
     "rand?/serde",
 ]
+borsh = ["dep:borsh", "ruint/borsh"]
 
 allocative = ["dep:allocative"]
 arbitrary = [

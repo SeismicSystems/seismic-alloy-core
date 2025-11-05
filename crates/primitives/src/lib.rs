@@ -6,7 +6,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "nightly", feature(hasher_prefixfree_extras))]
-#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
 extern crate alloc;
@@ -39,6 +39,11 @@ pub use bits::{
     Address, AddressChecksumBuffer, AddressError, BLOOM_BITS_PER_ITEM, BLOOM_SIZE_BITS,
     BLOOM_SIZE_BYTES, Bloom, BloomInput, FixedBytes, Function,
 };
+#[cfg(feature = "rkyv")]
+pub use bits::{
+    AddressResolver, ArchivedAddress, ArchivedBloom, ArchivedFixedBytes, BloomResolver,
+    FixedBytesResolver,
+};
 
 #[path = "bytes/mod.rs"]
 mod bytes_;
@@ -70,11 +75,13 @@ pub use utils::{KECCAK256_EMPTY, Keccak256, eip191_hash_message, keccak256};
 #[doc(hidden)] // Use `hex` directly instead!
 pub mod hex_literal;
 
+#[doc(inline)]
+pub use ruint::uint;
 #[doc(no_inline)]
 pub use {
     ::bytes,
     ::hex,
-    ruint::{self, Uint, uint},
+    ruint::{self, Uint},
 };
 
 #[cfg(feature = "serde")]
@@ -123,6 +130,9 @@ pub mod private {
 
     #[cfg(feature = "serde")]
     pub use serde;
+
+    #[cfg(feature = "borsh")]
+    pub use borsh;
 
     #[cfg(feature = "arbitrary")]
     pub use {arbitrary, proptest, proptest_derive};

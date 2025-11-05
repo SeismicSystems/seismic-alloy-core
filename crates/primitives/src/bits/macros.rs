@@ -5,7 +5,7 @@
 /// type-confused for another named `FixedBytes`.
 ///
 /// **NOTE:** This macro currently requires:
-/// - `#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]` at the top level of the crate.
+/// - `#![cfg_attr(docsrs, feature(doc_cfg))]` at the top level of the crate.
 /// - The `derive_more` crate in scope.
 ///
 /// # Examples
@@ -227,6 +227,7 @@ macro_rules! wrap_fixed_bytes {
         }
 
         $crate::impl_fb_traits!($name, $n);
+        $crate::impl_borsh!($name, $n);
         $crate::impl_rlp!($name, $n);
         $crate::impl_serde!($name);
         $crate::impl_allocative!($name);
@@ -635,6 +636,41 @@ macro_rules! impl_rlp {
 
 #[doc(hidden)]
 #[macro_export]
+#[cfg(feature = "borsh")]
+macro_rules! impl_borsh {
+    ($t:ty, $n:literal) => {
+        #[cfg_attr(docsrs, doc(cfg(feature = "borsh")))]
+        impl $crate::private::borsh::BorshSerialize for $t {
+            #[inline]
+            fn serialize<W: $crate::private::borsh::io::Write>(
+                &self,
+                writer: &mut W,
+            ) -> Result<(), $crate::private::borsh::io::Error> {
+                <$crate::FixedBytes<$n> as $crate::private::borsh::BorshSerialize>::serialize(&self.0, writer)
+            }
+        }
+
+        #[cfg_attr(docsrs, doc(cfg(feature = "borsh")))]
+        impl $crate::private::borsh::BorshDeserialize for $t {
+            #[inline]
+            fn deserialize_reader<R: $crate::private::borsh::io::Read>(
+                reader: &mut R,
+            ) -> Result<Self, $crate::private::borsh::io::Error> {
+                <$crate::FixedBytes<$n> as $crate::private::borsh::BorshDeserialize>::deserialize_reader(reader).map(Self)
+            }
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(not(feature = "borsh"))]
+macro_rules! impl_borsh {
+    ($($t:tt)*) => {};
+}
+
+#[doc(hidden)]
+#[macro_export]
 #[cfg(feature = "allocative")]
 macro_rules! impl_allocative {
     ($t:ty) => {
@@ -757,14 +793,14 @@ macro_rules! impl_diesel {
                 deserialize::{FromSql, Result as DeserResult},
                 expression::AsExpression,
                 internal::derives::as_expression::Bound,
-                query_builder::bind_collector::RawBytesBindCollector,
                 serialize::{Output, Result as SerResult, ToSql},
                 sql_types::{Binary, Nullable, SingleValue},
             };
 
             impl<Db> ToSql<Binary, Db> for $t
             where
-                for<'c> Db: Backend<BindCollector<'c> = RawBytesBindCollector<Db>>,
+                Db: Backend,
+                [u8]: ToSql<Binary, Db>,
             {
                 fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Db>) -> SerResult {
                     <$crate::FixedBytes<$n> as ToSql<Binary, Db>>::to_sql(&self.0, out)
@@ -785,10 +821,11 @@ macro_rules! impl_diesel {
             // #[derive(diesel::AsExpression)]
             impl<Db> ToSql<Nullable<Binary>, Db> for $t
             where
-                for<'c> Db: Backend<BindCollector<'c> = RawBytesBindCollector<Db>>,
+                Db: Backend,
+                Self: ToSql<Binary, Db>,
             {
                 fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Db>) -> SerResult {
-                    <$crate::FixedBytes<$n> as ToSql<Nullable<Binary>, Db>>::to_sql(&self.0, out)
+                    ToSql::<Binary, Db>::to_sql(self, out)
                 }
             }
 

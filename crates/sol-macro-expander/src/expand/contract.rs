@@ -38,7 +38,7 @@ pub(super) fn expand(cx: &mut ExpCtxt<'_>, contract: &ItemContract) -> Result<To
     let abi = sol_attrs.abi.or(cx.attrs.abi).unwrap_or(false);
     let docs = sol_attrs.docs.or(cx.attrs.docs).unwrap_or(true);
 
-    let bytecode = sol_attrs.bytecode.map(|lit| {
+    let bytecode = sol_attrs.bytecode.as_ref().map(|lit| {
         let name = Ident::new("BYTECODE", lit.span());
         let hex = lit.value();
         let bytes = hex::decode(&hex).unwrap();
@@ -55,7 +55,7 @@ pub(super) fn expand(cx: &mut ExpCtxt<'_>, contract: &ItemContract) -> Result<To
                 alloy_sol_types::private::Bytes::from_static(#lit_bytes);
         }
     });
-    let deployed_bytecode = sol_attrs.deployed_bytecode.map(|lit| {
+    let deployed_bytecode = sol_attrs.deployed_bytecode.as_ref().map(|lit| {
         let name = Ident::new("DEPLOYED_BYTECODE", lit.span());
         let hex = lit.value();
         let bytes = hex::decode(&hex).unwrap();
@@ -84,7 +84,10 @@ pub(super) fn expand(cx: &mut ExpCtxt<'_>, contract: &ItemContract) -> Result<To
         attrs.into_iter().partition::<Vec<_>, _>(|a| a.path().is_ident("doc"));
     mod_attrs.extend(item_attrs.iter().filter(|a| !a.path().is_ident("derive")).cloned());
 
+    // Expand inner items.
     let mut item_tokens = TokenStream::new();
+    let prev_cx_attrs = cx.attrs.clone();
+    cx.attrs.merge(&sol_attrs);
     for item in body {
         match item {
             Item::Function(function) => match function.kind {
@@ -139,7 +142,6 @@ pub(super) fn expand(cx: &mut ExpCtxt<'_>, contract: &ItemContract) -> Result<To
         }
     }
 
-    let enum_expander = CallLikeExpander { cx, contract_name: name.clone(), extra_methods };
     // Remove any `Default` derives.
     let mut enum_attrs = item_attrs;
     for attr in &mut enum_attrs {
@@ -162,25 +164,33 @@ pub(super) fn expand(cx: &mut ExpCtxt<'_>, contract: &ItemContract) -> Result<To
         attr.meta = parse_quote! { derive(#(#derives),*) };
     }
 
-    let functions_enum = (!functions.is_empty()).then(|| {
-        let mut attrs = enum_attrs.clone();
-        let doc_str = format!("Container for all the [`{name}`](self) function calls.");
-        attrs.push(parse_quote!(#[doc = #doc_str]));
-        enum_expander.expand(ToExpand::Functions(&functions), attrs)
-    });
-
+    let enum_expander = CallLikeExpander { cx, contract_name: name.clone(), extra_methods };
     let errors_enum = (!errors.is_empty()).then(|| {
         let mut attrs = enum_attrs.clone();
         let doc_str = format!("Container for all the [`{name}`](self) custom errors.");
         attrs.push(parse_quote!(#[doc = #doc_str]));
+        attrs.push(parse_quote!(#[derive(Clone)]));
         enum_expander.expand(ToExpand::Errors(&errors), attrs)
     });
 
     let events_enum = (!events.is_empty()).then(|| {
-        let mut attrs = enum_attrs;
+        let mut attrs = enum_attrs.clone();
         let doc_str = format!("Container for all the [`{name}`](self) events.");
         attrs.push(parse_quote!(#[doc = #doc_str]));
+        attrs.push(parse_quote!(#[derive(Clone)]));
         enum_expander.expand(ToExpand::Events(&events), attrs)
+    });
+
+    // Do not propagate contract-level derives to the functions enum.
+    cx.attrs = prev_cx_attrs;
+
+    let functions_enum = (!functions.is_empty()).then(|| {
+        let mut attrs = enum_attrs;
+        let doc_str = format!("Container for all the [`{name}`](self) function calls.");
+        attrs.push(parse_quote!(#[doc = #doc_str]));
+        attrs.push(parse_quote!(#[derive(Clone)]));
+        let enum_expander = CallLikeExpander { cx, contract_name: name.clone(), extra_methods };
+        enum_expander.expand(ToExpand::Functions(&functions), attrs)
     });
 
     let mod_descr_doc = (docs && docs_str(&mod_attrs).trim().is_empty())
@@ -407,7 +417,6 @@ pub(super) fn expand(cx: &mut ExpCtxt<'_>, contract: &ItemContract) -> Result<To
             }
 
             /// Instantiation and getters/setters.
-            #[automatically_derived]
             impl #generic_p_n #name<P, N> {
                 #[doc = #new_fn_doc]
                 #[inline]
@@ -451,7 +460,6 @@ pub(super) fn expand(cx: &mut ExpCtxt<'_>, contract: &ItemContract) -> Result<To
             }
 
             /// Function calls.
-            #[automatically_derived]
             impl #generic_p_n #name<P, N> {
                 /// Creates a new call builder using this contract instance's provider and address.
                 ///
@@ -467,7 +475,6 @@ pub(super) fn expand(cx: &mut ExpCtxt<'_>, contract: &ItemContract) -> Result<To
             }
 
             /// Event filters.
-            #[automatically_derived]
             impl #generic_p_n #name<P, N> {
                 /// Creates a new event filter using this contract instance's provider and address.
                 ///
@@ -891,12 +898,15 @@ impl CallLikeExpander<'_> {
         let types = data.types();
 
         let selectors = &sorted_data.selectors;
+        let sorted_variants = &sorted_data.variants;
+        let sorted_types = sorted_data.types();
 
         let selector_len = selectors.first().unwrap().array.len();
         assert!(selectors.iter().all(|s| s.array.len() == selector_len));
         let selector_type = quote!([u8; #selector_len]);
 
         self.cx.type_derives(&mut attrs, types.iter().cloned().map(ast::Type::custom), false);
+        let trait_ = &data.trait_;
 
         let mut tokens = quote! {
             #(#attrs)*
@@ -907,7 +917,6 @@ impl CallLikeExpander<'_> {
                 )*
             }
 
-            #[automatically_derived]
             impl #name {
                 /// All the selectors of this enum.
                 ///
@@ -917,6 +926,28 @@ impl CallLikeExpander<'_> {
                 /// Prefer using `SolInterface` methods instead.
                 // NOTE: This is currently sorted to allow for binary search in `SolInterface`.
                 pub const SELECTORS: &'static [#selector_type] = &[#(#selectors),*];
+
+                /// The names of the variants in the same order as `SELECTORS`.
+                pub const VARIANT_NAMES: &'static [&'static str] = &[#(::core::stringify!(#sorted_variants)),*];
+
+                /// The signatures in the same order as `SELECTORS`.
+                pub const SIGNATURES: &'static [&'static str] = &[#(<#sorted_types as alloy_sol_types::#trait_>::SIGNATURE),*];
+
+                /// Returns the signature for the given selector, if known.
+                #[inline]
+                pub fn signature_by_selector(selector: #selector_type) -> ::core::option::Option<&'static str> {
+                    match Self::SELECTORS.binary_search(&selector) {
+                        ::core::result::Result::Ok(idx) => ::core::option::Option::Some(Self::SIGNATURES[idx]),
+                        ::core::result::Result::Err(_) => ::core::option::Option::None,
+                    }
+                }
+
+                /// Returns the enum variant name for the given selector, if known.
+                #[inline]
+                pub fn name_by_selector(selector: #selector_type) -> ::core::option::Option<&'static str> {
+                    let sig = Self::signature_by_selector(selector)?;
+                    sig.split_once('(').map(|(name, _)| name)
+                }
             }
         };
 
@@ -926,7 +957,6 @@ impl CallLikeExpander<'_> {
             let methods = variants.iter().zip(types).map(generate_variant_methods);
             tokens.extend(conversions);
             tokens.extend(quote! {
-                #[automatically_derived]
                 impl #name {
                     #(#methods)*
                 }
