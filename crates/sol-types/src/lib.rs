@@ -5,7 +5,7 @@
 )]
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[allow(unused_extern_crates)]
 extern crate self as alloy_sol_types;
@@ -56,7 +56,7 @@ pub use alloy_sol_macro::sol;
 pub mod private {
     pub use super::{
         abi::RECURSION_LIMIT,
-        utils::{just_ok, next_multiple_of_32, words_for, words_for_len},
+        utils::{next_multiple_of_32, words_for, words_for_len},
     };
     pub use alloc::{
         borrow::{Cow, ToOwned},
@@ -119,4 +119,14 @@ pub mod private {
     }
 
     pub struct AssertTypeEq<T>(pub T);
+
+    #[inline(never)]
+    pub fn str_to_owned(s: &str) -> String {
+        s.to_owned()
+    }
+
+    #[inline(never)]
+    pub fn make_btree_map<K: Ord, V>(items: Vec<(K, V)>) -> BTreeMap<K, V> {
+        BTreeMap::from_iter(items)
+    }
 }
