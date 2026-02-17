@@ -4,84 +4,85 @@ Fork of [alloy-rs/core](https://github.com/alloy-rs/core) that adds **shielded t
 
 ## What This Does
 
-Standard EVM storage is publicly readable. Seismic extends the Ethereum type system with **shielded types** — `suint`, `sint`, `saddress`, `sbool` — that represent values hidden from the state tree. This crate library provides Rust-side type definitions, ABI encoding/decoding, Solidity parsing, and macro support for these types. It also introduces `FlaggedStorage` — a storage value wrapper that tracks whether data is private or public.
+Standard EVM storage is publicly readable. Seismic extends the Ethereum type system with **shielded types** — `suint`, `sint`, `saddress`, `sbool` — that represent values hidden from the state tree. This crate provides Rust-side type definitions, ABI encoding/decoding, Solidity parsing, and macro support for these types. It also introduces `FlaggedStorage` — a storage value wrapper that tracks whether data is private or public.
 
-## Build
+## Branches
 
-Rust workspace (10 crates + 1 test crate). Edition 2024, MSRV 1.85.
+- `seismic` — main development branch (PR target)
+- `main` — upstream tracking only (do not PR here)
 
-### macOS
+## Build & Test
+
+Rust workspace, edition 2024, MSRV 1.85.
 
 ```bash
-# Prerequisites: Rust stable >= 1.85
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
 # Build (default features include seismic)
 cargo build --workspace
 
 # Build with CI feature set
 cargo build --features arbitrary,eip712,seismic
-```
 
-### Linux (Ubuntu)
-
-```bash
-# Prerequisites
-sudo apt-get update && sudo apt-get install -y build-essential pkg-config libssl-dev
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Build
-cargo build --workspace
-
-# Build with CI feature set
-cargo build --features arbitrary,eip712,seismic
-```
-
-### Verify
-
-```bash
-cargo build --workspace 2>&1 | tail -1
-# Expected: Finished `dev` profile [unoptimized + debuginfo] target(s) in ...
-```
-
-## Test
-
-```bash
-# Full test suite (593 tests, ~15s)
+# Run all tests — all should pass with 0 failures
 cargo test --workspace
-```
 
-All 593 tests should pass with 0 failures (22 ignored doc-tests are expected).
+# Formatting (requires nightly)
+cargo +nightly fmt --all --check
 
-### Compile tests (trybuild, requires nightly)
+# Clippy — warnings are expected (workspace uses warn, not deny)
+# CI uses RUSTFLAGS="-D warnings" cargo check (not clippy)
+cargo clippy --workspace
 
-```bash
-# Update trybuild snapshots
+# Update trybuild snapshots (requires nightly)
 ./scripts/bless_tests.sh
-# Or run directly:
-cargo +nightly test -p alloy-sol-types --test compiletest -- --include-ignored
-```
 
-### Feature powerset validation (requires cargo-hack)
-
-```bash
-cargo install cargo-hack
+# Feature powerset validation (requires cargo-hack)
 ./scripts/check_features.sh
 ```
 
-### Formatting (requires nightly)
+## Seismic vs Upstream — What Changed
 
-```bash
-cargo +nightly fmt --all --check
-```
+All Seismic code is gated behind `#[cfg(feature = "seismic")]`. Default features include `seismic` in `alloy-sol-types` and `alloy-dyn-abi`, so it's on by default for normal builds.
 
-### Clippy
+### Feature flag propagation
 
-```bash
-cargo clippy --workspace
-```
+- `alloy-primitives` — defines the `seismic` feature (gate only, no deps)
+- `alloy-sol-types` — default includes `seismic`, forwards to `alloy-primitives/seismic` + `alloy-sol-macro/seismic`
+- `alloy-dyn-abi` — default includes `seismic`, forwards to `alloy-primitives`, `alloy-json-abi`, `alloy-sol-types`, `alloy-sol-type-parser`
+- `alloy-core` — optional propagation to all sub-crates
 
-Warnings are expected (workspace uses `warn` level, not `deny`). CI checks for warnings via `RUSTFLAGS="-D warnings" cargo check`.
+### Modifications by layer
+
+The changes follow the data path through the stack: primitives → parser → macro expansion → compile-time ABI → runtime ABI → JSON-ABI.
+
+**1. Primitives** (`crates/primitives/`)
+- `src/aliases.rs` — `SUint`, `SInt`, `SAddress` newtype wrappers (with size aliases SU8–SU256, SI8–SI256)
+- `src/storage/flagged_storage.rs` — `FlaggedStorage { value: U256, is_private: bool }` with `public()`/`private()` constructors, RLP encoding, serde support
+- `src/storage/storage_slot.rs` — `StorageSlot` and `PrivateSlot` traits
+
+**2. Solidity type parser** (`crates/sol-type-parser/`)
+- `src/root.rs` — recognizes `"saddress"`, `"sbool"`, `"sint"`, `"suint"`, `"sbytes"` type strings
+
+**3. Solidity syntax tree** (`crates/syn-solidity/`)
+- `src/type/mod.rs` — `Sint`, `Suint`, `Saddress`, `Sbool` variants in the `Type` enum
+
+**4. Macro expansion** (`crates/sol-macro-expander/`)
+- `src/expand/ty.rs` — expands shielded types to their `sol_data` counterparts
+
+**5. Compile-time ABI** (`crates/sol-types/`)
+- `src/types/data_type.rs` — `SolType` impls for `Sbool`, `Saddress`, `Sint<BITS>`, `Suint<BITS>` (32-byte ABI encoding, sealed `SupportedSint` trait)
+- `src/types/value.rs` — value encoding for shielded types
+- `src/types/event/topic.rs` — event topic handling
+
+**6. Runtime ABI** (`crates/dyn-abi/`)
+- `src/dynamic/ty.rs` — `DynSolType` enum variants: `Saddress`, `Sint(usize)`, `Suint(usize)`, `Sbool`, `Sbytes(usize)`
+- `src/dynamic/value.rs` — encode/decode for shielded `DynSolValue` variants
+- `src/specifier.rs` — runtime resolution of shielded type strings to `DynSolType`
+- `src/eip712/coerce.rs` — EIP-712 structured data support
+- `src/coerce.rs` — type coercion for shielded types
+- `src/arbitrary.rs` — property-based testing support
+
+**7. JSON-ABI** (`crates/json-abi/`)
+- Feature-flagged shielded type support in ABI JSON serialization
 
 ## Project Layout
 
@@ -102,36 +103,13 @@ tests/
 scripts/               Build/test automation (check_features.sh, bless_tests.sh, etc.)
 ```
 
-## Key Seismic Modifications
-
-All Seismic code is gated behind `#[cfg(feature = "seismic")]`. Default features include `seismic` in `alloy-sol-types` and `alloy-dyn-abi`.
-
-- **Shielded primitives**: `crates/primitives/src/aliases.rs` — `SUint`, `SInt`, `SAddress` wrapper types
-- **FlaggedStorage**: `crates/primitives/src/storage/flagged_storage.rs` — `U256` + `is_private` flag with `public()`/`private()` constructors
-- **Solidity parsing**: `crates/syn-solidity/src/type/mod.rs` — `Sint`, `Suint`, `Saddress`, `Sbool` type variants
-- **Type parser**: `crates/sol-type-parser/src/root.rs` — recognizes `"saddress"`, `"sbool"`, `"sint"`, `"suint"` strings
-- **Compile-time ABI**: `crates/sol-types/src/types/data_type.rs` — `Suint`, `Sint`, `Saddress`, `Sbool` SolType impls
-- **Runtime ABI**: `crates/dyn-abi/src/specifier.rs` — runtime shielded type resolution
-- **JSON-ABI**: `crates/json-abi/src/` — shielded type support in ABI JSON serialization
-
 ## Code Style
 
-Defined in `rustfmt.toml`:
+- Max line width: **100** characters (see `rustfmt.toml`)
+- Formatting requires **nightly**: `cargo +nightly fmt`
+- Lints are configured at workspace level in `Cargo.toml` (all `warn`, not `deny`)
 
-- Max line width: **100** characters
-- Imports: crate-level granularity, reordered
-- Field init shorthand enabled
-- Comments wrapped at 100 chars, formatted in doc comments
-- Formatting requires **nightly** (`cargo +nightly fmt`)
-
-Lints (workspace-level in `Cargo.toml`):
-
-- Clippy: `use-self`, `uninlined-format-args`, `missing-const-for-fn`, `redundant-clone` (all warn)
-- Rust: `missing-docs`, `missing-copy-implementations`, `rust-2018-idioms`, `unreachable-pub` (all warn)
-
-## CI
-
-### seismic.yml (Seismic branch)
+## CI (seismic.yml)
 
 | Job        | What it does                                                              |
 | ---------- | ------------------------------------------------------------------------- |
@@ -140,21 +118,14 @@ Lints (workspace-level in `Cargo.toml`):
 | `warnings` | `RUSTFLAGS="-D warnings" cargo check` (with and without seismic features) |
 | `test`     | `cargo test`                                                              |
 
-### ci.yml (upstream main branch)
-
-Full matrix: stable/nightly/MSRV, Ubuntu/Windows, feature powerset, miri, WASM, no_std, clippy, docs, deny.
-
-## Branches
-
-- `seismic` — main development branch (PR target)
-- `main` — upstream tracking only
+Upstream `ci.yml` runs on `main` only (full matrix: stable/nightly/MSRV, feature powerset, miri, WASM, no_std, clippy, docs, deny).
 
 ## Troubleshooting
 
-| Problem                                                                                              | Fix                                                                                                                                                                 |
-| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--all-features` build fails: `#![feature]` may not be used on the stable release channel (foldhash) | The `nightly` feature requires nightly Rust. Use `cargo build --workspace` (default features) or specify features explicitly: `--features arbitrary,eip712,seismic` |
-| `--no-default-features` build fails: `unresolved import alloy_sol_types::sol_data::Sbool`            | Known issue — `alloy-dyn-abi` imports `Sbool` unconditionally but it requires `seismic` feature. Default features include `seismic`, so normal builds work fine     |
-| Clippy warnings about `use-self`, `const fn`, `From` impl                                            | Expected — workspace uses `warn` not `deny`. CI uses `RUSTFLAGS="-D warnings" cargo check` (not clippy)                                                             |
-| `rustfmt` fails on stable                                                                            | Formatting config requires nightly: use `cargo +nightly fmt`                                                                                                        |
-| `bless_tests.sh` fails on stable                                                                     | Trybuild snapshot updates require nightly: script runs `cargo +nightly test`                                                                                        |
+| Problem | Fix |
+| --- | --- |
+| `--all-features` build fails (`#![feature]` on stable) | The `nightly` feature requires nightly Rust. Use `cargo build --workspace` or `--features arbitrary,eip712,seismic` |
+| `--no-default-features` build fails (`unresolved import Sbool`) | Known issue — `alloy-dyn-abi` imports `Sbool` unconditionally but it requires `seismic` feature. Default features include `seismic`, so normal builds work fine |
+| Clippy warnings | Expected — workspace uses `warn` not `deny`. CI uses `RUSTFLAGS="-D warnings" cargo check` (not clippy) |
+| `rustfmt` fails on stable | Formatting config requires nightly: `cargo +nightly fmt` |
+| `bless_tests.sh` fails on stable | Trybuild snapshots require nightly: script runs `cargo +nightly test` |
