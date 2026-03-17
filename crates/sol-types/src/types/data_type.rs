@@ -1540,7 +1540,8 @@ mod seismic {
         #[inline]
         fn stv_to_tokens(&self) -> <FixedSbytes<N> as SolType>::Token<'_> {
             let mut word = Word::ZERO;
-            word[..N].copy_from_slice(&self.borrow().0.0);
+            // SFixedBytes<N> -> FixedBytes<N> -> [u8; N]
+            word[..N].copy_from_slice(&self.borrow().0 .0);
             word.into()
         }
 
@@ -1551,7 +1552,8 @@ mod seismic {
 
         #[inline]
         fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
-            out.extend_from_slice(&self.borrow().0.0);
+            // SFixedBytes<N> -> FixedBytes<N> -> [u8; N]
+            out.extend_from_slice(&self.borrow().0 .0);
         }
     }
 
