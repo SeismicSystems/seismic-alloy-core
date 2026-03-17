@@ -17,6 +17,12 @@ use alloy_primitives::{
 
 #[cfg(feature = "seismic")]
 use alloy_primitives::aliases::SAddress as RustSAddress;
+#[cfg(feature = "seismic")]
+use alloy_primitives::aliases::SBool as RustSBool;
+#[cfg(feature = "seismic")]
+use alloy_primitives::aliases::SBytes as RustSBytes;
+#[cfg(feature = "seismic")]
+use alloy_primitives::aliases::SFixedBytes as RustSFixedBytes;
 
 use core::{borrow::Borrow, fmt::*, hash::Hash, marker::PhantomData, ops::*};
 
@@ -1186,39 +1192,14 @@ mod seismic {
     use super::*;
     use alloy_primitives::{Signed as RustSigned, Uint as RustUint};
 
-    /// `Sbool` is our seismic-boolean type. Unlike the legacy `Bool`,
-    /// which uses a plain `bool` in Rust, we store `bool` inside a newtype
-    /// so we can treat it differently if desired (e.g. “shielded bool”).
-    #[derive(Clone, Copy, Debug, PartialEq)]
-    pub struct Sbool(pub bool);
+    /// Sbool - `sbool`
+    #[derive(Clone, Copy, Debug)]
+    pub struct Sbool;
 
-    // 1) Implement `SolType` for `Sbool` in the usual way
-    impl SolType for Sbool {
-        // Because `Sbool` is the final, stored type
-        type RustType = Sbool;
-        type Token<'a> = WordToken;
-
-        const SOL_NAME: &'static str = "sbool";
-        const ENCODED_SIZE: Option<usize> = Some(32);
-        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
-
-        fn valid_token(token: &Self::Token<'_>) -> bool {
-            utils::check_zeroes(&token.0[..31])
-        }
-
-        fn detokenize(token: Self::Token<'_>) -> Self::RustType {
-            // Non-zero last byte => true
-            Sbool(token.0 != Word::ZERO)
-        }
-    }
-
-    // 2) Implement `SolTypeValue<Sbool>` for `T: Borrow<Sbool>` so references, owned values, etc.,
-    //    can all encode properly.
-    impl<T: Borrow<Sbool>> SolTypeValue<Sbool> for T {
+    impl<T: Borrow<RustSBool>> SolTypeValue<Sbool> for T {
         #[inline]
         fn stv_to_tokens(&self) -> WordToken {
-            let inner = self.borrow();
-            WordToken(Word::with_last_byte(inner.0 as u8))
+            WordToken(Word::with_last_byte(self.borrow().0 as u8))
         }
 
         #[inline]
@@ -1232,11 +1213,20 @@ mod seismic {
         }
     }
 
-    #[cfg(all(feature = "seismic", feature = "arbitrary"))]
-    impl arbitrary::Arbitrary<'_> for Sbool {
-        fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
-            let arbitrary_bool = u.arbitrary::<bool>()?;
-            Ok(Sbool(arbitrary_bool))
+    impl SolType for Sbool {
+        type RustType = RustSBool;
+        type Token<'a> = WordToken;
+
+        const SOL_NAME: &'static str = "sbool";
+        const ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+
+        fn valid_token(token: &Self::Token<'_>) -> bool {
+            utils::check_zeroes(&token.0[..31])
+        }
+
+        fn detokenize(token: Self::Token<'_>) -> Self::RustType {
+            RustSBool(token.0 != Word::ZERO)
         }
     }
 
@@ -1546,14 +1536,14 @@ mod seismic {
     /// Seismic Shielded Dynamic Bytes - `sbytes`
     pub struct Sbytes;
 
-    impl<T: Borrow<[u8; N]>, const N: usize> SolTypeValue<FixedSbytes<N>> for T
+    impl<T: Borrow<RustSFixedBytes<N>>, const N: usize> SolTypeValue<FixedSbytes<N>> for T
     where
         ByteCount<N>: SupportedFixedBytes,
     {
         #[inline]
         fn stv_to_tokens(&self) -> <FixedSbytes<N> as SolType>::Token<'_> {
             let mut word = Word::ZERO;
-            word[..N].copy_from_slice(self.borrow());
+            word[..N].copy_from_slice(&self.borrow().0.0);
             word.into()
         }
 
@@ -1564,7 +1554,7 @@ mod seismic {
 
         #[inline]
         fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
-            out.extend_from_slice(self.borrow().as_slice());
+            out.extend_from_slice(&self.borrow().0.0);
         }
     }
 
@@ -1572,7 +1562,7 @@ mod seismic {
     where
         ByteCount<N>: SupportedFixedBytes,
     {
-        type RustType = RustFixedBytes<N>;
+        type RustType = RustSFixedBytes<N>;
         type Token<'a> = WordToken;
 
         const SOL_NAME: &'static str =
@@ -1587,19 +1577,19 @@ mod seismic {
 
         #[inline]
         fn detokenize(token: Self::Token<'_>) -> Self::RustType {
-            token.0[..N].try_into().unwrap()
+            RustSFixedBytes(token.0[..N].try_into().unwrap())
         }
     }
 
-    impl<T: ?Sized + AsRef<[u8]>> SolTypeValue<Sbytes> for T {
+    impl<T: Borrow<RustSBytes>> SolTypeValue<Sbytes> for T {
         #[inline]
         fn stv_to_tokens(&self) -> PackedSeqToken<'_> {
-            PackedSeqToken(self.as_ref())
+            PackedSeqToken(self.borrow().0.as_ref())
         }
 
         #[inline]
         fn stv_abi_encoded_size(&self) -> usize {
-            let s = self.as_ref();
+            let s = self.borrow().0.as_ref();
             if s.is_empty() { 64 } else { 64 + utils::padded_len(s) }
         }
 
@@ -1610,17 +1600,17 @@ mod seismic {
 
         #[inline]
         fn stv_abi_encode_packed_to(&self, out: &mut Vec<u8>) {
-            out.extend_from_slice(self.as_ref());
+            out.extend_from_slice(self.borrow().0.as_ref());
         }
 
         #[inline]
         fn stv_abi_packed_encoded_size(&self) -> usize {
-            self.as_ref().len()
+            self.borrow().0.len()
         }
     }
 
     impl SolType for Sbytes {
-        type RustType = RustBytes;
+        type RustType = RustSBytes;
         type Token<'a> = PackedSeqToken<'a>;
 
         const SOL_NAME: &'static str = "sbytes";
@@ -1634,7 +1624,7 @@ mod seismic {
 
         #[inline]
         fn detokenize(token: Self::Token<'_>) -> Self::RustType {
-            token.into_bytes()
+            RustSBytes(token.into_bytes())
         }
     }
 }
@@ -1890,6 +1880,17 @@ mod tests {
         roundtrip_i256(Int<256>: I256);
     }
 
+    #[cfg(feature = "seismic")]
+    roundtrip! {
+        roundtrip_saddress(Saddress: alloy_primitives::aliases::SAddress);
+        roundtrip_sbool(Sbool: alloy_primitives::aliases::SBool);
+        roundtrip_sbytes(Sbytes: alloy_primitives::aliases::SBytes);
+        roundtrip_fixed_sbytes_16(FixedSbytes<16>: alloy_primitives::aliases::SFixedBytes<16>);
+        roundtrip_fixed_sbytes_32(FixedSbytes<32>: alloy_primitives::aliases::SFixedBytes<32>);
+        roundtrip_su256(Suint<256>: alloy_primitives::aliases::SU256);
+        roundtrip_si256(Sint<256>: alloy_primitives::aliases::SI256);
+    }
+
     #[test]
     fn tokenize_uint() {
         macro_rules! test {
@@ -2110,23 +2111,26 @@ mod tests {
     #[test]
     #[cfg(feature = "seismic")]
     fn seismic_tokenize_detokenize() {
-        use alloy_primitives::aliases::{SAddress, SI256, SU256};
+        use alloy_primitives::aliases::{SAddress, SBool, SBytes, SFixedBytes, SInt, SUInt};
 
         // FixedSbytes
-        let val: [u8; 1] = [0xAB];
+        let val = SFixedBytes(RustFixedBytes::from([0xAB]));
         assert_eq!(<FixedSbytes<1>>::detokenize(<FixedSbytes<1>>::tokenize(&val)), val);
 
-        let val: [u8; 16] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+        let val = SFixedBytes(RustFixedBytes::from([
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+        ]));
         assert_eq!(<FixedSbytes<16>>::detokenize(<FixedSbytes<16>>::tokenize(&val)), val);
 
-        let val: [u8; 32] = core::array::from_fn(|i| i as u8 + 1);
+        let val =
+            SFixedBytes(RustFixedBytes::from(core::array::from_fn::<u8, 32, _>(|i| i as u8 + 1)));
         assert_eq!(<FixedSbytes<32>>::detokenize(<FixedSbytes<32>>::tokenize(&val)), val);
 
         // Sbytes (dynamic)
-        let val: Vec<u8> = vec![0xDE, 0xAD, 0xBE, 0xEF];
+        let val = SBytes(vec![0xDE, 0xAD, 0xBE, 0xEF].into());
         assert_eq!(<Sbytes>::detokenize(<Sbytes>::tokenize(&val)), val);
 
-        let val: Vec<u8> = vec![];
+        let val = SBytes(vec![].into());
         assert_eq!(<Sbytes>::detokenize(<Sbytes>::tokenize(&val)), val);
 
         // Saddress
@@ -2134,46 +2138,51 @@ mod tests {
         assert_eq!(<Saddress>::detokenize(<Saddress>::tokenize(&val)), val);
 
         // Suint / Sint
-        let val = SU256(U256::from(42));
+        let val = SUInt(U256::from(42));
         assert_eq!(<Suint<256>>::detokenize(<Suint<256>>::tokenize(&val)), val);
 
-        let val = SI256(I256::try_from(-42i64).unwrap());
+        let val = SInt(I256::try_from(-42i64).unwrap());
         assert_eq!(<Sint<256>>::detokenize(<Sint<256>>::tokenize(&val)), val);
 
         // Sbool
-        let val = Sbool(true);
+        let val = SBool(true);
         assert_eq!(<super::Sbool>::detokenize(<super::Sbool>::tokenize(&val)), val);
 
-        let val = Sbool(false);
+        let val = SBool(false);
         assert_eq!(<super::Sbool>::detokenize(<super::Sbool>::tokenize(&val)), val);
     }
 
     #[test]
     #[cfg(feature = "seismic")]
     fn seismic_abi_encode_decode() {
+        use alloy_primitives::aliases::{SBytes, SFixedBytes};
+
         // FixedSbytes: encode is zero-padded to 32 bytes
-        let val: [u8; 4] = [0xDE, 0xAD, 0xBE, 0xEF];
+        let val = SFixedBytes(RustFixedBytes::from([0xDE, 0xAD, 0xBE, 0xEF]));
         let encoded = <FixedSbytes<4>>::abi_encode(&val);
         assert_eq!(encoded.len(), 32);
-        assert_eq!(&encoded[..4], &val);
+        assert_eq!(&encoded[..4], &val.0.0);
         assert!(encoded[4..].iter().all(|&b| b == 0));
         assert_eq!(<FixedSbytes<4>>::abi_decode(&encoded).unwrap(), val);
 
         // FixedSbytes boundary: sbytes1 and sbytes32
-        let val: [u8; 1] = [0xFF];
+        let val = SFixedBytes(RustFixedBytes::from([0xFF]));
         assert_eq!(FixedSbytes::<1>::abi_decode(&FixedSbytes::<1>::abi_encode(&val)).unwrap(), val);
 
-        let val: [u8; 32] = core::array::from_fn(|i| i as u8);
-        assert_eq!(FixedSbytes::<32>::abi_decode(&FixedSbytes::<32>::abi_encode(&val)).unwrap(), val);
+        let val = SFixedBytes(RustFixedBytes::from(core::array::from_fn::<u8, 32, _>(|i| i as u8)));
+        assert_eq!(
+            FixedSbytes::<32>::abi_decode(&FixedSbytes::<32>::abi_encode(&val)).unwrap(),
+            val
+        );
 
         // Sbytes (dynamic): small, empty, and large payloads
-        let val: Vec<u8> = vec![0xDE, 0xAD, 0xBE, 0xEF];
+        let val = SBytes(vec![0xDE, 0xAD, 0xBE, 0xEF].into());
         assert_eq!(Sbytes::abi_decode(&Sbytes::abi_encode(&val)).unwrap(), val);
 
-        let val: Vec<u8> = vec![];
+        let val = SBytes(vec![].into());
         assert_eq!(Sbytes::abi_decode(&Sbytes::abi_encode(&val)).unwrap(), val);
 
-        let val: Vec<u8> = (0..100).collect();
+        let val: SBytes = (0..100).collect::<Vec<u8>>().into();
         assert_eq!(Sbytes::abi_decode(&Sbytes::abi_encode(&val)).unwrap(), val);
     }
 
@@ -2195,5 +2204,4 @@ mod tests {
         let word = Word::new(core::array::from_fn(|i| i as u8 + 1));
         assert!(<FixedSbytes<32>>::valid_token(&WordToken(word)));
     }
-
 }

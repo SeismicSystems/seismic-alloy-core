@@ -188,7 +188,12 @@ impl DynSolType {
             | Self::Bytes
             | Self::String => 0,
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Sint(_) | Self::Suint(_) | Self::Sbool | Self::FixedSbytes(_) | Self::Sbytes => 0,
+            Self::Saddress
+            | Self::Sint(_)
+            | Self::Suint(_)
+            | Self::Sbool
+            | Self::FixedSbytes(_)
+            | Self::Sbytes => 0,
             Self::Array(contents) | Self::FixedArray(contents, _) => 1 + contents.nesting_depth(),
             as_tuple!(Self tuple) => 1 + tuple.iter().map(Self::nesting_depth).max().unwrap_or(0),
         }
@@ -392,12 +397,15 @@ impl DynSolType {
             }
 
             #[cfg(feature = "seismic")]
-            (Self::FixedSbytes(size), DynToken::Word(word)) => {
-                Ok(DynSolValue::FixedSbytes(sol_data::FixedSbytes::<32>::detokenize(word.into()), *size))
-            }
+            (Self::FixedSbytes(size), DynToken::Word(word)) => Ok(DynSolValue::FixedSbytes(
+                sol_data::FixedSbytes::<32>::detokenize(word.into()),
+                *size,
+            )),
 
             #[cfg(feature = "seismic")]
-            (Self::Sbytes, DynToken::PackedSeq(buf)) => Ok(DynSolValue::Sbytes(buf.to_vec())),
+            (Self::Sbytes, DynToken::PackedSeq(buf)) => {
+                Ok(DynSolValue::Sbytes(alloy_primitives::aliases::SBytes(buf.to_vec().into())))
+            }
 
             _ => Err(crate::Error::custom("mismatched types on dynamic detokenization")),
         }
@@ -591,9 +599,11 @@ impl DynSolType {
                 DynToken::FixedSeq(tokens.into(), tuple.len())
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Suint(_) | Self::Sint(_) | Self::Sbool | Self::FixedSbytes(_) => {
-                DynToken::Word(Word::ZERO)
-            }
+            Self::Saddress
+            | Self::Suint(_)
+            | Self::Sint(_)
+            | Self::Sbool
+            | Self::FixedSbytes(_) => DynToken::Word(Word::ZERO),
             #[cfg(feature = "seismic")]
             Self::Sbytes => DynToken::PackedSeq(&[]),
         })
@@ -609,9 +619,11 @@ impl DynSolType {
             | Self::Int(_)
             | Self::Uint(_) => self.detokenize(DynToken::Word(topic)).unwrap(),
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Sint(_) | Self::Suint(_) | Self::Sbool | Self::FixedSbytes(_) => {
-                self.detokenize(DynToken::Word(topic)).unwrap()
-            }
+            Self::Saddress
+            | Self::Sint(_)
+            | Self::Suint(_)
+            | Self::Sbool
+            | Self::FixedSbytes(_) => self.detokenize(DynToken::Word(topic)).unwrap(),
             _ => DynSolValue::FixedBytes(topic, 32),
         }
     }
@@ -677,9 +689,11 @@ impl DynSolType {
             Self::Tuple(tuple) => tuple.iter().any(Self::is_dynamic),
             Self::FixedArray(inner, _) => inner.is_dynamic(),
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Sint(..) | Self::Suint(..) | Self::Sbool | Self::FixedSbytes(..) => {
-                false
-            }
+            Self::Saddress
+            | Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Sbool
+            | Self::FixedSbytes(..) => false,
             #[cfg(feature = "seismic")]
             Self::Sbytes => true,
             #[cfg(feature = "eip712")]

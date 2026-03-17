@@ -186,17 +186,17 @@ impl ExpCtxt<'_> {
             }
             #[cfg(feature = "seismic")]
             Type::Sbool(span) => {
-                quote_spanned! {span=> #alloy_sol_types::sol_data::Sbool }
+                quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::SBool }
             }
             #[cfg(feature = "seismic")]
             Type::FixedSbytes(span, size) => {
                 assert!(size.get() <= 32);
                 let size = Literal::u16_unsuffixed(size.get());
-                quote_spanned! {span=> #alloy_sol_types::private::FixedBytes<#size> }
+                quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::SFixedBytes<#size> }
             }
             #[cfg(feature = "seismic")]
             Type::Sbytes(span) => {
-                quote_spanned! {span=> #alloy_sol_types::private::Bytes }
+                quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::SBytes }
             }
 
             Type::Tuple(ref tuple) => {
@@ -257,7 +257,11 @@ impl ExpCtxt<'_> {
             | Type::Function(_) => 32,
 
             #[cfg(feature = "seismic")]
-            Type::Sint(..) | Type::Suint(..) | Type::Saddress(_) | Type::Sbool(_) | Type::FixedSbytes(..) => 32,
+            Type::Sint(..)
+            | Type::Suint(..)
+            | Type::Saddress(_)
+            | Type::Sbool(_)
+            | Type::FixedSbytes(..) => 32,
 
             // dynamic types: 1 offset word, 1 length word
             #[cfg(feature = "seismic")]

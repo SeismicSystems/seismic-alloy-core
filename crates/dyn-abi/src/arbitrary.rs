@@ -20,9 +20,9 @@ use proptest::{
 };
 
 #[cfg(feature = "seismic")]
-use alloy_primitives::aliases::{SAddress, SInt, SUInt};
+use alloy_primitives::aliases::SBool;
 #[cfg(feature = "seismic")]
-use alloy_sol_types::sol_data::Sbool;
+use alloy_primitives::aliases::{SAddress, SBytes, SFixedBytes, SInt, SUInt};
 
 const DEPTH: u32 = 16;
 const DESIRED_SIZE: u32 = 64;
@@ -460,9 +460,11 @@ impl DynSolValue {
             #[cfg(feature = "seismic")]
             DynSolType::Sbool => u.arbitrary().map(Self::Sbool),
             #[cfg(feature = "seismic")]
-            &DynSolType::FixedSbytes(sz) => u.arbitrary().map(|x| Self::FixedSbytes(adjust_fb(x, sz), sz)),
+            &DynSolType::FixedSbytes(sz) => {
+                u.arbitrary().map(|x| Self::FixedSbytes(SFixedBytes(adjust_fb(x, sz)), sz))
+            }
             #[cfg(feature = "seismic")]
-            DynSolType::Sbytes => u.arbitrary().map(Self::Sbytes),
+            DynSolType::Sbytes => u.arbitrary::<Vec<u8>>().map(|x| Self::Sbytes(SBytes(x.into()))),
         }
     }
 
@@ -514,7 +516,9 @@ impl DynSolValue {
                     .sboxed()
             }
             #[cfg(feature = "seismic")]
-            &DynSolType::Saddress => any::<Address>().prop_map(|x| Self::Saddress(SAddress(x))).sboxed(),
+            &DynSolType::Saddress => {
+                any::<Address>().prop_map(|x| Self::Saddress(SAddress(x))).sboxed()
+            }
             #[cfg(feature = "seismic")]
             &DynSolType::Sint(sz) => {
                 any::<I256>().prop_map(move |x| Self::Sint(SInt(adjust_int(x, sz)), sz)).sboxed()
@@ -524,13 +528,15 @@ impl DynSolValue {
                 any::<U256>().prop_map(move |x| Self::Suint(SUInt(adjust_uint(x, sz)), sz)).sboxed()
             }
             #[cfg(feature = "seismic")]
-            DynSolType::Sbool => any::<bool>().prop_map(|x| Self::Sbool(Sbool(x))).sboxed(),
+            DynSolType::Sbool => any::<bool>().prop_map(|x| Self::Sbool(SBool(x))).sboxed(),
             #[cfg(feature = "seismic")]
-            &DynSolType::FixedSbytes(sz) => {
-                any::<B256>().prop_map(move |x| Self::FixedSbytes(adjust_fb(x, sz), sz)).sboxed()
+            &DynSolType::FixedSbytes(sz) => any::<B256>()
+                .prop_map(move |x| Self::FixedSbytes(SFixedBytes(adjust_fb(x, sz)), sz))
+                .sboxed(),
+            #[cfg(feature = "seismic")]
+            DynSolType::Sbytes => {
+                any::<Vec<u8>>().prop_map(|x| Self::Sbytes(SBytes(x.into()))).sboxed()
             }
-            #[cfg(feature = "seismic")]
-            DynSolType::Sbytes => any::<Vec<u8>>().prop_map(Self::Sbytes).sboxed(),
         }
     }
 
@@ -560,7 +566,7 @@ impl DynSolValue {
     fn leaf() -> impl Strategy<Value = Self> {
         prop_oneof![
             any::<bool>().prop_map(Self::Bool),
-            any::<bool>().prop_map(|x| Self::Sbool(Sbool(x))),
+            any::<bool>().prop_map(|x| Self::Sbool(SBool(x))),
             any::<Address>().prop_map(Self::Address),
             int_strategy::<I256>().prop_map(|(x, sz)| Self::Int(adjust_int(x, sz), sz)),
             int_strategy::<U256>().prop_map(|(x, sz)| Self::Uint(adjust_uint(x, sz), sz)),
@@ -568,9 +574,10 @@ impl DynSolValue {
             int_strategy::<I256>().prop_map(|(x, sz)| Self::Sint(SInt(adjust_int(x, sz)), sz)),
             int_strategy::<U256>().prop_map(|(x, sz)| Self::Suint(SUInt(adjust_uint(x, sz)), sz)),
             (any::<B256>(), 1..=32usize).prop_map(|(x, sz)| Self::FixedBytes(adjust_fb(x, sz), sz)),
-            (any::<B256>(), 1..=32usize).prop_map(|(x, sz)| Self::FixedSbytes(adjust_fb(x, sz), sz)),
+            (any::<B256>(), 1..=32usize)
+                .prop_map(|(x, sz)| Self::FixedSbytes(SFixedBytes(adjust_fb(x, sz)), sz)),
             any::<Vec<u8>>().prop_map(Self::Bytes),
-            any::<Vec<u8>>().prop_map(Self::Sbytes),
+            any::<Vec<u8>>().prop_map(|x| Self::Sbytes(SBytes(x.into()))),
             any::<String>().prop_map(Self::String),
         ]
     }

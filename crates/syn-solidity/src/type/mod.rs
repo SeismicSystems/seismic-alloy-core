@@ -354,10 +354,7 @@ impl Type {
                         match parse_size(s, span)? {
                             None => None,
                             Some(Some(size)) if size.get() > 32 => {
-                                return Err(Error::new(
-                                    span,
-                                    "sbytesX range is 1-32",
-                                ));
+                                return Err(Error::new(span, "sbytesX range is 1-32"));
                             }
                             Some(None) => Some(Self::Sbytes(span)),
                             Some(Some(size)) => Some(Self::FixedSbytes(span, size)),
@@ -422,7 +419,11 @@ impl Type {
         {
             let is_seismic_one_word = matches!(
                 self,
-                Self::Saddress(_) | Self::Sint(..) | Self::Suint(..) | Self::Sbool(_) | Self::FixedSbytes(..)
+                Self::Saddress(_)
+                    | Self::Sint(..)
+                    | Self::Suint(..)
+                    | Self::Sbool(_)
+                    | Self::FixedSbytes(..)
             );
             if is_seismic_one_word {
                 return true;
@@ -453,7 +454,11 @@ impl Type {
             | Self::Function(_) => false,
 
             #[cfg(feature = "seismic")]
-            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) | Self::Sbool(_) | Self::FixedSbytes(..) => false,
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(..)
+            | Self::Sbool(_)
+            | Self::FixedSbytes(..) => false,
             #[cfg(feature = "seismic")]
             Self::Sbytes(_) => true,
 
@@ -529,7 +534,12 @@ impl Type {
             | Self::String(_)
             | Self::Bytes(_) => false,
             #[cfg(feature = "seismic")]
-            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) | Self::Sbool(_) | Self::Sbytes(_) | Self::FixedSbytes(..) => false,
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(..)
+            | Self::Sbool(_)
+            | Self::Sbytes(_)
+            | Self::FixedSbytes(..) => false,
         }
     }
 
@@ -550,7 +560,12 @@ impl Type {
             | Self::String(_)
             | Self::Bytes(_) => false,
             #[cfg(feature = "seismic")]
-            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) | Self::Sbool(_) | Self::Sbytes(_) | Self::FixedSbytes(..) => false,
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(..)
+            | Self::Sbool(_)
+            | Self::Sbytes(_)
+            | Self::FixedSbytes(..) => false,
         }
     }
 
