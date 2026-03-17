@@ -63,13 +63,13 @@ int_aliases! {
 }
 
 #[cfg(feature = "seismic")]
-#[doc = "seismic unsigned integer type][Sint], where the preimage is a signed integer"]
+#[doc = "Seismic shielded unsigned integer type, where the preimage is an unsigned integer."]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary, proptest_derive::Arbitrary))]
 pub struct SUInt<const BITS: usize, const LIMBS: usize>(pub Uint<BITS, LIMBS>);
 
 #[cfg(feature = "seismic")]
-#[doc = "seismic unsigned integer type][Suint], where the preimage is an unsigned integer"]
+#[doc = "Seismic shielded signed integer type, where the preimage is a signed integer."]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary, proptest_derive::Arbitrary))]
 pub struct SInt<const BITS: usize, const LIMBS: usize>(pub Signed<BITS, LIMBS>);
@@ -174,7 +174,7 @@ sint_aliases! {
    SU128, SI128<128, 2>,
 
    SU136, SI136<136, 3>,
-   SU144, SI144<144, 3  >,
+   SU144, SI144<144, 3>,
    SU152, SI152<152, 3>,
    SU160, SI160<160, 3>,
    SU168, SI168<168, 3>,

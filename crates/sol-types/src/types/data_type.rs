@@ -16,13 +16,10 @@ use alloy_primitives::{
 };
 
 #[cfg(feature = "seismic")]
-use alloy_primitives::aliases::SAddress as RustSAddress;
-#[cfg(feature = "seismic")]
-use alloy_primitives::aliases::SBool as RustSBool;
-#[cfg(feature = "seismic")]
-use alloy_primitives::aliases::SBytes as RustSBytes;
-#[cfg(feature = "seismic")]
-use alloy_primitives::aliases::SFixedBytes as RustSFixedBytes;
+use alloy_primitives::aliases::{
+    SAddress as RustSAddress, SBool as RustSBool, SBytes as RustSBytes,
+    SFixedBytes as RustSFixedBytes,
+};
 
 use core::{borrow::Borrow, fmt::*, hash::Hash, marker::PhantomData, ops::*};
 

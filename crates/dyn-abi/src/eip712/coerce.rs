@@ -6,10 +6,7 @@ use alloc::{
 use alloy_primitives::{Address, Function, I256, U256, hex};
 
 #[cfg(feature = "seismic")]
-use alloy_primitives::aliases::{SAddress, SBytes, SFixedBytes, SInt, SUInt};
-
-#[cfg(feature = "seismic")]
-use alloy_primitives::aliases::SBool;
+use alloy_primitives::aliases::{SAddress, SBool, SBytes, SFixedBytes, SInt, SUInt};
 
 impl DynSolType {
     /// Coerce a [`serde_json::Value`] to a [`DynSolValue`] via this type.

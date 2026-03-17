@@ -20,9 +20,7 @@ use proptest::{
 };
 
 #[cfg(feature = "seismic")]
-use alloy_primitives::aliases::SBool;
-#[cfg(feature = "seismic")]
-use alloy_primitives::aliases::{SAddress, SBytes, SFixedBytes, SInt, SUInt};
+use alloy_primitives::aliases::{SAddress, SBool, SBytes, SFixedBytes, SInt, SUInt};
 
 const DEPTH: u32 = 16;
 const DESIRED_SIZE: u32 = 64;

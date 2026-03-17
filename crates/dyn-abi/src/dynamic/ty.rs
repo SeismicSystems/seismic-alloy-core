@@ -489,29 +489,19 @@ impl DynSolType {
                 out.push(']');
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress => out.push_str("saddress"),
-            #[cfg(feature = "seismic")]
-            Self::Sint(size) => {
-                out.push_str("sint");
-                out.push_str(itoa::Buffer::new().format(*size));
-            }
-            #[cfg(feature = "seismic")]
-            Self::Suint(size) => {
-                out.push_str("suint");
-                out.push_str(itoa::Buffer::new().format(*size));
-            }
-            #[cfg(feature = "seismic")]
-            Self::Sbool => {
+            Self::Saddress | Self::Sbool | Self::Sbytes => {
                 out.push_str(unsafe { self.sol_type_name_simple().unwrap_unchecked() });
+            }
+            #[cfg(feature = "seismic")]
+            Self::Sint(size) | Self::Suint(size) => {
+                let prefix = if matches!(self, Self::Sint(_)) { "sint" } else { "suint" };
+                out.push_str(prefix);
+                out.push_str(itoa::Buffer::new().format(*size));
             }
             #[cfg(feature = "seismic")]
             Self::FixedSbytes(size) => {
                 out.push_str("sbytes");
                 out.push_str(itoa::Buffer::new().format(*size));
-            }
-            #[cfg(feature = "seismic")]
-            Self::Sbytes => {
-                out.push_str(unsafe { self.sol_type_name_simple().unwrap_unchecked() });
             }
         }
     }

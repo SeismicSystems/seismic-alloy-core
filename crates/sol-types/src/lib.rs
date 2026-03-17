@@ -36,6 +36,7 @@ pub use types::{
     data_type as sol_data, decode_revert_reason,
 };
 
+#[cfg(feature = "seismic")]
 pub use alloy_primitives::{SBool, SBytes, SFixedBytes};
 #[cfg(feature = "seismic")]
 pub use types::data_type::{FixedSbytes, Saddress, Sbool, Sbytes, Sint, Suint};
