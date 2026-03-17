@@ -1680,6 +1680,26 @@ mod tests {
         assert_name!((Uint<8>,), "(uint8)");
         assert_name!((Uint<8>, Bool), "(uint8,bool)");
         assert_name!((Uint<8>, Bool, FixedArray<Address, 4>), "(uint8,bool,address[4])");
+
+        #[cfg(feature = "seismic")]
+        {
+            assert_name!(Saddress, "saddress");
+            assert_name!(Sbool, "sbool");
+            assert_name!(Sint<8>, "sint8");
+            assert_name!(Sint<256>, "sint256");
+            assert_name!(Suint<8>, "suint8");
+            assert_name!(Suint<256>, "suint256");
+            assert_name!(FixedSbytes<1>, "sbytes1");
+            assert_name!(FixedSbytes<16>, "sbytes16");
+            assert_name!(FixedSbytes<32>, "sbytes32");
+            assert_name!(Sbytes, "sbytes");
+
+            assert_name!(Array<Suint<256>>, "suint256[]");
+            assert_name!(Array<Sbytes>, "sbytes[]");
+            assert_name!(FixedArray<FixedSbytes<32>, 3>, "sbytes32[3]");
+            assert_name!((Suint<256>, Saddress), "(suint256,saddress)");
+            assert_name!((FixedSbytes<32>, Sbytes), "(sbytes32,sbytes)");
+        }
     }
 
     macro_rules! assert_encoded_size {
@@ -1716,6 +1736,30 @@ mod tests {
         assert_encoded_size!(Bytes, None);
         assert_encoded_size!(String, None);
 
+        #[cfg(feature = "seismic")]
+        {
+            assert_encoded_size!(Saddress, Some(32));
+            assert_encoded_size!(Sbool, Some(32));
+            assert_encoded_size!(Sint<8>, Some(32));
+            assert_encoded_size!(Sint<256>, Some(32));
+            assert_encoded_size!(Suint<8>, Some(32));
+            assert_encoded_size!(Suint<256>, Some(32));
+            assert_encoded_size!(FixedSbytes<1>, Some(32));
+            assert_encoded_size!(FixedSbytes<16>, Some(32));
+            assert_encoded_size!(FixedSbytes<32>, Some(32));
+            assert_encoded_size!(Sbytes, None);
+
+            assert_encoded_size!(Array<Suint<256>>, None);
+            assert_encoded_size!(Array<Sbytes>, None);
+            assert_encoded_size!(FixedArray<Suint<256>, 0>, Some(0));
+            assert_encoded_size!(FixedArray<Suint<256>, 1>, Some(32));
+            assert_encoded_size!(FixedArray<Suint<256>, 2>, Some(64));
+            assert_encoded_size!(FixedArray<FixedSbytes<32>, 2>, Some(64));
+            assert_encoded_size!(FixedArray<Sbytes, 0>, None);
+            assert_encoded_size!(FixedArray<Sbytes, 1>, None);
+            assert_encoded_size!(FixedArray<Sbytes, 2>, None);
+        }
+
         assert_encoded_size!(Array<()>, None);
         assert_encoded_size!(Array<Uint<8>>, None);
         assert_encoded_size!(Array<Bytes>, None);
@@ -1738,6 +1782,14 @@ mod tests {
         assert_encoded_size!((Uint<8>, Bool, FixedArray<Address, 4>), Some(6 * 32));
         assert_encoded_size!((Bytes,), None);
         assert_encoded_size!((Uint<8>, Bytes), None);
+
+        #[cfg(feature = "seismic")]
+        {
+            assert_encoded_size!((Suint<256>,), Some(32));
+            assert_encoded_size!((Suint<256>, Saddress), Some(64));
+            assert_encoded_size!((Suint<256>, Sbytes), None);
+            assert_encoded_size!((FixedSbytes<32>, Suint<256>, Saddress), Some(3 * 32));
+        }
     }
 
     #[test]
@@ -2051,291 +2103,97 @@ mod tests {
         assert_eq!(hex::encode(res_value), hex::encode(expected));
     }
 
+    // =========================================================================
+    // Seismic shielded type tests
+    // =========================================================================
+
+    #[test]
     #[cfg(feature = "seismic")]
-    mod seismic_tests {
-        use super::*;
+    fn seismic_tokenize_detokenize() {
+        use alloy_primitives::aliases::{SAddress, SI256, SU256};
 
-        #[test]
-        fn sbytes_sol_names() {
-            assert_eq!(<FixedSbytes<1> as SolType>::SOL_NAME, "sbytes1");
-            assert_eq!(<FixedSbytes<2> as SolType>::SOL_NAME, "sbytes2");
-            assert_eq!(<FixedSbytes<4> as SolType>::SOL_NAME, "sbytes4");
-            assert_eq!(<FixedSbytes<16> as SolType>::SOL_NAME, "sbytes16");
-            assert_eq!(<FixedSbytes<32> as SolType>::SOL_NAME, "sbytes32");
-        }
+        // FixedSbytes
+        let val: [u8; 1] = [0xAB];
+        assert_eq!(<FixedSbytes<1>>::detokenize(<FixedSbytes<1>>::tokenize(&val)), val);
 
-        #[test]
-        fn sbytes_encoded_sizes() {
-            assert_encoded_size!(FixedSbytes<1>, Some(32));
-            assert_encoded_size!(FixedSbytes<2>, Some(32));
-            assert_encoded_size!(FixedSbytes<4>, Some(32));
-            assert_encoded_size!(FixedSbytes<16>, Some(32));
-            assert_encoded_size!(FixedSbytes<32>, Some(32));
-        }
+        let val: [u8; 16] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+        assert_eq!(<FixedSbytes<16>>::detokenize(<FixedSbytes<16>>::tokenize(&val)), val);
 
-        #[test]
-        fn sbytes_packed_encoded_sizes() {
-            assert_eq!(<FixedSbytes<1> as SolType>::PACKED_ENCODED_SIZE, Some(1));
-            assert_eq!(<FixedSbytes<4> as SolType>::PACKED_ENCODED_SIZE, Some(4));
-            assert_eq!(<FixedSbytes<16> as SolType>::PACKED_ENCODED_SIZE, Some(16));
-            assert_eq!(<FixedSbytes<32> as SolType>::PACKED_ENCODED_SIZE, Some(32));
-        }
+        let val: [u8; 32] = core::array::from_fn(|i| i as u8 + 1);
+        assert_eq!(<FixedSbytes<32>>::detokenize(<FixedSbytes<32>>::tokenize(&val)), val);
 
-        #[test]
-        fn sbytes_not_dynamic() {
-            assert!(!<FixedSbytes<1> as SolType>::DYNAMIC);
-            assert!(!<FixedSbytes<16> as SolType>::DYNAMIC);
-            assert!(!<FixedSbytes<32> as SolType>::DYNAMIC);
-        }
+        // Sbytes (dynamic)
+        let val: Vec<u8> = vec![0xDE, 0xAD, 0xBE, 0xEF];
+        assert_eq!(<Sbytes>::detokenize(<Sbytes>::tokenize(&val)), val);
 
-        #[test]
-        fn sbytes_tokenize_roundtrip() {
-            // sbytes1
-            let val: [u8; 1] = [0xAB];
-            let token = <FixedSbytes<1>>::tokenize(&val);
-            let back = <FixedSbytes<1>>::detokenize(token);
-            assert_eq!(back, val);
+        let val: Vec<u8> = vec![];
+        assert_eq!(<Sbytes>::detokenize(<Sbytes>::tokenize(&val)), val);
 
-            // sbytes16
-            let val: [u8; 16] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-            let token = <FixedSbytes<16>>::tokenize(&val);
-            let back = <FixedSbytes<16>>::detokenize(token);
-            assert_eq!(back, val);
+        // Saddress
+        let val = SAddress(RustAddress::with_last_byte(0x42));
+        assert_eq!(<Saddress>::detokenize(<Saddress>::tokenize(&val)), val);
 
-            // sbytes32
-            let val: [u8; 32] = core::array::from_fn(|i| i as u8 + 1);
-            let token = <FixedSbytes<32>>::tokenize(&val);
-            let back = <FixedSbytes<32>>::detokenize(token);
-            assert_eq!(back, val);
-        }
+        // Suint / Sint
+        let val = SU256(U256::from(42));
+        assert_eq!(<Suint<256>>::detokenize(<Suint<256>>::tokenize(&val)), val);
 
-        #[test]
-        fn sbytes_abi_encode_decode() {
-            let val: [u8; 4] = [0xDE, 0xAD, 0xBE, 0xEF];
-            let encoded = <FixedSbytes<4>>::abi_encode(&val);
-            assert_eq!(encoded.len(), 32);
-            // first 4 bytes should be our data, rest zero-padded
-            assert_eq!(&encoded[..4], &val);
-            assert!(encoded[4..].iter().all(|&b| b == 0));
+        let val = SI256(I256::try_from(-42i64).unwrap());
+        assert_eq!(<Sint<256>>::detokenize(<Sint<256>>::tokenize(&val)), val);
 
-            let decoded = <FixedSbytes<4>>::abi_decode(&encoded).unwrap();
-            assert_eq!(decoded, val);
-        }
+        // Sbool
+        let val = Sbool(true);
+        assert_eq!(<super::Sbool>::detokenize(<super::Sbool>::tokenize(&val)), val);
 
-        #[test]
-        fn sbytes_valid_token() {
-            // valid: zero-padded after N bytes
-            let mut word = Word::ZERO;
-            word[0] = 0xFF;
-            assert!(<FixedSbytes<1>>::valid_token(&WordToken(word)));
-
-            // invalid: non-zero bytes after position N
-            let mut word = Word::ZERO;
-            word[0] = 0xFF;
-            word[1] = 0x01; // this byte should be zero for sbytes1
-            assert!(!<FixedSbytes<1>>::valid_token(&WordToken(word)));
-
-            // sbytes32: all bytes valid, no padding
-            let word = Word::new(core::array::from_fn(|i| i as u8 + 1));
-            assert!(<FixedSbytes<32>>::valid_token(&WordToken(word)));
-        }
-
-        #[test]
-        fn sbytes_in_sol_macro() {
-            // Test sbytes in function signatures
-            sol! {
-                function takeSbytes(sbytes32 data) returns (sbytes16);
-            }
-
-            sol! {
-                function multiSbytes(sbytes1 a, sbytes4 b, sbytes32 c) returns (sbytes16 out);
-            }
-
-            // Test sbytes in structs
-            sol! {
-                struct SbytesStruct {
-                    sbytes1 small;
-                    sbytes16 medium;
-                    sbytes32 large;
-                }
-            }
-
-            // Test sbytes in events
-            sol! {
-                event SbytesEvent(sbytes32 indexed data, sbytes4 extra);
-            }
-
-            // Test sbytes in errors
-            sol! {
-                error SbytesError(sbytes32 data);
-            }
-
-            // Verify encoding roundtrip through sol macro types
-            use crate::SolCall;
-            let call = takeSbytesCall { data: [0xAB; 32].into() };
-            let encoded = <takeSbytesCall as SolCall>::abi_encode(&call);
-            let decoded = <takeSbytesCall as SolCall>::abi_decode(&encoded).unwrap();
-            assert_eq!(decoded.data, call.data);
-        }
-
-        #[test]
-        fn sbytes_mixed_with_other_shielded_types() {
-            sol! {
-                struct MixedShielded {
-                    sbytes32 data;
-                    suint256 amount;
-                    saddress recipient;
-                    sint128 delta;
-                    sbytes4 tag;
-                }
-            }
-
-            sol! {
-                function processShielded(
-                    sbytes32 data,
-                    suint256 amount,
-                    saddress to
-                ) returns (sbytes4 result);
-            }
-        }
-
-        #[test]
-        fn dynamic_sbytes_sol_name() {
-            assert_eq!(<Sbytes as SolType>::SOL_NAME, "sbytes");
-        }
-
-        #[test]
-        fn dynamic_sbytes_is_dynamic() {
-            assert!(<Sbytes as SolType>::DYNAMIC);
-            assert_eq!(<Sbytes as SolType>::ENCODED_SIZE, None);
-            assert_eq!(<Sbytes as SolType>::PACKED_ENCODED_SIZE, None);
-        }
-
-        #[test]
-        fn dynamic_sbytes_tokenize_roundtrip() {
-            let val: Vec<u8> = vec![0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x02, 0x03];
-            let token = <Sbytes>::tokenize(&val);
-            let back = <Sbytes>::detokenize(token);
-            assert_eq!(back, val);
-
-            // empty
-            let val: Vec<u8> = vec![];
-            let token = <Sbytes>::tokenize(&val);
-            let back = <Sbytes>::detokenize(token);
-            assert_eq!(back, val);
-        }
-
-        #[test]
-        fn dynamic_sbytes_in_sol_macro() {
-            sol! {
-                function takeDynSbytes(sbytes data) returns (sbytes);
-            }
-
-            sol! {
-                struct DynSbytesStruct {
-                    sbytes data;
-                    suint256 amount;
-                    sbytes32 tag;
-                }
-            }
-
-            sol! {
-                event DynSbytesEvent(sbytes data, sbytes32 indexed tag);
-            }
-
-            // Verify encoding roundtrip
-            use crate::SolCall;
-            let call = takeDynSbytesCall { data: vec![0xAB, 0xCD, 0xEF].into() };
-            let encoded = <takeDynSbytesCall as SolCall>::abi_encode(&call);
-            let decoded = <takeDynSbytesCall as SolCall>::abi_decode(&encoded).unwrap();
-            assert_eq!(decoded.data, call.data);
-        }
-
-        #[test]
-        fn mixed_fixed_and_dynamic_sbytes() {
-            sol! {
-                function mixedSbytes(sbytes32 fixed, sbytes dynamic) returns (sbytes4 tag);
-            }
-
-            sol! {
-                struct MixedSbytesStruct {
-                    sbytes32 fixed;
-                    sbytes dynamic;
-                    sbytes4 tag;
-                }
-            }
-        }
-
-        #[test]
-        fn sbytes_in_arrays() {
-            sol! {
-                function takeArrayOfFixedSbytes(sbytes32[] data) returns (sbytes4[3] tags);
-            }
-
-            sol! {
-                function takeArrayOfDynSbytes(sbytes[] data) returns (sbytes[] result);
-            }
-
-            sol! {
-                struct ArrayStruct {
-                    sbytes32[] fixedArr;
-                    sbytes[] dynArr;
-                    sbytes4[2] smallArr;
-                }
-            }
-        }
-
-        #[test]
-        #[test]
-        fn sbytes_in_tuples() {
-            type SbytesTuple = sol! { (sbytes32, sbytes, sbytes4) };
-
-            let val: ([u8; 32], Vec<u8>, [u8; 4]) = (
-                [0xAB; 32].into(),
-                vec![1, 2, 3],
-                [0xDE, 0xAD, 0xBE, 0xEF],
-            );
-            let encoded = SbytesTuple::abi_encode(&val);
-            let decoded = SbytesTuple::abi_decode(&encoded).unwrap();
-            assert_eq!(decoded.0, val.0);
-            assert_eq!(decoded.1, val.1);
-            assert_eq!(decoded.2, val.2);
-        }
-
-        #[test]
-        fn dynamic_sbytes_direct_abi_roundtrip() {
-            // Small payload
-            let val: Vec<u8> = vec![0xDE, 0xAD, 0xBE, 0xEF];
-            let encoded = Sbytes::abi_encode(&val);
-            let decoded = Sbytes::abi_decode(&encoded).unwrap();
-            assert_eq!(decoded, val);
-
-            // Empty payload
-            let val: Vec<u8> = vec![];
-            let encoded = Sbytes::abi_encode(&val);
-            let decoded = Sbytes::abi_decode(&encoded).unwrap();
-            assert_eq!(decoded, val);
-
-            // Large payload (> 32 bytes)
-            let val: Vec<u8> = (0..100).collect();
-            let encoded = Sbytes::abi_encode(&val);
-            let decoded = Sbytes::abi_decode(&encoded).unwrap();
-            assert_eq!(decoded, val);
-        }
-
-        #[test]
-        fn fixed_sbytes_boundary_sizes() {
-            // sbytes1 - minimum
-            assert_eq!(<FixedSbytes<1> as SolType>::SOL_NAME, "sbytes1");
-            let val: [u8; 1] = [0xFF];
-            let roundtrip = FixedSbytes::<1>::abi_decode(&FixedSbytes::<1>::abi_encode(&val)).unwrap();
-            assert_eq!(roundtrip, val);
-
-            // sbytes32 - maximum
-            assert_eq!(<FixedSbytes<32> as SolType>::SOL_NAME, "sbytes32");
-            let val: [u8; 32] = core::array::from_fn(|i| i as u8);
-            let roundtrip = FixedSbytes::<32>::abi_decode(&FixedSbytes::<32>::abi_encode(&val)).unwrap();
-            assert_eq!(roundtrip, val);
-        }
+        let val = Sbool(false);
+        assert_eq!(<super::Sbool>::detokenize(<super::Sbool>::tokenize(&val)), val);
     }
+
+    #[test]
+    #[cfg(feature = "seismic")]
+    fn seismic_abi_encode_decode() {
+        // FixedSbytes: encode is zero-padded to 32 bytes
+        let val: [u8; 4] = [0xDE, 0xAD, 0xBE, 0xEF];
+        let encoded = <FixedSbytes<4>>::abi_encode(&val);
+        assert_eq!(encoded.len(), 32);
+        assert_eq!(&encoded[..4], &val);
+        assert!(encoded[4..].iter().all(|&b| b == 0));
+        assert_eq!(<FixedSbytes<4>>::abi_decode(&encoded).unwrap(), val);
+
+        // FixedSbytes boundary: sbytes1 and sbytes32
+        let val: [u8; 1] = [0xFF];
+        assert_eq!(FixedSbytes::<1>::abi_decode(&FixedSbytes::<1>::abi_encode(&val)).unwrap(), val);
+
+        let val: [u8; 32] = core::array::from_fn(|i| i as u8);
+        assert_eq!(FixedSbytes::<32>::abi_decode(&FixedSbytes::<32>::abi_encode(&val)).unwrap(), val);
+
+        // Sbytes (dynamic): small, empty, and large payloads
+        let val: Vec<u8> = vec![0xDE, 0xAD, 0xBE, 0xEF];
+        assert_eq!(Sbytes::abi_decode(&Sbytes::abi_encode(&val)).unwrap(), val);
+
+        let val: Vec<u8> = vec![];
+        assert_eq!(Sbytes::abi_decode(&Sbytes::abi_encode(&val)).unwrap(), val);
+
+        let val: Vec<u8> = (0..100).collect();
+        assert_eq!(Sbytes::abi_decode(&Sbytes::abi_encode(&val)).unwrap(), val);
+    }
+
+    #[test]
+    #[cfg(feature = "seismic")]
+    fn seismic_valid_token() {
+        // FixedSbytes<1>: valid when zero-padded after byte 0
+        let mut word = Word::ZERO;
+        word[0] = 0xFF;
+        assert!(<FixedSbytes<1>>::valid_token(&WordToken(word)));
+
+        // FixedSbytes<1>: invalid when non-zero after byte 0
+        let mut word = Word::ZERO;
+        word[0] = 0xFF;
+        word[1] = 0x01;
+        assert!(!<FixedSbytes<1>>::valid_token(&WordToken(word)));
+
+        // FixedSbytes<32>: all bytes valid, no padding required
+        let word = Word::new(core::array::from_fn(|i| i as u8 + 1));
+        assert!(<FixedSbytes<32>>::valid_token(&WordToken(word)));
+    }
+
 }
