@@ -105,7 +105,10 @@ pub enum DynSolValue {
     Sbool(Sbool),
     #[cfg(feature = "seismic")]
     /// A seismic fixed-length byte array. The second parameter is the number of bytes.
-    Sbytes(Word, usize),
+    FixedSbytes(Word, usize),
+    #[cfg(feature = "seismic")]
+    /// A seismic dynamic byte array.
+    Sbytes(Vec<u8>),
 
     /// A named struct, treated as a tuple with a name parameter.
     #[cfg(feature = "eip712")]
@@ -259,7 +262,9 @@ impl DynSolValue {
             #[cfg(feature = "seismic")]
             Self::Sbool(_) => DynSolType::Sbool,
             #[cfg(feature = "seismic")]
-            Self::Sbytes(_, size) => DynSolType::Sbytes(*size),
+            Self::FixedSbytes(_, size) => DynSolType::FixedSbytes(*size),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => DynSolType::Sbytes,
         };
         Some(ty)
     }
@@ -277,6 +282,8 @@ impl DynSolValue {
             Self::Sbool(_) => Some("sbool"),
             #[cfg(feature = "seismic")]
             Self::Saddress(_) => Some("saddress"),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => Some("sbytes"),
             _ => None,
         }
     }
@@ -347,9 +354,13 @@ impl DynSolValue {
                 out.push_str(unsafe { self.sol_type_name_simple().unwrap_unchecked() });
             }
             #[cfg(feature = "seismic")]
-            Self::Sbytes(_, size) => {
+            Self::FixedSbytes(_, size) => {
                 out.push_str("sbytes");
                 out.push_str(itoa::Buffer::new().format(*size));
+            }
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => {
+                out.push_str(unsafe { self.sol_type_name_simple().unwrap_unchecked() });
             }
         }
     }
@@ -385,7 +396,9 @@ impl DynSolValue {
             #[cfg(feature = "seismic")]
             Self::Sbool(_) => Some(8),
             #[cfg(feature = "seismic")]
-            Self::Sbytes(_, _) => Some(8),
+            Self::FixedSbytes(_, _) => Some(8),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => Some(8),
         }
     }
 
@@ -415,7 +428,7 @@ impl DynSolValue {
                     | Self::Sint(..)
                     | Self::Suint(..)
                     | Self::Sbool(_)
-                    | Self::Sbytes(..)
+                    | Self::FixedSbytes(..)
             );
             if is_sword {
                 return true;
@@ -450,7 +463,7 @@ impl DynSolValue {
             #[cfg(feature = "seismic")]
             Self::Sbool(b) => Some(Word::with_last_byte(b.0.into())),
             #[cfg(feature = "seismic")]
-            Self::Sbytes(w, _) => Some(w),
+            Self::FixedSbytes(w, _) => Some(w),
             _ => None,
         }
     }
@@ -492,7 +505,7 @@ impl DynSolValue {
         match self {
             Self::FixedBytes(w, size) => Some((w.as_slice(), *size)),
             #[cfg(feature = "seismic")]
-            Self::Sbytes(w, size) => Some((w.as_slice(), *size)),
+            Self::FixedSbytes(w, size) => Some((w.as_slice(), *size)),
             _ => None,
         }
     }
@@ -618,6 +631,8 @@ impl DynSolValue {
         match self {
             Self::String(s) => Some(s.as_bytes()),
             Self::Bytes(b) => Some(b),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(b) => Some(b),
             _ => None,
         }
     }
@@ -639,7 +654,9 @@ impl DynSolValue {
             | Self::Sint(_, _)
             | Self::Suint(_, _)
             | Self::Sbool(_)
-            | Self::Sbytes(_, _) => false,
+            | Self::FixedSbytes(_, _) => false,
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => true,
         }
     }
 
@@ -724,7 +741,9 @@ impl DynSolValue {
             | Self::Sint(_, _)
             | Self::Suint(_, _)
             | Self::Sbool(_)
-            | Self::Sbytes(_, _) => 0,
+            | Self::FixedSbytes(_, _) => 0,
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(b) => 1 + words_for_len(b.len()),
         }
     }
 
@@ -762,7 +781,9 @@ impl DynSolValue {
             | Self::Sint(_, _)
             | Self::Suint(_, _)
             | Self::Sbool(_)
-            | Self::Sbytes(_, _) => enc.append_word(unsafe { self.as_word().unwrap_unchecked() }),
+            | Self::FixedSbytes(_, _) => enc.append_word(unsafe { self.as_word().unwrap_unchecked() }),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => enc.append_indirection(),
         }
     }
 
@@ -795,7 +816,9 @@ impl DynSolValue {
             | Self::Sint(_, _)
             | Self::Suint(_, _)
             | Self::Sbool(_)
-            | Self::Sbytes(_, _) => {}
+            | Self::FixedSbytes(_, _) => {}
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(bytes) => enc.append_packed_seq(bytes),
         }
     }
 
@@ -866,7 +889,9 @@ impl DynSolValue {
             #[cfg(feature = "seismic")]
             Self::Sbool(b) => buf.push(b.0.into()),
             #[cfg(feature = "seismic")]
-            Self::Sbytes(w, size) => buf.extend_from_slice(&w[..(*size).min(32)]),
+            Self::FixedSbytes(w, size) => buf.extend_from_slice(&w[..(*size).min(32)]),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(bytes) => buf.extend_from_slice(bytes),
         }
     }
 
@@ -894,7 +919,9 @@ impl DynSolValue {
             #[cfg(feature = "seismic")]
             Self::Sbool(_) => 1,
             #[cfg(feature = "seismic")]
-            Self::Sbytes(_, size) => (*size).min(32),
+            Self::FixedSbytes(_, size) => (*size).min(32),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(b) => b.len(),
         }
     }
 
@@ -920,7 +947,9 @@ impl DynSolValue {
             #[cfg(feature = "seismic")]
             Self::Sbool(b) => Word::with_last_byte(b.0.into()).into(),
             #[cfg(feature = "seismic")]
-            Self::Sbytes(buf, _) => (*buf).into(),
+            Self::FixedSbytes(buf, _) => (*buf).into(),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(buf) => DynToken::PackedSeq(buf),
         }
     }
 

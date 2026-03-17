@@ -139,9 +139,11 @@ impl<'i> Parser<Input<'i>, DynSolValue, ErrMode<ContextError>> for ValueParser<'
             #[cfg(feature = "seismic")]
             DynSolType::Sbool => bool(input).map(|x| DynSolValue::Sbool(Sbool(x))),
             #[cfg(feature = "seismic")]
-            DynSolType::Sbytes(size) => {
-                fixed_bytes(*size).parse_next(input).map(|x| DynSolValue::Sbytes(x, *size))
+            DynSolType::FixedSbytes(size) => {
+                fixed_bytes(*size).parse_next(input).map(|x| DynSolValue::FixedSbytes(x, *size))
             }
+            #[cfg(feature = "seismic")]
+            DynSolType::Sbytes => bytes(input).map(DynSolValue::Sbytes),
         })
         .parse_next(input)
     }

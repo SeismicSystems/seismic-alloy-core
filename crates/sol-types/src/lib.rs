@@ -37,7 +37,7 @@ pub use types::{
 };
 
 #[cfg(feature = "seismic")]
-pub use types::data_type::{Saddress, Sbool, Sbytes, Sint, Suint};
+pub use types::data_type::{FixedSbytes, Saddress, Sbool, Sbytes, Sint, Suint};
 
 pub mod utils;
 

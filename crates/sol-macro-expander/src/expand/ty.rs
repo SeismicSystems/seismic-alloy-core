@@ -85,6 +85,17 @@ impl ExpCtxt<'_> {
             #[cfg(feature = "seismic")]
             Type::Sbool(span) => quote_spanned! {span=> #alloy_sol_types::sol_data::Sbool },
 
+            #[cfg(feature = "seismic")]
+            Type::FixedSbytes(span, size) => {
+                assert!(size.get() <= 32);
+                let size = Literal::u16_unsuffixed(size.get());
+                quote_spanned! {span=> #alloy_sol_types::sol_data::FixedSbytes<#size> }
+            }
+            #[cfg(feature = "seismic")]
+            Type::Sbytes(span) => {
+                quote_spanned! {span=> #alloy_sol_types::sol_data::Sbytes }
+            }
+
             Type::Tuple(ref tuple) => {
                 return tuple.paren_token.surround(tokens, |tokens| {
                     for pair in tuple.types.pairs() {
@@ -177,6 +188,16 @@ impl ExpCtxt<'_> {
             Type::Sbool(span) => {
                 quote_spanned! {span=> #alloy_sol_types::sol_data::Sbool }
             }
+            #[cfg(feature = "seismic")]
+            Type::FixedSbytes(span, size) => {
+                assert!(size.get() <= 32);
+                let size = Literal::u16_unsuffixed(size.get());
+                quote_spanned! {span=> #alloy_sol_types::private::FixedBytes<#size> }
+            }
+            #[cfg(feature = "seismic")]
+            Type::Sbytes(span) => {
+                quote_spanned! {span=> #alloy_sol_types::private::Bytes }
+            }
 
             Type::Tuple(ref tuple) => {
                 return tuple.paren_token.surround(tokens, |tokens| {
@@ -236,9 +257,11 @@ impl ExpCtxt<'_> {
             | Type::Function(_) => 32,
 
             #[cfg(feature = "seismic")]
-            Type::Sint(..) | Type::Suint(..) | Type::Saddress(_) | Type::Sbool(_) => 32,
+            Type::Sint(..) | Type::Suint(..) | Type::Saddress(_) | Type::Sbool(_) | Type::FixedSbytes(..) => 32,
 
             // dynamic types: 1 offset word, 1 length word
+            #[cfg(feature = "seismic")]
+            Type::Sbytes(_) => 64,
             Type::String(_) | Type::Bytes(_) | Type::Array(TypeArray { size: None, .. }) => 64,
 
             // fixed array: size * encoded size

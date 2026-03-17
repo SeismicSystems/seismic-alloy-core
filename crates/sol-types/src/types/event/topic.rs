@@ -124,6 +124,14 @@ where
     word_impl!();
 }
 
+#[cfg(feature = "seismic")]
+impl<const N: usize> EventTopic for FixedSbytes<N>
+where
+    ByteCount<N>: SupportedFixedBytes,
+{
+    word_impl!();
+}
+
 // Bytes-like types - preimage encoding: bytes padded to 32; hash: the bytes
 macro_rules! bytes_impl {
     () => {
@@ -149,6 +157,11 @@ impl EventTopic for String {
 }
 
 impl EventTopic for Bytes {
+    bytes_impl!();
+}
+
+#[cfg(feature = "seismic")]
+impl EventTopic for Sbytes {
     bytes_impl!();
 }
 
