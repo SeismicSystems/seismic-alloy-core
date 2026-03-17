@@ -2202,5 +2202,54 @@ mod tests {
         // FixedSbytes<32>: all bytes valid, no padding required
         let word = Word::new(core::array::from_fn(|i| i as u8 + 1));
         assert!(<FixedSbytes<32>>::valid_token(&WordToken(word)));
+
+        // Sbool: valid when first 31 bytes are zero
+        assert!(<Sbool>::valid_token(&WordToken(Word::with_last_byte(1))));
+        assert!(<Sbool>::valid_token(&WordToken(Word::ZERO)));
+
+        // Sbool: invalid when non-zero in first 31 bytes
+        let mut word = Word::ZERO;
+        word[0] = 0x01;
+        assert!(!<Sbool>::valid_token(&WordToken(word)));
+    }
+
+    #[test]
+    #[cfg(feature = "seismic")]
+    fn seismic_custom_encoded_sizes() {
+        macro_rules! custom_and_assert {
+            ($block:tt, $e:expr) => {{
+                sol! {
+                    struct Struct $block
+                }
+                assert_encoded_size!(Struct, $e);
+            }};
+        }
+        custom_and_assert!({ sbool a; }, Some(32));
+        custom_and_assert!({ sbool a; saddress b; }, Some(64));
+        custom_and_assert!({ suint256 a; sbytes32 b; sint128 c; }, Some(3 * 32));
+        custom_and_assert!({ sbytes a; }, None);
+        custom_and_assert!({ suint256 a; sbytes b; }, None);
+    }
+
+    #[test]
+    #[cfg(feature = "seismic")]
+    fn seismic_encode_packed() {
+        use alloy_primitives::aliases::{SAddress, SBool, SFixedBytes, SUInt};
+
+        let value = (
+            SAddress(RustAddress::with_last_byte(1)),
+            SUInt(U256::from(42)),
+            SBool(true),
+            SFixedBytes(RustFixedBytes::from([0xDE, 0xAD, 0xBE, 0xEF])),
+        );
+
+        let encoded = <sol! { (saddress, suint256, sbool, sbytes4) }>::abi_encode_packed(&value);
+        let expected = hex!(
+            "0000000000000000000000000000000000000001" // saddress: 20 bytes
+            "000000000000000000000000000000000000000000000000000000000000002a" // suint256: 32 bytes
+            "01"                                       // sbool: 1 byte
+            "deadbeef"                                 // sbytes4: 4 bytes
+        );
+        assert_eq!(hex::encode(&encoded), hex::encode(expected));
     }
 }
