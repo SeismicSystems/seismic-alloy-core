@@ -61,6 +61,12 @@ pub enum Type {
     #[cfg(feature = "seismic")]
     /// `sbool`
     Sbool(Span),
+    #[cfg(feature = "seismic")]
+    /// `sbytes`
+    Sbytes(Span),
+    #[cfg(feature = "seismic")]
+    /// `sbytes<size>`
+    FixedSbytes(Span, NonZeroU16),
 
     /// `$ty[$($size)?]`
     Array(TypeArray),
@@ -95,6 +101,10 @@ impl PartialEq for Type {
             (Self::Saddress(_), Self::Saddress(_)) => true,
             #[cfg(feature = "seismic")]
             (Self::Sbool(_), Self::Sbool(_)) => true,
+            #[cfg(feature = "seismic")]
+            (Self::Sbytes(_), Self::Sbytes(_)) => true,
+            #[cfg(feature = "seismic")]
+            (Self::FixedSbytes(_, a), Self::FixedSbytes(_, b)) => a == b,
 
             (Self::Tuple(a), Self::Tuple(b)) => a == b,
             (Self::Array(a), Self::Array(b)) => a == b,
@@ -124,7 +134,9 @@ impl Hash for Type {
             #[cfg(feature = "seismic")]
             Self::Suint(_, size) => size.hash(state),
             #[cfg(feature = "seismic")]
-            Self::Saddress(_) | Self::Sbool(_) => {}
+            Self::Saddress(_) | Self::Sbool(_) | Self::Sbytes(_) => {}
+            #[cfg(feature = "seismic")]
+            Self::FixedSbytes(_, size) => size.hash(state),
 
             Self::Tuple(tuple) => tuple.hash(state),
             Self::Array(array) => array.hash(state),
@@ -157,6 +169,10 @@ impl fmt::Debug for Type {
             Self::Saddress(_) => f.write_str("Saddress"),
             #[cfg(feature = "seismic")]
             Self::Sbool(_) => f.write_str("Sbool"),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => f.write_str("Sbytes"),
+            #[cfg(feature = "seismic")]
+            Self::FixedSbytes(_, size) => f.debug_tuple("FixedSbytes").field(size).finish(),
 
             Self::Tuple(tuple) => tuple.fmt(f),
             Self::Array(array) => array.fmt(f),
@@ -188,6 +204,10 @@ impl fmt::Display for Type {
             Self::Saddress(_) => f.write_str("saddress"),
             #[cfg(feature = "seismic")]
             Self::Sbool(_) => f.write_str("sbool"),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => f.write_str("sbytes"),
+            #[cfg(feature = "seismic")]
+            Self::FixedSbytes(_, size) => write!(f, "sbytes{size}"),
 
             Self::Tuple(tuple) => tuple.fmt(f),
             Self::Array(array) => array.fmt(f),
@@ -228,7 +248,9 @@ impl Spanned for Type {
             Self::Sint(span, _)
             | Self::Suint(span, _)
             | Self::Saddress(span)
-            | Self::Sbool(span) => *span,
+            | Self::Sbool(span)
+            | Self::Sbytes(span)
+            | Self::FixedSbytes(span, _) => *span,
             Self::Tuple(tuple) => tuple.span(),
             Self::Array(array) => array.span(),
             Self::Function(function) => function.span(),
@@ -256,7 +278,9 @@ impl Spanned for Type {
             Self::Sint(span, _)
             | Self::Suint(span, _)
             | Self::Saddress(span)
-            | Self::Sbool(span) => *span = new_span,
+            | Self::Sbool(span)
+            | Self::Sbytes(span)
+            | Self::FixedSbytes(span, _) => *span = new_span,
 
             Self::Tuple(tuple) => tuple.set_span(new_span),
             Self::Array(array) => array.set_span(new_span),
@@ -326,6 +350,15 @@ impl Type {
                             }
                             Some(size) => Some(Self::Suint(span, size)),
                         }
+                    } else if let Some(s) = s.strip_prefix("sbytes") {
+                        match parse_size(s, span)? {
+                            None => None,
+                            Some(Some(size)) if size.get() > 32 => {
+                                return Err(Error::new(span, "sbytesX range is 1-32"));
+                            }
+                            Some(None) => Some(Self::Sbytes(span)),
+                            Some(Some(size)) => Some(Self::FixedSbytes(span, size)),
+                        }
                     } else {
                         None
                     };
@@ -386,7 +419,11 @@ impl Type {
         {
             let is_seismic_one_word = matches!(
                 self,
-                Self::Saddress(_) | Self::Sint(..) | Self::Suint(..) | Self::Sbool(_)
+                Self::Saddress(_)
+                    | Self::Sint(..)
+                    | Self::Suint(..)
+                    | Self::Sbool(_)
+                    | Self::FixedSbytes(..)
             );
             if is_seismic_one_word {
                 return true;
@@ -417,7 +454,13 @@ impl Type {
             | Self::Function(_) => false,
 
             #[cfg(feature = "seismic")]
-            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) | Self::Sbool(_) => false,
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(..)
+            | Self::Sbool(_)
+            | Self::FixedSbytes(..) => false,
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => true,
 
             Self::String(_) | Self::Bytes(_) | Self::Custom(_) => true,
 
@@ -491,7 +534,12 @@ impl Type {
             | Self::String(_)
             | Self::Bytes(_) => false,
             #[cfg(feature = "seismic")]
-            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) | Self::Sbool(_) => false,
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(..)
+            | Self::Sbool(_)
+            | Self::Sbytes(_)
+            | Self::FixedSbytes(..) => false,
         }
     }
 
@@ -512,7 +560,12 @@ impl Type {
             | Self::String(_)
             | Self::Bytes(_) => false,
             #[cfg(feature = "seismic")]
-            Self::Sint(..) | Self::Suint(..) | Self::Saddress(..) | Self::Sbool(_) => false,
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(..)
+            | Self::Sbool(_)
+            | Self::Sbytes(_)
+            | Self::FixedSbytes(..) => false,
         }
     }
 

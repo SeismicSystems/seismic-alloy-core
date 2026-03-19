@@ -63,33 +63,15 @@ int_aliases! {
 }
 
 #[cfg(feature = "seismic")]
-#[doc = "seismic unsigned integer type][Sint], where the preimage is a signed integer"]
-#[derive(
-    // Standard derives
-    Copy,
-    Clone,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Debug,
-)]
+#[doc = "Seismic shielded unsigned integer type, where the preimage is an unsigned integer."]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary, proptest_derive::Arbitrary))]
 pub struct SUInt<const BITS: usize, const LIMBS: usize>(pub Uint<BITS, LIMBS>);
 
 #[cfg(feature = "seismic")]
-#[doc = "seismic unsigned integer type][Suint], where the preimage is an unsigned integer"]
-#[derive(
-    // Standard derives
-    Copy,
-    Clone,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Debug,
-)]
+#[doc = "Seismic shielded signed integer type, where the preimage is a signed integer."]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary, proptest_derive::Arbitrary))]
 pub struct SInt<const BITS: usize, const LIMBS: usize>(pub Signed<BITS, LIMBS>);
 
 #[cfg(feature = "seismic")]
@@ -104,31 +86,70 @@ macro_rules! sint_aliases {
 }
 
 #[cfg(feature = "seismic")]
-#[derive(Copy, Clone, Debug, PartialEq)]
-/// Seismic-shielded address type. Preimage is an address
+/// Seismic-shielded address type. Preimage is an address.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary, proptest_derive::Arbitrary))]
 pub struct SAddress(pub crate::Address);
 
-#[cfg(all(feature = "seismic", feature = "arbitrary"))]
-impl arbitrary::Arbitrary<'_> for SAddress {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
-        let arbitrary_addr = u.arbitrary::<crate::Address>()?;
-        Ok(SAddress(arbitrary_addr))
+#[cfg(feature = "seismic")]
+/// Seismic-shielded boolean type. Preimage is a bool.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary, proptest_derive::Arbitrary))]
+pub struct SBool(pub bool);
+
+#[cfg(feature = "seismic")]
+/// Seismic-shielded fixed byte array type. Preimage is a fixed byte array.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary, proptest_derive::Arbitrary))]
+pub struct SFixedBytes<const N: usize>(pub FixedBytes<N>);
+
+#[cfg(feature = "seismic")]
+/// Seismic-shielded dynamic byte array type. Preimage is a byte array.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub struct SBytes(pub crate::Bytes);
+
+#[cfg(feature = "seismic")]
+impl AsRef<[u8]> for SBytes {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+
+#[cfg(feature = "seismic")]
+impl SBytes {
+    /// Returns the length of the byte array.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns true if the byte array is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+#[cfg(feature = "seismic")]
+impl From<alloc::vec::Vec<u8>> for SBytes {
+    fn from(v: alloc::vec::Vec<u8>) -> Self {
+        SBytes(v.into())
     }
 }
 
 #[cfg(all(feature = "seismic", feature = "arbitrary"))]
-impl<const BITS: usize, const LIMBS: usize> arbitrary::Arbitrary<'_> for SUInt<BITS, LIMBS> {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
-        let arbitrary_uint = u.arbitrary::<Uint<BITS, LIMBS>>()?;
-        Ok(SUInt(arbitrary_uint))
+impl<'a> arbitrary::Arbitrary<'a> for SBytes {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        u.arbitrary::<crate::Bytes>().map(SBytes)
     }
 }
 
 #[cfg(all(feature = "seismic", feature = "arbitrary"))]
-impl<const BITS: usize, const LIMBS: usize> arbitrary::Arbitrary<'_> for SInt<BITS, LIMBS> {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
-        let arbitrary_signed = u.arbitrary::<Signed<BITS, LIMBS>>()?;
-        Ok(SInt(arbitrary_signed))
+impl proptest::arbitrary::Arbitrary for SBytes {
+    type Parameters = proptest::arbitrary::ParamsFor<alloc::vec::Vec<u8>>;
+    type Strategy = proptest::arbitrary::Mapped<alloc::vec::Vec<u8>, Self>;
+
+    fn arbitrary_with(args: Self::Parameters) -> Self::Strategy {
+        use proptest::strategy::Strategy;
+        proptest::arbitrary::any_with::<alloc::vec::Vec<u8>>(args).prop_map(|v| SBytes(v.into()))
     }
 }
 
@@ -153,7 +174,7 @@ sint_aliases! {
    SU128, SI128<128, 2>,
 
    SU136, SI136<136, 3>,
-   SU144, SI144<144, 3  >,
+   SU144, SI144<144, 3>,
    SU152, SI152<152, 3>,
    SU160, SI160<160, 3>,
    SU168, SI168<168, 3>,

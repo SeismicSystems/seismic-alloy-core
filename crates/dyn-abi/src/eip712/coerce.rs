@@ -6,10 +6,7 @@ use alloc::{
 use alloy_primitives::{Address, Function, I256, U256, hex};
 
 #[cfg(feature = "seismic")]
-use alloy_primitives::aliases::{SAddress, SInt, SUInt};
-
-#[cfg(feature = "seismic")]
-use alloy_sol_types::Sbool;
+use alloy_primitives::aliases::{SAddress, SBool, SBytes, SFixedBytes, SInt, SUInt};
 
 impl DynSolType {
     /// Coerce a [`serde_json::Value`] to a [`DynSolValue`] via this type.
@@ -41,9 +38,12 @@ impl DynSolType {
                 custom_struct(name, prop_names, tuple, value)
             }
             #[cfg(feature = "seismic")]
-            Self::Saddress | Self::Suint(_) | Self::Sint(_) | Self::Sbool | Self::Sbytes(_) => {
-                self.coerce_json_simple(value).ok_or_else(err)
-            }
+            Self::Saddress
+            | Self::Suint(_)
+            | Self::Sint(_)
+            | Self::Sbool
+            | Self::FixedSbytes(_)
+            | Self::Sbytes => self.coerce_json_simple(value).ok_or_else(err),
         }
     }
 
@@ -64,9 +64,13 @@ impl DynSolType {
             #[cfg(feature = "seismic")]
             Self::Suint(n) => uint(*n, value).map(|x| DynSolValue::Suint(SUInt(x), *n)),
             #[cfg(feature = "seismic")]
-            Self::Sbool => bool(value).map(|x| DynSolValue::Sbool(Sbool(x))),
+            Self::Sbool => bool(value).map(|x| DynSolValue::Sbool(SBool(x))),
             #[cfg(feature = "seismic")]
-            Self::Sbytes(n) => fixed_bytes(*n, value).map(|x| DynSolValue::Sbytes(x, *n)),
+            Self::FixedSbytes(n) => {
+                fixed_bytes(*n, value).map(|x| DynSolValue::FixedSbytes(SFixedBytes(x), *n))
+            }
+            #[cfg(feature = "seismic")]
+            Self::Sbytes => bytes(value).map(|x| DynSolValue::Sbytes(SBytes(x.into()))),
             _ => unreachable!(),
         }
     }

@@ -68,6 +68,8 @@ impl Specifier<DynSolType> for RootType<'_> {
             "sint" => Ok(DynSolType::Sint(256)),
             #[cfg(feature = "seismic")]
             "suint" => Ok(DynSolType::Suint(256)),
+            #[cfg(feature = "seismic")]
+            "sbytes" => Ok(DynSolType::Sbytes),
 
             name => {
                 if let Some(sz) = name.strip_prefix("bytes") {
@@ -83,7 +85,7 @@ impl Specifier<DynSolType> for RootType<'_> {
                 if let Some(sz) = name.strip_prefix("sbytes") {
                     if let Ok(sz) = sz.parse() {
                         if sz != 0 && sz <= 32 {
-                            return Ok(DynSolType::Sbytes(sz));
+                            return Ok(DynSolType::FixedSbytes(sz));
                         }
                     }
                     return Err(parser::Error::invalid_size(name).into());
