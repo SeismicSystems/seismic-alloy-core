@@ -152,6 +152,16 @@ impl<'a> RootType<'a> {
                     return Err(Error::invalid_size(name));
                 }
 
+                #[cfg(feature = "seismic")]
+                if let Some(sz) = name.strip_prefix("sbytes") {
+                    if let Ok(sz) = sz.parse::<usize>() {
+                        if sz != 0 && sz <= 32 {
+                            return Ok(());
+                        }
+                    }
+                    return Err(Error::invalid_size(name));
+                }
+
                 // fast path both integer types
                 #[cfg(not(feature = "seismic"))]
                 let s = name.strip_prefix('u').unwrap_or(name);

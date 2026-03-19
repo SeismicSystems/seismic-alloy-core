@@ -28,11 +28,50 @@ fn e2e() {
         }
     }
 
-    sol! {
-        struct MyStruct3 {
-            saddress b;
-            suint256 c;
-            sint248 d;
+    #[cfg(feature = "seismic")]
+    mod seismic_sol {
+        use super::*;
+
+        sol! {
+            struct MyStruct3 {
+                saddress b;
+                suint256 c;
+                sint248 d;
+            }
+        }
+
+        sol! {
+            struct MyStruct4 {
+                sbytes1 a;
+                sbytes16 b;
+                sbytes32 c;
+                saddress d;
+                suint256 e;
+            }
+        }
+
+        sol! {
+            function shieldedOp(sbytes32 data, suint256 amount, saddress to) returns (sbytes4);
+        }
+
+        sol! {
+            event ShieldedTransfer(sbytes32 indexed payload, saddress indexed from, suint256 value);
+        }
+
+        sol! {
+            error ShieldedError(sbytes32 reason, suint256 code);
+        }
+
+        sol! {
+            function dynamicShielded(sbytes data, sbytes32 tag) returns (sbytes result);
+        }
+
+        sol! {
+            struct DynSbytesStruct {
+                sbytes data;
+                sbytes32 tag;
+                suint256 amount;
+            }
         }
     }
 
