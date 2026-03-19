@@ -86,12 +86,8 @@ pub mod private {
     #[cfg(feature = "json")]
     pub use alloy_json_abi;
 
-    /// Wrapper around a call builder for functions with shielded parameters.
-    ///
-    /// This type intentionally does not expose `.call()` or `.send()` — the
-    /// caller must invoke `.seismic()` first to obtain a builder that encrypts
-    /// calldata. This enforces at compile time that shielded functions go
-    /// through the encrypted transaction path.
+    /// Wrapper indicating that the inner call builder targets a function
+    /// with shielded types in its parameters.
     #[cfg(feature = "seismic")]
     pub struct ShieldedCallBuilder<T>(pub T);
 
