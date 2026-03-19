@@ -62,7 +62,6 @@ impl ExpCtxt<'_> {
                 quote_spanned! {span=> #alloy_sol_types::sol_data::#name<#size> }
             }
 
-            #[cfg(feature = "seismic")]
             Type::Sint(span, size) | Type::Suint(span, size) => {
                 let name = match ty {
                     Type::Sint(..) => "Sint",
@@ -77,21 +76,17 @@ impl ExpCtxt<'_> {
                 quote_spanned! {span=> #alloy_sol_types::sol_data::#name<#size> }
             }
 
-            #[cfg(feature = "seismic")]
             Type::Saddress(span) => {
                 quote_spanned! {span=> #alloy_sol_types::sol_data::Saddress }
             }
 
-            #[cfg(feature = "seismic")]
             Type::Sbool(span) => quote_spanned! {span=> #alloy_sol_types::sol_data::Sbool },
 
-            #[cfg(feature = "seismic")]
             Type::FixedSbytes(span, size) => {
                 assert!(size.get() <= 32);
                 let size = Literal::u16_unsuffixed(size.get());
                 quote_spanned! {span=> #alloy_sol_types::sol_data::FixedSbytes<#size> }
             }
-            #[cfg(feature = "seismic")]
             Type::Sbytes(span) => {
                 quote_spanned! {span=> #alloy_sol_types::sol_data::Sbytes }
             }
@@ -169,7 +164,6 @@ impl ExpCtxt<'_> {
                 let name = Ident::new(&format!("{prefix}{size}"), span);
                 quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::#name }
             }
-            #[cfg(feature = "seismic")]
             Type::Sint(span, size) | Type::Suint(span, size) => {
                 let size = size.map_or(256, NonZeroU16::get);
                 let prefix = match ty {
@@ -180,21 +174,17 @@ impl ExpCtxt<'_> {
                 let name = Ident::new(&format!("{prefix}{size}"), span);
                 quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::#name }
             }
-            #[cfg(feature = "seismic")]
             Type::Saddress(span) => {
                 quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::SAddress }
             }
-            #[cfg(feature = "seismic")]
             Type::Sbool(span) => {
                 quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::SBool }
             }
-            #[cfg(feature = "seismic")]
             Type::FixedSbytes(span, size) => {
                 assert!(size.get() <= 32);
                 let size = Literal::u16_unsuffixed(size.get());
                 quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::SFixedBytes<#size> }
             }
-            #[cfg(feature = "seismic")]
             Type::Sbytes(span) => {
                 quote_spanned! {span=> #alloy_sol_types::private::primitives::aliases::SBytes }
             }
@@ -256,7 +246,6 @@ impl ExpCtxt<'_> {
             | Type::FixedBytes(..)
             | Type::Function(_) => 32,
 
-            #[cfg(feature = "seismic")]
             Type::Sint(..)
             | Type::Suint(..)
             | Type::Saddress(_)
@@ -264,7 +253,6 @@ impl ExpCtxt<'_> {
             | Type::FixedSbytes(..) => 32,
 
             // dynamic types: 1 offset word, 1 length word
-            #[cfg(feature = "seismic")]
             Type::Sbytes(_) => 64,
             Type::String(_) | Type::Bytes(_) | Type::Array(TypeArray { size: None, .. }) => 64,
 

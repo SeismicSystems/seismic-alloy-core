@@ -140,7 +140,6 @@ impl<'a> RootType<'a> {
     pub fn try_basic_solidity(self) -> Result<()> {
         match self.0 {
             "address" | "bool" | "string" | "bytes" | "uint" | "int" | "function" => Ok(()),
-            #[cfg(feature = "seismic")]
             "saddress" | "sint" | "suint" | "sbool" | "sbytes" => Ok(()),
             name => {
                 if let Some(sz) = name.strip_prefix("bytes") {
@@ -152,7 +151,6 @@ impl<'a> RootType<'a> {
                     return Err(Error::invalid_size(name));
                 }
 
-                #[cfg(feature = "seismic")]
                 if let Some(sz) = name.strip_prefix("sbytes") {
                     if let Ok(sz) = sz.parse::<usize>() {
                         if sz != 0 && sz <= 32 {
@@ -163,9 +161,6 @@ impl<'a> RootType<'a> {
                 }
 
                 // fast path both integer types
-                #[cfg(not(feature = "seismic"))]
-                let s = name.strip_prefix('u').unwrap_or(name);
-                #[cfg(feature = "seismic")]
                 let s = {
                     let ws = if let Some(s) = name.strip_prefix("s") { s } else { name };
                     match ws.strip_prefix('u') {

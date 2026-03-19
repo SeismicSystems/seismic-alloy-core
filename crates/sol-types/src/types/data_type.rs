@@ -15,7 +15,6 @@ use alloy_primitives::{
     Function as RustFunction, I256, U256, aliases::*, keccak256,
 };
 
-#[cfg(feature = "seismic")]
 use alloy_primitives::aliases::{
     SAddress as RustSAddress, SBool as RustSBool, SBytes as RustSBytes,
     SFixedBytes as RustSFixedBytes,
@@ -831,9 +830,6 @@ mod sealed {
     /// To prevent users from implementing downstream
     pub trait Sealed {}
 }
-#[cfg(not(feature = "seismic"))]
-use sealed::Sealed;
-#[cfg(feature = "seismic")]
 pub use sealed::Sealed;
 
 /// Specifies the number of bytes in a [`FixedBytes`] array as a type.
@@ -1184,7 +1180,6 @@ impl NameBuffer {
     }
 }
 
-#[cfg(feature = "seismic")]
 mod seismic {
     use super::*;
     use alloy_primitives::{Signed as RustSigned, Uint as RustUint};
@@ -1273,7 +1268,6 @@ mod seismic {
     #[derive(Debug)]
     pub struct Sint<const BITS: usize>;
 
-    #[cfg(feature = "seismic")]
     impl<T, const BITS: usize> SolTypeValue<Sint<BITS>> for T
     where
         T: Borrow<<IntBitCount<BITS> as SupportedSint>::Sint>,
@@ -1628,7 +1622,6 @@ mod seismic {
     }
 }
 
-#[cfg(feature = "seismic")]
 pub use seismic::*;
 
 #[cfg(test)]
@@ -1670,7 +1663,6 @@ mod tests {
         assert_name!((Uint<8>, Bool), "(uint8,bool)");
         assert_name!((Uint<8>, Bool, FixedArray<Address, 4>), "(uint8,bool,address[4])");
 
-        #[cfg(feature = "seismic")]
         {
             assert_name!(Saddress, "saddress");
             assert_name!(Sbool, "sbool");
@@ -1725,7 +1717,6 @@ mod tests {
         assert_encoded_size!(Bytes, None);
         assert_encoded_size!(String, None);
 
-        #[cfg(feature = "seismic")]
         {
             assert_encoded_size!(Saddress, Some(32));
             assert_encoded_size!(Sbool, Some(32));
@@ -1772,7 +1763,6 @@ mod tests {
         assert_encoded_size!((Bytes,), None);
         assert_encoded_size!((Uint<8>, Bytes), None);
 
-        #[cfg(feature = "seismic")]
         {
             assert_encoded_size!((Suint<256>,), Some(32));
             assert_encoded_size!((Suint<256>, Saddress), Some(64));
@@ -1879,7 +1869,6 @@ mod tests {
         roundtrip_i256(Int<256>: I256);
     }
 
-    #[cfg(feature = "seismic")]
     roundtrip! {
         roundtrip_saddress(Saddress: alloy_primitives::aliases::SAddress);
         roundtrip_sbool(Sbool: alloy_primitives::aliases::SBool);
@@ -2108,7 +2097,6 @@ mod tests {
     // =========================================================================
 
     #[test]
-    #[cfg(feature = "seismic")]
     fn seismic_tokenize_detokenize() {
         use alloy_primitives::aliases::{SAddress, SBool, SBytes, SFixedBytes, SInt, SUInt};
 
@@ -2152,7 +2140,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "seismic")]
     fn seismic_abi_encode_decode() {
         use alloy_primitives::aliases::{SBytes, SFixedBytes};
 
@@ -2186,7 +2173,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "seismic")]
     fn seismic_valid_token() {
         // FixedSbytes<1>: valid when zero-padded after byte 0
         let mut word = Word::ZERO;
@@ -2214,7 +2200,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "seismic")]
     fn seismic_custom_encoded_sizes() {
         macro_rules! custom_and_assert {
             ($block:tt, $e:expr) => {{
@@ -2232,7 +2217,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "seismic")]
     fn seismic_encode_packed() {
         use alloy_primitives::aliases::{SAddress, SBool, SFixedBytes, SUInt};
 

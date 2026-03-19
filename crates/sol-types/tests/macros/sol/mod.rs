@@ -28,7 +28,6 @@ fn e2e() {
         }
     }
 
-    #[cfg(feature = "seismic")]
     mod seismic_sol {
         use super::*;
 

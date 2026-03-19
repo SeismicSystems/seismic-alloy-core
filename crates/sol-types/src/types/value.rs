@@ -302,7 +302,6 @@ impl_sol_value! {
     ['a, T: ?Sized + SolValue] &'a mut T => T::SolType [where &'a mut T: SolTypeValue<T::SolType>];
 }
 
-#[cfg(feature = "seismic")]
 impl_sol_value! {
     [] SBool => sol_data::Sbool [];
     [] SAddress => sol_data::Saddress [];
@@ -374,7 +373,6 @@ impl_sol_value! {
     []     SI256 => sol_data::Sint<256> [];
 }
 
-#[cfg(feature = "seismic")]
 impl SolValue for SBytes {
     type SolType = sol_data::Sbytes;
 

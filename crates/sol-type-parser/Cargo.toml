@@ -32,7 +32,6 @@ serde = { workspace = true, optional = true, features = ["derive"] }
 serde_json.workspace = true
 
 [features]
-seismic = []
 default = ["std"]
 std = ["winnow/std"]
 serde = ["dep:serde"]

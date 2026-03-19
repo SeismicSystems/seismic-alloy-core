@@ -60,15 +60,10 @@ impl Specifier<DynSolType> for RootType<'_> {
             "bytes" => Ok(DynSolType::Bytes),
             "uint" => Ok(DynSolType::Uint(256)),
             "int" => Ok(DynSolType::Int(256)),
-            #[cfg(feature = "seismic")]
             "saddress" => Ok(DynSolType::Saddress),
-            #[cfg(feature = "seismic")]
             "sbool" => Ok(DynSolType::Sbool),
-            #[cfg(feature = "seismic")]
             "sint" => Ok(DynSolType::Sint(256)),
-            #[cfg(feature = "seismic")]
             "suint" => Ok(DynSolType::Suint(256)),
-            #[cfg(feature = "seismic")]
             "sbytes" => Ok(DynSolType::Sbytes),
 
             name => {
@@ -81,7 +76,6 @@ impl Specifier<DynSolType> for RootType<'_> {
                     return Err(parser::Error::invalid_size(name).into());
                 }
 
-                #[cfg(feature = "seismic")]
                 if let Some(sz) = name.strip_prefix("sbytes") {
                     if let Ok(sz) = sz.parse() {
                         if sz != 0 && sz <= 32 {
@@ -93,10 +87,6 @@ impl Specifier<DynSolType> for RootType<'_> {
 
                 // fast path both integer types
 
-                #[cfg(not(feature = "seismic"))]
-                let (s, is_uint) =
-                    if let Some(s) = name.strip_prefix('u') { (s, true) } else { (name, false) };
-                #[cfg(feature = "seismic")]
                 let (s, is_uint, is_seismic) = {
                     let (ws, is_s) = if let Some(s) = name.strip_prefix("s") {
                         (s, true)
@@ -111,7 +101,6 @@ impl Specifier<DynSolType> for RootType<'_> {
                 if let Some(sz) = s.strip_prefix("int") {
                     if let Ok(sz) = sz.parse() {
                         if sz != 0 && sz <= 256 && sz % 8 == 0 {
-                            #[cfg(feature = "seismic")]
                             if is_seismic {
                                 return if is_uint {
                                     Ok(DynSolType::Suint(sz))

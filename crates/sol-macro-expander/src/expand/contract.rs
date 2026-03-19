@@ -1059,7 +1059,6 @@ fn call_builder_method(f: &ItemFunction, cx: &ExpCtxt<'_>) -> TokenStream {
 
     // If any parameter contains a shielded type, wrap in ShieldedCallBuilder
     // to force callers through `.seismic()` before `.call()` / `.send()`.
-    #[cfg(feature = "seismic")]
     if f.parameters.types().any(|ty| ty.has_shielded()) {
         let alloy_sol_types = &cx.crates.sol_types;
         return quote! {

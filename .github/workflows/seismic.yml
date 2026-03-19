@@ -36,7 +36,7 @@ jobs:
       - name: cargo build without flags
         run: cargo build
       - name: cargo build with foundry flags
-        run: cargo build --features arbitrary,eip712,seismic
+        run: cargo build --features arbitrary,eip712
 
   warnings:
     runs-on: ubuntu-latest
@@ -50,7 +50,7 @@ jobs:
       - name: cargo check warnings without flags
         run: RUSTFLAGS="-D warnings" cargo check
       - name: cargo check warnings with foundry flags
-        run: RUSTFLAGS="-D warnings" cargo check --features arbitrary,eip712,seismic
+        run: RUSTFLAGS="-D warnings" cargo check --features arbitrary,eip712
 
   test:
     runs-on: ubuntu-latest
@@ -63,6 +63,5 @@ jobs:
           shared-key: "test-cache"
       - name: cargo test
         run: cargo test
-      # TODO: christian: get this to work
-      # - name: cargo test with foundry flags
-      #   run: cargo test --features arbitrary --features seismic
+      - name: cargo test with foundry flags
+        run: cargo test --features arbitrary

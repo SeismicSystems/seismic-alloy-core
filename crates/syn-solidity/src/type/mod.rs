@@ -49,22 +49,16 @@ pub enum Type {
     /// `uint[size]`
     Uint(Span, Option<NonZeroU16>),
 
-    #[cfg(feature = "seismic")]
     /// `sint[size]`
     Sint(Span, Option<NonZeroU16>),
-    #[cfg(feature = "seismic")]
     /// `suint[size]`
     Suint(Span, Option<NonZeroU16>),
-    #[cfg(feature = "seismic")]
     /// `saddress`
     Saddress(Span),
-    #[cfg(feature = "seismic")]
     /// `sbool`
     Sbool(Span),
-    #[cfg(feature = "seismic")]
     /// `sbytes`
     Sbytes(Span),
-    #[cfg(feature = "seismic")]
     /// `sbytes<size>`
     FixedSbytes(Span, NonZeroU16),
 
@@ -93,17 +87,11 @@ impl PartialEq for Type {
             (Self::Int(_, a), Self::Int(_, b)) => a == b,
             (Self::Uint(_, a), Self::Uint(_, b)) => a == b,
 
-            #[cfg(feature = "seismic")]
             (Self::Sint(_, a), Self::Sint(_, b)) => a == b,
-            #[cfg(feature = "seismic")]
             (Self::Suint(_, a), Self::Suint(_, b)) => a == b,
-            #[cfg(feature = "seismic")]
             (Self::Saddress(_), Self::Saddress(_)) => true,
-            #[cfg(feature = "seismic")]
             (Self::Sbool(_), Self::Sbool(_)) => true,
-            #[cfg(feature = "seismic")]
             (Self::Sbytes(_), Self::Sbytes(_)) => true,
-            #[cfg(feature = "seismic")]
             (Self::FixedSbytes(_, a), Self::FixedSbytes(_, b)) => a == b,
 
             (Self::Tuple(a), Self::Tuple(b)) => a == b,
@@ -129,13 +117,9 @@ impl Hash for Type {
             Self::Int(_, size) => size.hash(state),
             Self::Uint(_, size) => size.hash(state),
 
-            #[cfg(feature = "seismic")]
             Self::Sint(_, size) => size.hash(state),
-            #[cfg(feature = "seismic")]
             Self::Suint(_, size) => size.hash(state),
-            #[cfg(feature = "seismic")]
             Self::Saddress(_) | Self::Sbool(_) | Self::Sbytes(_) => {}
-            #[cfg(feature = "seismic")]
             Self::FixedSbytes(_, size) => size.hash(state),
 
             Self::Tuple(tuple) => tuple.hash(state),
@@ -161,17 +145,11 @@ impl fmt::Debug for Type {
             Self::Int(_, size) => f.debug_tuple("Int").field(size).finish(),
             Self::Uint(_, size) => f.debug_tuple("Uint").field(size).finish(),
 
-            #[cfg(feature = "seismic")]
             Self::Sint(_, size) => f.debug_tuple("Sint").field(size).finish(),
-            #[cfg(feature = "seismic")]
             Self::Suint(_, size) => f.debug_tuple("Suint").field(size).finish(),
-            #[cfg(feature = "seismic")]
             Self::Saddress(_) => f.write_str("Saddress"),
-            #[cfg(feature = "seismic")]
             Self::Sbool(_) => f.write_str("Sbool"),
-            #[cfg(feature = "seismic")]
             Self::Sbytes(_) => f.write_str("Sbytes"),
-            #[cfg(feature = "seismic")]
             Self::FixedSbytes(_, size) => f.debug_tuple("FixedSbytes").field(size).finish(),
 
             Self::Tuple(tuple) => tuple.fmt(f),
@@ -196,17 +174,11 @@ impl fmt::Display for Type {
             Self::Int(_, size) => write_opt(f, "int", *size),
             Self::Uint(_, size) => write_opt(f, "uint", *size),
 
-            #[cfg(feature = "seismic")]
             Self::Sint(_, size) => write_opt(f, "sint", *size),
-            #[cfg(feature = "seismic")]
             Self::Suint(_, size) => write_opt(f, "suint", *size),
-            #[cfg(feature = "seismic")]
             Self::Saddress(_) => f.write_str("saddress"),
-            #[cfg(feature = "seismic")]
             Self::Sbool(_) => f.write_str("sbool"),
-            #[cfg(feature = "seismic")]
             Self::Sbytes(_) => f.write_str("sbytes"),
-            #[cfg(feature = "seismic")]
             Self::FixedSbytes(_, size) => write!(f, "sbytes{size}"),
 
             Self::Tuple(tuple) => tuple.fmt(f),
@@ -244,7 +216,6 @@ impl Spanned for Type {
             | Self::FixedBytes(span, _)
             | Self::Int(span, _)
             | Self::Uint(span, _) => *span,
-            #[cfg(feature = "seismic")]
             Self::Sint(span, _)
             | Self::Suint(span, _)
             | Self::Saddress(span)
@@ -274,7 +245,6 @@ impl Spanned for Type {
             | Self::Int(span, _)
             | Self::Uint(span, _) => *span = new_span,
 
-            #[cfg(feature = "seismic")]
             Self::Sint(span, _)
             | Self::Suint(span, _)
             | Self::Saddress(span)
@@ -321,12 +291,9 @@ impl Type {
             "address" => Self::Address(span, None),
             "bool" => Self::Bool(span),
             "string" => Self::String(span),
-            #[cfg(feature = "seismic")]
             "saddress" => Self::Saddress(span),
-            #[cfg(feature = "seismic")]
             "sbool" => Self::Sbool(span),
             s => {
-                #[cfg(feature = "seismic")]
                 {
                     let seismic_type = if let Some(s) = s.strip_prefix("sint") {
                         match parse_size(s, span)? {
@@ -415,7 +382,6 @@ impl Type {
     /// Returns whether this type is ABI-encoded as a single EVM word (32
     /// bytes).
     pub const fn is_one_word(&self) -> bool {
-        #[cfg(feature = "seismic")]
         {
             let is_seismic_one_word = matches!(
                 self,
@@ -453,13 +419,11 @@ impl Type {
             | Self::Address(..)
             | Self::Function(_) => false,
 
-            #[cfg(feature = "seismic")]
             Self::Sint(..)
             | Self::Suint(..)
             | Self::Saddress(..)
             | Self::Sbool(_)
             | Self::FixedSbytes(..) => false,
-            #[cfg(feature = "seismic")]
             Self::Sbytes(_) => true,
 
             Self::String(_) | Self::Bytes(_) | Self::Custom(_) => true,
@@ -533,7 +497,6 @@ impl Type {
             | Self::Address(..)
             | Self::String(_)
             | Self::Bytes(_) => false,
-            #[cfg(feature = "seismic")]
             Self::Sint(..)
             | Self::Suint(..)
             | Self::Saddress(..)
@@ -559,7 +522,6 @@ impl Type {
             | Self::Function(_)
             | Self::String(_)
             | Self::Bytes(_) => false,
-            #[cfg(feature = "seismic")]
             Self::Sint(..)
             | Self::Suint(..)
             | Self::Saddress(..)
@@ -571,7 +533,6 @@ impl Type {
 
     /// Returns whether this type contains any seismic shielded types,
     /// recursing into arrays, tuples, and mappings.
-    #[cfg(feature = "seismic")]
     pub fn has_shielded(&self) -> bool {
         match self {
             Self::Sint(..)
@@ -725,7 +686,7 @@ fn parse_size(s: &str, span: Span) -> Result<Option<Option<NonZeroU16>>> {
     Ok(opt)
 }
 
-#[cfg(all(test, feature = "seismic"))]
+#[cfg(test)]
 mod tests {
     use super::*;
 

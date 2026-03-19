@@ -19,7 +19,6 @@ use winnow::{
     token::take_while,
 };
 
-#[cfg(feature = "seismic")]
 use alloy_primitives::aliases::{SAddress, SBool, SBytes, SFixedBytes, SInt, SUInt};
 
 impl DynSolType {
@@ -122,25 +121,19 @@ impl<'i> Parser<Input<'i>, DynSolValue, ErrMode<ContextError>> for ValueParser<'
             as_tuple!(DynSolType tys) => {
                 self.in_list(')', |this| this.tuple(tys).parse_next(input).map(DynSolValue::Tuple))
             }
-            #[cfg(feature = "seismic")]
             DynSolType::Saddress => {
                 address(input).map(|address| DynSolValue::Saddress(SAddress(address)))
             }
-            #[cfg(feature = "seismic")]
             DynSolType::Sint(size) => {
                 int(*size).parse_next(input).map(|x| DynSolValue::Sint(SInt(x), *size))
             }
-            #[cfg(feature = "seismic")]
             DynSolType::Suint(size) => {
                 uint(*size).parse_next(input).map(|x| DynSolValue::Suint(SUInt(x), *size))
             }
-            #[cfg(feature = "seismic")]
             DynSolType::Sbool => bool(input).map(|x| DynSolValue::Sbool(SBool(x))),
-            #[cfg(feature = "seismic")]
             DynSolType::FixedSbytes(size) => fixed_bytes(*size)
                 .parse_next(input)
                 .map(|x| DynSolValue::FixedSbytes(SFixedBytes(x), *size)),
-            #[cfg(feature = "seismic")]
             DynSolType::Sbytes => bytes(input).map(|x| DynSolValue::Sbytes(SBytes(x.into()))),
         })
         .parse_next(input)

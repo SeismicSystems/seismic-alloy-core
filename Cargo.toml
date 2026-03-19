@@ -53,9 +53,6 @@ borsh = { version = "1.5", default-features = false }
 serde = { version = "1.0.198", features = ["derive", "alloc"] }
 serde_json = { version = "1.0.116", features = ["alloc"] }
 
-# seismic
-lazy_static = "1.4"
-
 # rkyv
 rkyv = "0.8"
 

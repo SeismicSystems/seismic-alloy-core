@@ -49,14 +49,14 @@ arbitrary = { workspace = true, optional = true }
 proptest = { workspace = true, optional = true }
 
 [dev-dependencies]
-alloy-dyn-abi = { path = ".", version = ">=0", features = ["std", "seismic"] }
+alloy-dyn-abi = { path = ".", version = ">=0", features = ["std"] }
 criterion.workspace = true
 ethabi = "18"
 rand = { workspace = true, features = ["thread_rng"] }
 serde_json.workspace = true
 
 [features]
-default = ["std", "seismic"]
+default = ["std"]
 std = [
     "alloy-json-abi/std",
     "alloy-sol-types/std",
@@ -78,15 +78,8 @@ arbitrary = [
     "dep:arbitrary",
     "dep:proptest",
 ]
-seismic = [
-    "alloy-primitives/seismic",
-    "alloy-json-abi/seismic",
-    "alloy-sol-types/seismic",
-    "alloy-sol-type-parser/seismic",
-]
-
 # Debug winnow parsers; intentionally doesn't enable `winnow/debug`
-debug = ["std", "alloy-sol-type-parser/debug", "seismic"]
+debug = ["std", "alloy-sol-type-parser/debug"]
 
 [[bench]]
 name = "abi"
