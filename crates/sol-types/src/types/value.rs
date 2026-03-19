@@ -8,9 +8,6 @@ use crate::{
 use alloc::{borrow::Cow, string::String, vec::Vec};
 use alloy_primitives::{Address, Bytes, FixedBytes, Function, I256, U256, aliases::*};
 
-#[cfg(feature = "seismic")]
-use alloy_sol_types::Sbool;
-
 /// A Solidity value.
 ///
 /// This is a convenience trait that re-exports the logic in [`SolType`] with
@@ -307,8 +304,9 @@ impl_sol_value! {
 
 #[cfg(feature = "seismic")]
 impl_sol_value! {
-    [] Sbool => sol_data::Sbool [];
+    [] SBool => sol_data::Sbool [];
     [] SAddress => sol_data::Saddress [];
+    [const N: usize] SFixedBytes<N> => sol_data::FixedSbytes<N> [where ByteCount<N>: SupportedFixedBytes];
     []     SU8 => sol_data::Suint<8> [];
     []     SU16 => sol_data::Suint<16> [];
     []     SU24 => sol_data::Suint<24> [];
@@ -374,6 +372,20 @@ impl_sol_value! {
     []     SI240 => sol_data::Sint<240> [];
     []     SI248 => sol_data::Sint<248> [];
     []     SI256 => sol_data::Sint<256> [];
+}
+
+#[cfg(feature = "seismic")]
+impl SolValue for SBytes {
+    type SolType = sol_data::Sbytes;
+
+    #[inline]
+    fn abi_encode(&self) -> Vec<u8> {
+        if self.0.is_empty() {
+            crate::abi::EMPTY_BYTES.to_vec()
+        } else {
+            <Self::SolType as SolType>::abi_encode(self)
+        }
+    }
 }
 
 macro_rules! tuple_impls {
