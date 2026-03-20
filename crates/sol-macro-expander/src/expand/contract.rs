@@ -1056,6 +1056,20 @@ fn call_builder_method(f: &ItemFunction, cx: &ExpCtxt<'_>) -> TokenStream {
             #call_name { #(#call_fields),* }
         }
     };
+
+    // If any parameter contains a shielded type, wrap in ShieldedCallBuilder
+    // to force callers through `.seismic()` before `.call()` / `.send()`.
+    #[cfg(feature = "seismic")]
+    if f.parameters.types().any(|ty| ty.has_shielded()) {
+        let alloy_sol_types = &cx.crates.sol_types;
+        return quote! {
+            #[doc = #doc]
+            pub fn #name(&self, #(#param_names1: #param_tys),*) -> #alloy_sol_types::private::ShieldedCallBuilder<alloy_contract::SolCallBuilder<&P, #call_name, N>> {
+                #alloy_sol_types::private::ShieldedCallBuilder(self.call_builder(&#call_struct))
+            }
+        };
+    }
+
     quote! {
         #[doc = #doc]
         pub fn #name(&self, #(#param_names1: #param_tys),*) -> alloy_contract::SolCallBuilder<&P, #call_name, N> {
