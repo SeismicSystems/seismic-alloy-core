@@ -51,7 +51,7 @@ fn e2e() {
         }
 
         sol! {
-            function shieldedOp(sbytes32 data, suint256 amount, saddress to) returns (sbytes4);
+            function shieldedOp(sbytes32 data, suint256 amount, saddress to) returns (bytes4);
         }
 
         sol! {
@@ -63,7 +63,7 @@ fn e2e() {
         }
 
         sol! {
-            function dynamicShielded(sbytes data, sbytes32 tag) returns (sbytes result);
+            function dynamicShielded(sbytes data, sbytes32 tag) returns (bytes result);
         }
 
         sol! {
