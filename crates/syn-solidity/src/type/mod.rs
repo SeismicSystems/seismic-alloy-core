@@ -569,6 +569,39 @@ impl Type {
         }
     }
 
+    /// Returns whether this type contains any seismic shielded types,
+    /// recursing into arrays, tuples, and mappings.
+    #[cfg(feature = "seismic")]
+    pub fn has_shielded(&self) -> bool {
+        match self {
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(_)
+            | Self::Sbool(_)
+            | Self::Sbytes(_)
+            | Self::FixedSbytes(..) => true,
+
+            Self::Array(a) => a.ty.has_shielded(),
+            Self::Tuple(t) => t.types.iter().any(Self::has_shielded),
+            Self::Function(f) => {
+                f.arguments.iter().any(|arg| arg.ty.has_shielded())
+                    || f.returns
+                        .as_ref()
+                        .is_some_and(|ret| ret.returns.iter().any(|arg| arg.ty.has_shielded()))
+            }
+            Self::Mapping(m) => m.key.has_shielded() || m.value.has_shielded(),
+
+            Self::Bool(_)
+            | Self::Int(..)
+            | Self::Uint(..)
+            | Self::FixedBytes(..)
+            | Self::Address(..)
+            | Self::String(_)
+            | Self::Bytes(_)
+            | Self::Custom(_) => false,
+        }
+    }
+
     /// Returns the inner type.
     pub fn peel_arrays(&self) -> &Self {
         let mut this = self;
@@ -690,4 +723,51 @@ fn parse_size(s: &str, span: Span) -> Result<Option<Option<NonZeroU16>>> {
         },
     };
     Ok(opt)
+}
+
+#[cfg(all(test, feature = "seismic"))]
+mod tests {
+    use super::*;
+
+    fn parse_type(s: &str) -> Type {
+        syn::parse_str::<Type>(s).unwrap()
+    }
+
+    #[test]
+    fn has_shielded_primitives() {
+        // Shielded types
+        assert!(parse_type("suint256").has_shielded());
+        assert!(parse_type("sint128").has_shielded());
+        assert!(parse_type("saddress").has_shielded());
+        assert!(parse_type("sbool").has_shielded());
+        assert!(parse_type("sbytes32").has_shielded());
+        assert!(parse_type("sbytes").has_shielded());
+
+        // Non-shielded types
+        assert!(!parse_type("uint256").has_shielded());
+        assert!(!parse_type("int128").has_shielded());
+        assert!(!parse_type("address").has_shielded());
+        assert!(!parse_type("bool").has_shielded());
+        assert!(!parse_type("bytes32").has_shielded());
+        assert!(!parse_type("bytes").has_shielded());
+        assert!(!parse_type("string").has_shielded());
+    }
+
+    #[test]
+    fn has_shielded_nested() {
+        // Arrays
+        assert!(parse_type("suint256[]").has_shielded());
+        assert!(parse_type("sbytes32[3]").has_shielded());
+        assert!(!parse_type("uint256[]").has_shielded());
+
+        // Tuples
+        assert!(parse_type("(uint256, saddress)").has_shielded());
+        assert!(parse_type("(uint256, (bool, suint256))").has_shielded());
+        assert!(!parse_type("(uint256, address)").has_shielded());
+
+        // Mappings
+        assert!(parse_type("mapping(address => suint256)").has_shielded());
+        assert!(parse_type("mapping(saddress => uint256)").has_shielded());
+        assert!(!parse_type("mapping(address => uint256)").has_shielded());
+    }
 }
