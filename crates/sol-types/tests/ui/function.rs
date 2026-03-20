@@ -72,4 +72,22 @@ sol! {
     function n() public pure returns (uint256,);
 }
 
+// Shielded return types are not allowed
+sol! {
+    function shieldedReturn1() returns (suint256);
+}
+
+sol! {
+    function shieldedReturn2(saddress to) returns (sbytes32);
+}
+
+sol! {
+    function shieldedReturn3() returns (sbool);
+}
+
+// OK: shielded params with non-shielded returns
+sol! {
+    function shieldedParams(suint256 amount, saddress to) returns (uint256);
+}
+
 fn main() {}
