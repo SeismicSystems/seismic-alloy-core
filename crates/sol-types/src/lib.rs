@@ -86,6 +86,11 @@ pub mod private {
     #[cfg(feature = "json")]
     pub use alloy_json_abi;
 
+    /// Wrapper indicating that the inner call builder targets a function
+    /// with shielded types in its parameters.
+    #[cfg(feature = "seismic")]
+    pub struct ShieldedCallBuilder<T>(pub T);
+
     /// An ABI-encodable is any type that may be encoded via a given `SolType`.
     ///
     /// The `SolType` trait contains encoding logic for a single associated
