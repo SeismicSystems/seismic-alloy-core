@@ -1502,8 +1502,6 @@ mod seismic {
         };
     }
 
-
-
     supported_sint!(
         8 => SI8, SU8, 1;
         16 => SI16, SU16, 1;
