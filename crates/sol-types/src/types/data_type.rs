@@ -2000,4 +2000,50 @@ mod tests {
         assert_eq!(hex::encode(res_ty), hex::encode(expected));
         assert_eq!(hex::encode(res_value), hex::encode(expected));
     }
+
+    /// Regression test: ABI encode/decode of shielded integers must not panic
+    /// for sub-256-bit widths. Previously, copy_from_slice panicked because it
+    /// tried to copy N/8 bytes into a 32-byte word without offset adjustment.
+    #[test]
+    #[cfg(feature = "seismic")]
+    fn seismic_sint_suint_round_trip() {
+        use alloy_primitives::{Signed as RustSigned, Uint as RustUint, aliases::*};
+
+        macro_rules! test_round_trip {
+            ($($bits:literal, $limbs:literal);+ $(;)?) => {$(
+                // Unsigned
+                let val_u = SUInt::<$bits, $limbs>(RustUint::<$bits, $limbs>::from(42u64));
+                let encoded_u = Suint::<$bits>::abi_encode(&val_u);
+                let decoded_u = Suint::<$bits>::abi_decode(&encoded_u).unwrap();
+                assert_eq!(val_u, decoded_u, "suint{} round-trip failed", $bits);
+
+                // Signed positive
+                let val_s = SInt::<$bits, $limbs>(RustSigned::<$bits, $limbs>::try_from(42i64).unwrap());
+                let encoded_s = Sint::<$bits>::abi_encode(&val_s);
+                let decoded_s = Sint::<$bits>::abi_decode(&encoded_s).unwrap();
+                assert_eq!(val_s, decoded_s, "sint{} positive round-trip failed", $bits);
+
+                // Signed negative
+                let val_neg = SInt::<$bits, $limbs>(RustSigned::<$bits, $limbs>::try_from(-1i64).unwrap());
+                let encoded_neg = Sint::<$bits>::abi_encode(&val_neg);
+                let decoded_neg = Sint::<$bits>::abi_decode(&encoded_neg).unwrap();
+                assert_eq!(val_neg, decoded_neg, "sint{} negative round-trip failed", $bits);
+            )+};
+        }
+
+        test_round_trip! {
+              8, 1;
+             16, 1;
+             24, 1;
+             32, 1;
+             40, 1;
+             48, 1;
+             56, 1;
+             64, 1;
+            128, 2;
+            200, 4;
+            248, 4;
+            256, 4;
+        }
+    }
 }
