@@ -1439,24 +1439,33 @@ mod seismic {
 
                 const BITS: usize = $bits;
 
-                sint_impls2!($i $bits $limbs);
-                suint_impls2!($u $bits $limbs);
+                sint_impls! { @big_int $i $bits $limbs }
+                sint_impls! { @big_uint $u $bits $limbs }
             }
         )+};
     }
 
+    // Unlike upstream's `int_impls!`, which has separate `@primitive_int` / `@big_int`
+    // arms (because upstream uses native i8/i16/i32/i64/i128 for standard widths and
+    // ruint for the rest), we only have `@big_int` / `@big_uint`. Seismic shielded
+    // types uniformly wrap ruint's Signed<N,LIMBS> / Uint<N,LIMBS> for all widths,
+    // even small ones (e.g. SI8 = SInt<8,1> wrapping Signed<8,1>). This trades a
+    // small space overhead (Signed<8,1> uses a u64 limb vs native i8) for a simpler
+    // single code path. These types are used for ABI encoding in off-chain tooling,
+    // not in any hot path, so the overhead is negligible.
     macro_rules! sint_impls {
         (@big_int $ity:ident $bits:literal $limbs:literal) => {
             #[inline]
             fn tokenize_int(int: $ity) -> WordToken {
-                let mut word = Word::ZERO;
-                word[..].copy_from_slice(&int.0.to_be_bytes::<{ $bits / 8 }>()[..]);
-                WordToken(word)
+                let mut word = [int.0.is_negative() as u8 * 0xff; 32];
+                let bytes = int.0.to_be_bytes::<{ $bits / 8 }>();
+                word[32 - $bits / 8..].copy_from_slice(&bytes);
+                WordToken(word.into())
             }
 
             #[inline]
             fn detokenize_int(token: WordToken) -> $ity {
-                let s = &token.0[..];
+                let s = &token.0[32 - $bits / 8..];
                 let signed = RustSigned::<$bits, $limbs>::from_be_bytes::<{ $bits / 8 }>(
                     s.try_into().unwrap(),
                 );
@@ -1472,13 +1481,14 @@ mod seismic {
             #[inline]
             fn tokenize_uint(uint: $uty) -> WordToken {
                 let mut word = Word::ZERO;
-                word[..].copy_from_slice(&uint.0.to_be_bytes::<{ $bits / 8 }>()[..]);
+                let bytes = uint.0.to_be_bytes::<{ $bits / 8 }>();
+                word[32 - $bits / 8..].copy_from_slice(&bytes);
                 WordToken(word)
             }
 
             #[inline]
             fn detokenize_uint(token: WordToken) -> $uty {
-                let s = &token.0[..];
+                let s = &token.0[32 - $bits / 8..];
                 let unsigned = RustUint::<$bits, $limbs>::from_be_bytes::<{ $bits / 8 }>(
                     s.try_into().unwrap(),
                 );
@@ -1492,17 +1502,7 @@ mod seismic {
         };
     }
 
-    macro_rules! sint_impls2 {
-        ($t:ident $bits:literal $limbs:literal) => {
-            sint_impls! { @big_int $t $bits $limbs }
-        };
-    }
 
-    macro_rules! suint_impls2 {
-        ($t:ident $bits:literal $limbs:literal) => {
-            sint_impls! { @big_uint $t $bits $limbs }
-        };
-    }
 
     supported_sint!(
         8 => SI8, SU8, 1;
