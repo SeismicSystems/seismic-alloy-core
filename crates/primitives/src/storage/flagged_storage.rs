@@ -4,7 +4,7 @@
 use proptest_derive::Arbitrary;
 use ruint::UintTryFrom;
 
-use crate::{FixedBytes, U256};
+use crate::U256;
 use core::fmt;
 
 /// A storage value that can be either private or public.
@@ -19,46 +19,12 @@ pub struct FlaggedStorage {
     pub is_private: bool,
 }
 
-impl<T> From<T> for FlaggedStorage
-where
-    U256: UintTryFrom<T>,
-{
-    fn from(value: T) -> Self {
-        Self { value: U256::from(value), is_private: false }
-    }
-}
-
-impl From<FlaggedStorage> for FixedBytes<32> {
-    fn from(storage: FlaggedStorage) -> FixedBytes<32> {
-        FixedBytes::<32>::from(storage.value)
-    }
-}
-
-impl Into<FlaggedStorage> for FixedBytes<32> {
-    fn into(self) -> FlaggedStorage {
-        let value: U256 = self.into();
-        FlaggedStorage::new_from_value(value)
-    }
-}
-
-impl From<FlaggedStorage> for U256 {
-    fn from(storage: FlaggedStorage) -> U256 {
-        storage.value
-    }
-}
-
-impl From<&FlaggedStorage> for U256 {
-    fn from(storage: &FlaggedStorage) -> U256 {
-        storage.value
-    }
-}
-
 impl FlaggedStorage {
     /// The default word for a flagged storage slot
     /// when no state has been set. Importantly, this slot is public by default
     pub const ZERO: Self = Self { value: U256::ZERO, is_private: false };
 
-    /// Create a private flagged storage value
+    /// Create a public flagged storage value
     pub fn public<T>(value: T) -> Self
     where
         U256: UintTryFrom<T>,
@@ -88,17 +54,6 @@ impl FlaggedStorage {
         U256: UintTryFrom<T>,
     {
         Self { value: U256::from(value), is_private }
-    }
-
-    /// Create a new FlaggedStorage value from a given value.
-    pub fn new_from_value<T>(value: T) -> Self
-    where
-        U256: UintTryFrom<T>,
-    {
-        Self {
-            value: U256::from(value),
-            is_private: false, // Default to false
-        }
     }
 
     /// Collect the values from a HashMap of FlaggedStorage values.
