@@ -1200,7 +1200,7 @@ mod seismic {
 
         const SOL_NAME: &'static str = "sbool";
         const ENCODED_SIZE: Option<usize> = Some(32);
-        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(1);
 
         fn valid_token(token: &Self::Token<'_>) -> bool {
             utils::check_zeroes(&token.0[..31])
@@ -1269,7 +1269,7 @@ mod seismic {
 
         const SOL_NAME: &'static str = "saddress";
         const ENCODED_SIZE: Option<usize> = Some(32);
-        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(20);
 
         #[inline]
         fn valid_token(token: &Self::Token<'_>) -> bool {
@@ -1317,7 +1317,7 @@ mod seismic {
 
         const SOL_NAME: &'static str = IntBitCount::<BITS>::SINT_NAME;
         const ENCODED_SIZE: Option<usize> = Some(32);
-        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(BITS / 8);
 
         #[inline]
         fn valid_token(_token: &Self::Token<'_>) -> bool {
@@ -1364,7 +1364,7 @@ mod seismic {
 
         const SOL_NAME: &'static str = IntBitCount::<BITS>::SUINT_NAME;
         const ENCODED_SIZE: Option<usize> = Some(32);
-        const PACKED_ENCODED_SIZE: Option<usize> = Some(32);
+        const PACKED_ENCODED_SIZE: Option<usize> = Some(BITS / 8);
 
         #[inline]
         fn valid_token(_token: &Self::Token<'_>) -> bool {
