@@ -1439,24 +1439,33 @@ mod seismic {
 
                 const BITS: usize = $bits;
 
-                sint_impls2!($i $bits $limbs);
-                suint_impls2!($u $bits $limbs);
+                sint_impls! { @big_int $i $bits $limbs }
+                sint_impls! { @big_uint $u $bits $limbs }
             }
         )+};
     }
 
+    // Unlike upstream's `int_impls!`, which has separate `@primitive_int` / `@big_int`
+    // arms (because upstream uses native i8/i16/i32/i64/i128 for standard widths and
+    // ruint for the rest), we only have `@big_int` / `@big_uint`. Seismic shielded
+    // types uniformly wrap ruint's Signed<N,LIMBS> / Uint<N,LIMBS> for all widths,
+    // even small ones (e.g. SI8 = SInt<8,1> wrapping Signed<8,1>). This trades a
+    // small space overhead (Signed<8,1> uses a u64 limb vs native i8) for a simpler
+    // single code path. These types are used for ABI encoding in off-chain tooling,
+    // not in any hot path, so the overhead is negligible.
     macro_rules! sint_impls {
         (@big_int $ity:ident $bits:literal $limbs:literal) => {
             #[inline]
             fn tokenize_int(int: $ity) -> WordToken {
-                let mut word = Word::ZERO;
-                word[..].copy_from_slice(&int.0.to_be_bytes::<{ $bits / 8 }>()[..]);
-                WordToken(word)
+                let mut word = [int.0.is_negative() as u8 * 0xff; 32];
+                let bytes = int.0.to_be_bytes::<{ $bits / 8 }>();
+                word[32 - $bits / 8..].copy_from_slice(&bytes);
+                WordToken(word.into())
             }
 
             #[inline]
             fn detokenize_int(token: WordToken) -> $ity {
-                let s = &token.0[..];
+                let s = &token.0[32 - $bits / 8..];
                 let signed = RustSigned::<$bits, $limbs>::from_be_bytes::<{ $bits / 8 }>(
                     s.try_into().unwrap(),
                 );
@@ -1472,13 +1481,14 @@ mod seismic {
             #[inline]
             fn tokenize_uint(uint: $uty) -> WordToken {
                 let mut word = Word::ZERO;
-                word[..].copy_from_slice(&uint.0.to_be_bytes::<{ $bits / 8 }>()[..]);
+                let bytes = uint.0.to_be_bytes::<{ $bits / 8 }>();
+                word[32 - $bits / 8..].copy_from_slice(&bytes);
                 WordToken(word)
             }
 
             #[inline]
             fn detokenize_uint(token: WordToken) -> $uty {
-                let s = &token.0[..];
+                let s = &token.0[32 - $bits / 8..];
                 let unsigned = RustUint::<$bits, $limbs>::from_be_bytes::<{ $bits / 8 }>(
                     s.try_into().unwrap(),
                 );
@@ -1489,18 +1499,6 @@ mod seismic {
             fn encode_packed_to_uint(uint: $uty, out: &mut Vec<u8>) {
                 out.extend_from_slice(&uint.0.to_be_bytes::<{ $bits / 8 }>()[..]);
             }
-        };
-    }
-
-    macro_rules! sint_impls2 {
-        ($t:ident $bits:literal $limbs:literal) => {
-            sint_impls! { @big_int $t $bits $limbs }
-        };
-    }
-
-    macro_rules! suint_impls2 {
-        ($t:ident $bits:literal $limbs:literal) => {
-            sint_impls! { @big_uint $t $bits $limbs }
         };
     }
 
@@ -1999,5 +1997,51 @@ mod tests {
         );
         assert_eq!(hex::encode(res_ty), hex::encode(expected));
         assert_eq!(hex::encode(res_value), hex::encode(expected));
+    }
+
+    /// Regression test: ABI encode/decode of shielded integers must not panic
+    /// for sub-256-bit widths. Previously, copy_from_slice panicked because it
+    /// tried to copy N/8 bytes into a 32-byte word without offset adjustment.
+    #[test]
+    #[cfg(feature = "seismic")]
+    fn seismic_sint_suint_round_trip() {
+        use alloy_primitives::{Signed as RustSigned, Uint as RustUint, aliases::*};
+
+        macro_rules! test_round_trip {
+            ($($bits:literal, $limbs:literal);+ $(;)?) => {$(
+                // Unsigned
+                let val_u = SUInt::<$bits, $limbs>(RustUint::<$bits, $limbs>::from(42u64));
+                let encoded_u = Suint::<$bits>::abi_encode(&val_u);
+                let decoded_u = Suint::<$bits>::abi_decode(&encoded_u).unwrap();
+                assert_eq!(val_u, decoded_u, "suint{} round-trip failed", $bits);
+
+                // Signed positive
+                let val_s = SInt::<$bits, $limbs>(RustSigned::<$bits, $limbs>::try_from(42i64).unwrap());
+                let encoded_s = Sint::<$bits>::abi_encode(&val_s);
+                let decoded_s = Sint::<$bits>::abi_decode(&encoded_s).unwrap();
+                assert_eq!(val_s, decoded_s, "sint{} positive round-trip failed", $bits);
+
+                // Signed negative
+                let val_neg = SInt::<$bits, $limbs>(RustSigned::<$bits, $limbs>::try_from(-1i64).unwrap());
+                let encoded_neg = Sint::<$bits>::abi_encode(&val_neg);
+                let decoded_neg = Sint::<$bits>::abi_decode(&encoded_neg).unwrap();
+                assert_eq!(val_neg, decoded_neg, "sint{} negative round-trip failed", $bits);
+            )+};
+        }
+
+        test_round_trip! {
+              8, 1;
+             16, 1;
+             24, 1;
+             32, 1;
+             40, 1;
+             48, 1;
+             56, 1;
+             64, 1;
+            128, 2;
+            200, 4;
+            248, 4;
+            256, 4;
+        }
     }
 }
