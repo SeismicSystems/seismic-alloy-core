@@ -36,6 +36,11 @@ pub use types::{
     data_type as sol_data, decode_revert_reason,
 };
 
+#[cfg(feature = "seismic")]
+pub use alloy_primitives::{SBool, SBytes, SFixedBytes};
+#[cfg(feature = "seismic")]
+pub use types::data_type::{FixedSbytes, Saddress, Sbool, Sbytes, Sint, Suint};
+
 pub mod utils;
 
 mod eip712;
@@ -80,6 +85,11 @@ pub mod private {
 
     #[cfg(feature = "json")]
     pub use alloy_json_abi;
+
+    /// Wrapper indicating that the inner call builder targets a function
+    /// with shielded types in its parameters.
+    #[cfg(feature = "seismic")]
+    pub struct ShieldedCallBuilder<T>(pub T);
 
     /// An ABI-encodable is any type that may be encoded via a given `SolType`.
     ///

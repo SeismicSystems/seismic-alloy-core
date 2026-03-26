@@ -40,6 +40,17 @@ pub(super) fn expand(cx: &ExpCtxt<'_>, function: &ItemFunction) -> Result<TokenS
 
     let returns = returns.as_ref().map(|r| &r.returns).unwrap_or_default();
 
+    // Shielded types cannot be used as return types
+    #[cfg(feature = "seismic")]
+    for param in returns.iter() {
+        if param.ty.has_shielded() {
+            return Err(syn::Error::new(
+                param.ty.span(),
+                "shielded types cannot be used as function return types",
+            ));
+        }
+    }
+
     cx.assert_resolved(parameters)?;
     if !returns.is_empty() {
         cx.assert_resolved(returns)?;

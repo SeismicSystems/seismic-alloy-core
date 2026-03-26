@@ -1,0 +1,206 @@
+//! Abstraction for ethereum storage slots
+//! Particularly to enable a privacy flag
+#[cfg(feature = "arbitrary")]
+use proptest_derive::Arbitrary;
+use ruint::UintTryFrom;
+
+use crate::U256;
+use core::fmt;
+
+/// A storage value that can be either private or public.
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct FlaggedStorage {
+    /// The value of the storage.
+    pub value: U256,
+    /// Whether the storage is private.
+    pub is_private: bool,
+}
+
+/// Converts a `U256` into a **public** `FlaggedStorage`.
+///
+/// This impl exists solely because upstream `alloy-genesis` (from crates.io) calls
+/// `seismic-trie::storage_root_unhashed<T: Into<FlaggedStorage>>` with `U256` values,
+/// due to the `[patch.crates-io]` replacing `alloy-trie` with `seismic-trie`.
+/// The Seismic codebase never actually calls this code path (we use `seismic-alloy-genesis`
+/// which passes `FlaggedStorage` directly), but it still gets compiled as a transitive dependency.
+///
+/// TODO(samlaf): We might implement a refactor that would allow us to get rid of our seismic-trie
+/// fork. See https://hackmd.io/@samlaf/SJcBaCBtbe). If we do implement this, then upstream alloy-genesis would
+/// call upstream alloy-trie (which takes U256 directly) and this implicit conversion would no
+/// longer be needed. I would recommend we instead force callers to use the explicit
+/// `FlaggedStorage::public/private` instead.
+impl From<U256> for FlaggedStorage {
+    fn from(value: U256) -> Self {
+        Self { value, is_private: false }
+    }
+}
+
+impl FlaggedStorage {
+    /// The default word for a flagged storage slot
+    /// when no state has been set. Importantly, this slot is public by default
+    pub const ZERO: Self = Self { value: U256::ZERO, is_private: false };
+
+    /// Create a public flagged storage value
+    pub fn public<T>(value: T) -> Self
+    where
+        U256: UintTryFrom<T>,
+    {
+        Self::new(value, false)
+    }
+
+    /// Create a private flagged storage value
+    pub fn private<T>(value: T) -> Self
+    where
+        U256: UintTryFrom<T>,
+    {
+        Self::new(value, true)
+    }
+
+    /// Create a new FlaggedStorage value from a given value and visibility.
+    pub fn new<T>(value: T, is_private: bool) -> Self
+    where
+        U256: UintTryFrom<T>,
+    {
+        Self { value: U256::from(value), is_private }
+    }
+
+    /// Create a new FlaggedStorage value from a tuple of (value, is_private).
+    pub fn new_from_tuple<T>((value, is_private): (T, bool)) -> Self
+    where
+        U256: UintTryFrom<T>,
+    {
+        Self { value: U256::from(value), is_private }
+    }
+
+    /// Collect the values from a HashMap of FlaggedStorage values.
+    #[cfg(feature = "std")]
+    pub fn collect_value<S: core::hash::BuildHasher + Default>(
+        container: std::collections::HashMap<crate::B256, FlaggedStorage, S>,
+    ) -> std::collections::HashMap<crate::B256, U256, S> {
+        container.into_iter().map(|(key, flagged_storage)| (key, flagged_storage.value)).collect()
+    }
+
+    /// Check if the storage is private.
+    pub fn is_private(&self) -> bool {
+        self.is_private
+    }
+
+    /// Check if the storage is public.
+    pub fn is_public(&self) -> bool {
+        !self.is_private
+    }
+
+    /// Set the visibility of the storage.
+    pub fn set_visibility(&self, is_private: bool) -> Self {
+        FlaggedStorage { value: self.value, is_private }
+    }
+
+    /// Mark the storage as private.
+    pub fn mark_private(&self) -> Self {
+        self.set_visibility(true)
+    }
+
+    /// Mark the storage as public.
+    pub fn mark_public(&self) -> Self {
+        self.set_visibility(false)
+    }
+
+    /// Check if the storage is zero.
+    pub fn is_zero(&self) -> bool {
+        self.is_public() && self.value.is_zero()
+    }
+
+    /// Compare FlaggedStorage == U256
+    /// We do not impl PartialEq<U256> for FlaggedStorage
+    /// because it ends up conflicting with other PartialEq<U256> impls
+    pub fn equals_u256(&self, other: &U256) -> bool {
+        self.value == *other && !self.is_private
+    }
+
+    const fn same_private(&self, other: bool) -> bool {
+        self.is_private == other
+    }
+
+    /// Same as == but with references
+    pub const fn const_eq(&self, other: &Self) -> bool {
+        self.value.const_eq(&other.value) && self.same_private(other.is_private)
+    }
+
+    /// Same as == FlaggedStorage::ZERO
+    pub const fn const_is_zero(&self) -> bool {
+        self.const_eq(&FlaggedStorage::ZERO)
+    }
+}
+
+impl fmt::Display for FlaggedStorage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_private {
+            write!(f, "{} (private)", self.value)
+        } else {
+            write!(f, "{} (public)", self.value)
+        }
+    }
+}
+
+#[cfg(feature = "rlp")]
+mod rlp {
+    use super::{FlaggedStorage, U256};
+
+    use alloy_rlp::{Decodable, Encodable, Result as RlpResult};
+    use bytes::BufMut;
+
+    impl Encodable for FlaggedStorage {
+        #[inline]
+        fn length(&self) -> usize {
+            self.value.length() + self.is_private.length()
+        }
+
+        #[inline]
+        fn encode(&self, out: &mut dyn BufMut) {
+            self.value.encode(out);
+            self.is_private.encode(out);
+        }
+    }
+
+    impl Decodable for FlaggedStorage {
+        #[inline]
+        fn decode(buf: &mut &[u8]) -> RlpResult<Self> {
+            let value = U256::decode(buf)?;
+            let is_private = bool::decode(buf)?;
+            Ok(Self { value, is_private })
+        }
+    }
+
+    use alloy_rlp::{MaxEncodedLen, MaxEncodedLenAssoc};
+    // SAFETY: Assumes U256 and bool both have fixed max encoded lengths
+    unsafe impl
+        MaxEncodedLen<
+            {
+                <U256 as MaxEncodedLenAssoc>::LEN + 1 // bool encodes to 1 byte
+            },
+        > for FlaggedStorage
+    {
+    }
+
+    unsafe impl MaxEncodedLenAssoc for FlaggedStorage {
+        const LEN: usize = <U256 as MaxEncodedLenAssoc>::LEN + 1;
+    }
+
+    #[test]
+    fn rlp_encode_decode() {
+        let buf = &mut vec![];
+        let flagged_a = FlaggedStorage::new(U256::from(1), false);
+        flagged_a.encode(buf);
+        let decoded = FlaggedStorage::decode(&mut buf.as_slice()).unwrap();
+        assert_eq!(flagged_a, decoded);
+
+        let buf = &mut vec![];
+        let flagged_b = FlaggedStorage::new(U256::from(1), true);
+        flagged_b.encode(buf);
+        let decoded = FlaggedStorage::decode(&mut buf.as_slice()).unwrap();
+        assert_eq!(flagged_b, decoded);
+    }
+}

@@ -8,8 +8,8 @@ edition = "2024"
 rust-version = "1.85"
 authors = ["Alloy Contributors"]
 license = "MIT OR Apache-2.0"
-homepage = "https://github.com/alloy-rs/core"
-repository = "https://github.com/alloy-rs/core"
+homepage = "https://github.com/SeismicSystems/seismic-alloy-core"
+repository = "https://github.com/SeismicSystems/seismic-alloy-core"
 exclude = ["tests"]
 
 [workspace.lints.clippy]
@@ -50,8 +50,11 @@ syn-solidity = { version = "1.4.1", path = "crates/syn-solidity", default-featur
 borsh = { version = "1.5", default-features = false }
 
 # serde
-serde = { version = "1.0", default-features = false, features = ["alloc"] }
-serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+serde = { version = "1.0.198", features = ["derive", "alloc"] }
+serde_json = { version = "1.0.116", features = ["alloc"] }
+
+# seismic
+lazy_static = "1.4"
 
 # rkyv
 rkyv = "0.8"
@@ -83,7 +86,7 @@ rustc-hash = { version = "2.1", default-features = false }
 allocative = { version = "0.3.2", default-features = false }
 alloy-rlp = { version = "0.3", default-features = false }
 alloy-rlp-derive = { version = "0.3", default-features = false }
-arbitrary = "1.3"
+arbitrary = "1.4.1"
 arrayvec = { version = "0.7", default-features = false }
 bcs = "0.1.6"
 bincode = "1.3"

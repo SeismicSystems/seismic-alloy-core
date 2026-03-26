@@ -1,23 +1,32 @@
-# Alloy
+# Seismic Alloy Core
 
-Core libraries at the root of the Rust Ethereum ecosystem.
+This repository contains Seismic's fork of alloy-core
 
-Alloy is a rewrite of [`ethers-rs`] from the ground up, with exciting new
-features, high performance, and excellent docs.
+The upstream repository lives [here](https://github.com/alloy-rs/alloy-core). This fork is up-to-date with it through commit `c268e8d`. You can see this by viewing the [main](https://github.com/SeismicSystems/seismic-alloy-core/tree/main) branch on this repository
 
-We have a [book](https://alloy.rs) on all things Alloy and many [examples](https://github.com/alloy-rs/examples) to help you get started.
+You can view all of our changes vs. upstream on this [pull request](https://github.com/SeismicSystems/seismic-alloy-core/pull/30). The sole purpose of this PR is display our diff; it will never be merged in to the main branch of this repo
 
-[`ethers-rs`] has been deprecated, and users are recommended to migrate to Alloy.
+## Main Changes
 
-[`ethers-rs`]: https://github.com/gakonst/ethers-rs
+The repository was forked to support Seismic's [modifications](https://github.com/SeismicSystems/seismic-solidity) to [Solidity](https://github.com/ethereum/solidity). Seismic introduces new types that represent shielded state in smart contracts.
 
-[![Build Status][actions-badge]][actions-url]
-[![Telegram chat][telegram-badge]][telegram-url]
+### New Shielded Types
 
-[actions-badge]: https://img.shields.io/github/actions/workflow/status/alloy-rs/core/ci.yml?branch=main&style=for-the-badge
-[actions-url]: https://github.com/alloy-rs/core/actions?query=branch%3Amain
-[telegram-badge]: https://img.shields.io/endpoint?color=neon&style=for-the-badge&url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Fethers_rs
-[telegram-url]: https://t.me/ethers_rs
+These shielded types include:
+
+- `saddress`
+- `suint` and the `suint{n}` family
+- `sint` and the `sint{n}` family
+- `sbool`
+
+Each of these types behaves similarly to its unshielded counterpart, with one key exception: the values are hidden from the state tree.
+
+## Structure
+
+Seismic's forks of the [reth](https://github.com/paradigmxyz/reth) stack all have the same branch structure:
+
+- `main` or `master`: this branch only consists of commits from the upstream repository. However it will rarely be up-to-date with upstream. The latest commit from this branch reflects how recently Seismic has merged in upstream commits to the seismic branch
+- `seismic`: the default and production branch for these repositories. This includes all Seismic-specific code essential to make our network run
 
 ## Overview
 
@@ -32,14 +41,14 @@ This repository contains the following crates:
 - [`alloy-sol-type-parser`] - A simple parser for Solidity type strings
 - [`syn-solidity`] - [`syn`]-powered Solidity parser
 
-[`alloy-core`]: https://github.com/alloy-rs/core/tree/main/crates/core
-[`alloy-primitives`]: https://github.com/alloy-rs/core/tree/main/crates/primitives
-[`alloy-sol-types`]: https://github.com/alloy-rs/core/tree/main/crates/sol-types
-[`alloy-sol-macro`]: https://github.com/alloy-rs/core/tree/main/crates/sol-macro
-[`alloy-dyn-abi`]: https://github.com/alloy-rs/core/tree/main/crates/dyn-abi
-[`alloy-json-abi`]: https://github.com/alloy-rs/core/tree/main/crates/json-abi
-[`alloy-sol-type-parser`]: https://github.com/alloy-rs/core/tree/main/crates/sol-type-parser
-[`syn-solidity`]: https://github.com/alloy-rs/core/tree/main/crates/syn-solidity
+[`alloy-core`]: https://github.com/SeismicSystems/alloy-core/tree/seismic/crates/core
+[`alloy-primitives`]: https://github.com/SeismicSystems/alloy-core/tree/seismic/crates/primitives
+[`alloy-sol-types`]: https://github.com/SeismicSystems/alloy-core/tree/seismic/crates/sol-types
+[`alloy-sol-macro`]: https://github.com/SeismicSystems/alloy-core/tree/seismic/crates/sol-macro
+[`alloy-dyn-abi`]: https://github.com/SeismicSystems/alloy-core/tree/seismic/crates/dyn-abi
+[`alloy-json-abi`]: https://github.com/SeismicSystems/alloy-core/tree/seismic/crates/json-abi
+[`alloy-sol-type-parser`]: https://github.com/SeismicSystems/alloy-core/tree/seismic/crates/sol-type-parser
+[`syn-solidity`]: https://github.com/SeismicSystems/alloy-core/tree/seismic/crates/syn-solidity
 [JSON-ABI]: https://docs.soliditylang.org/en/latest/abi-spec.html#json
 [ABI]: https://docs.soliditylang.org/en/latest/abi-spec.html
 [EIP-712]: https://eips.ethereum.org/EIPS/eip-712
@@ -115,6 +124,7 @@ None of these crates would have been possible without the great work done in:
 - [`ethabi`](https://github.com/rust-ethereum/ethabi)
 - [`ethcontract-rs`](https://github.com/gnosis/ethcontract-rs/)
 - [`guac_rs`](https://github.com/althea-net/guac_rs/)
+- and of course: [`alloy-core`](https://github.com/alloy-rs/alloy-core/)
 
 #### License
 

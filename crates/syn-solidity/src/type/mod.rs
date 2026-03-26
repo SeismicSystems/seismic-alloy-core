@@ -49,6 +49,25 @@ pub enum Type {
     /// `uint[size]`
     Uint(Span, Option<NonZeroU16>),
 
+    #[cfg(feature = "seismic")]
+    /// `sint[size]`
+    Sint(Span, Option<NonZeroU16>),
+    #[cfg(feature = "seismic")]
+    /// `suint[size]`
+    Suint(Span, Option<NonZeroU16>),
+    #[cfg(feature = "seismic")]
+    /// `saddress`
+    Saddress(Span),
+    #[cfg(feature = "seismic")]
+    /// `sbool`
+    Sbool(Span),
+    #[cfg(feature = "seismic")]
+    /// `sbytes`
+    Sbytes(Span),
+    #[cfg(feature = "seismic")]
+    /// `sbytes<size>`
+    FixedSbytes(Span, NonZeroU16),
+
     /// `$ty[$($size)?]`
     Array(TypeArray),
     /// `$(tuple)? ( $($types,)* )`
@@ -74,6 +93,19 @@ impl PartialEq for Type {
             (Self::Int(_, a), Self::Int(_, b)) => a == b,
             (Self::Uint(_, a), Self::Uint(_, b)) => a == b,
 
+            #[cfg(feature = "seismic")]
+            (Self::Sint(_, a), Self::Sint(_, b)) => a == b,
+            #[cfg(feature = "seismic")]
+            (Self::Suint(_, a), Self::Suint(_, b)) => a == b,
+            #[cfg(feature = "seismic")]
+            (Self::Saddress(_), Self::Saddress(_)) => true,
+            #[cfg(feature = "seismic")]
+            (Self::Sbool(_), Self::Sbool(_)) => true,
+            #[cfg(feature = "seismic")]
+            (Self::Sbytes(_), Self::Sbytes(_)) => true,
+            #[cfg(feature = "seismic")]
+            (Self::FixedSbytes(_, a), Self::FixedSbytes(_, b)) => a == b,
+
             (Self::Tuple(a), Self::Tuple(b)) => a == b,
             (Self::Array(a), Self::Array(b)) => a == b,
             (Self::Function(a), Self::Function(b)) => a == b,
@@ -96,6 +128,15 @@ impl Hash for Type {
             Self::FixedBytes(_, size) => size.hash(state),
             Self::Int(_, size) => size.hash(state),
             Self::Uint(_, size) => size.hash(state),
+
+            #[cfg(feature = "seismic")]
+            Self::Sint(_, size) => size.hash(state),
+            #[cfg(feature = "seismic")]
+            Self::Suint(_, size) => size.hash(state),
+            #[cfg(feature = "seismic")]
+            Self::Saddress(_) | Self::Sbool(_) | Self::Sbytes(_) => {}
+            #[cfg(feature = "seismic")]
+            Self::FixedSbytes(_, size) => size.hash(state),
 
             Self::Tuple(tuple) => tuple.hash(state),
             Self::Array(array) => array.hash(state),
@@ -120,6 +161,19 @@ impl fmt::Debug for Type {
             Self::Int(_, size) => f.debug_tuple("Int").field(size).finish(),
             Self::Uint(_, size) => f.debug_tuple("Uint").field(size).finish(),
 
+            #[cfg(feature = "seismic")]
+            Self::Sint(_, size) => f.debug_tuple("Sint").field(size).finish(),
+            #[cfg(feature = "seismic")]
+            Self::Suint(_, size) => f.debug_tuple("Suint").field(size).finish(),
+            #[cfg(feature = "seismic")]
+            Self::Saddress(_) => f.write_str("Saddress"),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(_) => f.write_str("Sbool"),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => f.write_str("Sbytes"),
+            #[cfg(feature = "seismic")]
+            Self::FixedSbytes(_, size) => f.debug_tuple("FixedSbytes").field(size).finish(),
+
             Self::Tuple(tuple) => tuple.fmt(f),
             Self::Array(array) => array.fmt(f),
             Self::Function(function) => function.fmt(f),
@@ -141,6 +195,19 @@ impl fmt::Display for Type {
             Self::FixedBytes(_, size) => write!(f, "bytes{size}"),
             Self::Int(_, size) => write_opt(f, "int", *size),
             Self::Uint(_, size) => write_opt(f, "uint", *size),
+
+            #[cfg(feature = "seismic")]
+            Self::Sint(_, size) => write_opt(f, "sint", *size),
+            #[cfg(feature = "seismic")]
+            Self::Suint(_, size) => write_opt(f, "suint", *size),
+            #[cfg(feature = "seismic")]
+            Self::Saddress(_) => f.write_str("saddress"),
+            #[cfg(feature = "seismic")]
+            Self::Sbool(_) => f.write_str("sbool"),
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => f.write_str("sbytes"),
+            #[cfg(feature = "seismic")]
+            Self::FixedSbytes(_, size) => write!(f, "sbytes{size}"),
 
             Self::Tuple(tuple) => tuple.fmt(f),
             Self::Array(array) => array.fmt(f),
@@ -177,6 +244,13 @@ impl Spanned for Type {
             | Self::FixedBytes(span, _)
             | Self::Int(span, _)
             | Self::Uint(span, _) => *span,
+            #[cfg(feature = "seismic")]
+            Self::Sint(span, _)
+            | Self::Suint(span, _)
+            | Self::Saddress(span)
+            | Self::Sbool(span)
+            | Self::Sbytes(span)
+            | Self::FixedSbytes(span, _) => *span,
             Self::Tuple(tuple) => tuple.span(),
             Self::Array(array) => array.span(),
             Self::Function(function) => function.span(),
@@ -199,6 +273,14 @@ impl Spanned for Type {
             | Self::FixedBytes(span, _)
             | Self::Int(span, _)
             | Self::Uint(span, _) => *span = new_span,
+
+            #[cfg(feature = "seismic")]
+            Self::Sint(span, _)
+            | Self::Suint(span, _)
+            | Self::Saddress(span)
+            | Self::Sbool(span)
+            | Self::Sbytes(span)
+            | Self::FixedSbytes(span, _) => *span = new_span,
 
             Self::Tuple(tuple) => tuple.set_span(new_span),
             Self::Array(array) => array.set_span(new_span),
@@ -239,7 +321,52 @@ impl Type {
             "address" => Self::Address(span, None),
             "bool" => Self::Bool(span),
             "string" => Self::String(span),
+            #[cfg(feature = "seismic")]
+            "saddress" => Self::Saddress(span),
+            #[cfg(feature = "seismic")]
+            "sbool" => Self::Sbool(span),
             s => {
+                #[cfg(feature = "seismic")]
+                {
+                    let seismic_type = if let Some(s) = s.strip_prefix("sint") {
+                        match parse_size(s, span)? {
+                            None => None,
+                            Some(Some(size)) if size.get() > 256 || size.get() % 8 != 0 => {
+                                return Err(Error::new(
+                                    span,
+                                    "sintX must be a multiple of 8 up to 256",
+                                ));
+                            }
+                            Some(size) => Some(Self::Sint(span, size)),
+                        }
+                    } else if let Some(s) = s.strip_prefix("suint") {
+                        match parse_size(s, span)? {
+                            None => None,
+                            Some(Some(size)) if size.get() > 256 || size.get() % 8 != 0 => {
+                                return Err(Error::new(
+                                    span,
+                                    "suintX must be a multiple of 8 up to 256",
+                                ));
+                            }
+                            Some(size) => Some(Self::Suint(span, size)),
+                        }
+                    } else if let Some(s) = s.strip_prefix("sbytes") {
+                        match parse_size(s, span)? {
+                            None => None,
+                            Some(Some(size)) if size.get() > 32 => {
+                                return Err(Error::new(span, "sbytesX range is 1-32"));
+                            }
+                            Some(None) => Some(Self::Sbytes(span)),
+                            Some(Some(size)) => Some(Self::FixedSbytes(span, size)),
+                        }
+                    } else {
+                        None
+                    };
+                    if let Some(ty) = seismic_type {
+                        return Ok(ty);
+                    }
+                }
+
                 if let Some(s) = s.strip_prefix("bytes") {
                     match parse_size(s, span)? {
                         None => Self::custom(ident),
@@ -285,12 +412,33 @@ impl Type {
         self
     }
 
-    /// Returns whether this type is ABI-encoded as a single EVM word (32 bytes).
-    ///
-    /// This is the same as [`is_value_type`](Self::is_value_type).
-    #[deprecated = "use `is_value_type` instead"]
-    pub fn is_one_word(&self, custom_is_value_type: impl Fn(&SolPath) -> bool) -> bool {
-        self.is_value_type(custom_is_value_type)
+    /// Returns whether this type is ABI-encoded as a single EVM word (32
+    /// bytes).
+    pub const fn is_one_word(&self) -> bool {
+        #[cfg(feature = "seismic")]
+        {
+            let is_seismic_one_word = matches!(
+                self,
+                Self::Saddress(_)
+                    | Self::Sint(..)
+                    | Self::Suint(..)
+                    | Self::Sbool(_)
+                    | Self::FixedSbytes(..)
+            );
+            if is_seismic_one_word {
+                return true;
+            }
+        }
+
+        matches!(
+            self,
+            Self::Bool(_)
+                | Self::Int(..)
+                | Self::Uint(..)
+                | Self::FixedBytes(..)
+                | Self::Address(..)
+                | Self::Function(_)
+        )
     }
 
     /// Returns whether this type is dynamic according to ABI rules.
@@ -304,6 +452,15 @@ impl Type {
             | Self::FixedBytes(..)
             | Self::Address(..)
             | Self::Function(_) => false,
+
+            #[cfg(feature = "seismic")]
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(..)
+            | Self::Sbool(_)
+            | Self::FixedSbytes(..) => false,
+            #[cfg(feature = "seismic")]
+            Self::Sbytes(_) => true,
 
             Self::String(_) | Self::Bytes(_) | Self::Custom(_) => true,
 
@@ -376,6 +533,13 @@ impl Type {
             | Self::Address(..)
             | Self::String(_)
             | Self::Bytes(_) => false,
+            #[cfg(feature = "seismic")]
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(..)
+            | Self::Sbool(_)
+            | Self::Sbytes(_)
+            | Self::FixedSbytes(..) => false,
         }
     }
 
@@ -395,6 +559,46 @@ impl Type {
             | Self::Function(_)
             | Self::String(_)
             | Self::Bytes(_) => false,
+            #[cfg(feature = "seismic")]
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(..)
+            | Self::Sbool(_)
+            | Self::Sbytes(_)
+            | Self::FixedSbytes(..) => false,
+        }
+    }
+
+    /// Returns whether this type contains any seismic shielded types,
+    /// recursing into arrays, tuples, and mappings.
+    #[cfg(feature = "seismic")]
+    pub fn has_shielded(&self) -> bool {
+        match self {
+            Self::Sint(..)
+            | Self::Suint(..)
+            | Self::Saddress(_)
+            | Self::Sbool(_)
+            | Self::Sbytes(_)
+            | Self::FixedSbytes(..) => true,
+
+            Self::Array(a) => a.ty.has_shielded(),
+            Self::Tuple(t) => t.types.iter().any(Self::has_shielded),
+            Self::Function(f) => {
+                f.arguments.iter().any(|arg| arg.ty.has_shielded())
+                    || f.returns
+                        .as_ref()
+                        .is_some_and(|ret| ret.returns.iter().any(|arg| arg.ty.has_shielded()))
+            }
+            Self::Mapping(m) => m.key.has_shielded() || m.value.has_shielded(),
+
+            Self::Bool(_)
+            | Self::Int(..)
+            | Self::Uint(..)
+            | Self::FixedBytes(..)
+            | Self::Address(..)
+            | Self::String(_)
+            | Self::Bytes(_)
+            | Self::Custom(_) => false,
         }
     }
 
@@ -519,4 +723,51 @@ fn parse_size(s: &str, span: Span) -> Result<Option<Option<NonZeroU16>>> {
         },
     };
     Ok(opt)
+}
+
+#[cfg(all(test, feature = "seismic"))]
+mod tests {
+    use super::*;
+
+    fn parse_type(s: &str) -> Type {
+        syn::parse_str::<Type>(s).unwrap()
+    }
+
+    #[test]
+    fn has_shielded_primitives() {
+        // Shielded types
+        assert!(parse_type("suint256").has_shielded());
+        assert!(parse_type("sint128").has_shielded());
+        assert!(parse_type("saddress").has_shielded());
+        assert!(parse_type("sbool").has_shielded());
+        assert!(parse_type("sbytes32").has_shielded());
+        assert!(parse_type("sbytes").has_shielded());
+
+        // Non-shielded types
+        assert!(!parse_type("uint256").has_shielded());
+        assert!(!parse_type("int128").has_shielded());
+        assert!(!parse_type("address").has_shielded());
+        assert!(!parse_type("bool").has_shielded());
+        assert!(!parse_type("bytes32").has_shielded());
+        assert!(!parse_type("bytes").has_shielded());
+        assert!(!parse_type("string").has_shielded());
+    }
+
+    #[test]
+    fn has_shielded_nested() {
+        // Arrays
+        assert!(parse_type("suint256[]").has_shielded());
+        assert!(parse_type("sbytes32[3]").has_shielded());
+        assert!(!parse_type("uint256[]").has_shielded());
+
+        // Tuples
+        assert!(parse_type("(uint256, saddress)").has_shielded());
+        assert!(parse_type("(uint256, (bool, suint256))").has_shielded());
+        assert!(!parse_type("(uint256, address)").has_shielded());
+
+        // Mappings
+        assert!(parse_type("mapping(address => suint256)").has_shielded());
+        assert!(parse_type("mapping(saddress => uint256)").has_shielded());
+        assert!(!parse_type("mapping(address => uint256)").has_shielded());
+    }
 }

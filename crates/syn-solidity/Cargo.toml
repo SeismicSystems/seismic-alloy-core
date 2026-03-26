@@ -36,3 +36,4 @@ pretty_assertions.workspace = true
 [features]
 visit = []
 visit-mut = []
+seismic = []
