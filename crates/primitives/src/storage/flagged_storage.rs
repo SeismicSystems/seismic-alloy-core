@@ -19,6 +19,24 @@ pub struct FlaggedStorage {
     pub is_private: bool,
 }
 
+/// Converts a `U256` into a **public** `FlaggedStorage`.
+///
+/// This impl exists solely because upstream `alloy-genesis` (from crates.io) calls
+/// `seismic-trie::storage_root_unhashed<T: Into<FlaggedStorage>>` with `U256` values,
+/// due to the `[patch.crates-io]` replacing `alloy-trie` with `seismic-trie`.
+/// The Seismic codebase never actually calls this code path (we use `seismic-alloy-genesis`
+/// which passes `FlaggedStorage` directly), but it still gets compiled as a transitive dependency.
+///
+/// TODO(samlaf): We might implement a refactor that would allow us to get rid of our seismic-trie fork.
+/// See https://hackmd.io/@samlaf/SJcBaCBtbe). If we do implement this, then upstream alloy-genesis would
+/// call upstream alloy-trie (which takes U256 directly) and this implicit conversion would no longer be needed.
+/// I would recommend we instead force callers to use the explicit `FlaggedStorage::public/private` instead.
+impl From<U256> for FlaggedStorage {
+    fn from(value: U256) -> Self {
+        Self { value, is_private: false }
+    }
+}
+
 impl FlaggedStorage {
     /// The default word for a flagged storage slot
     /// when no state has been set. Importantly, this slot is public by default
