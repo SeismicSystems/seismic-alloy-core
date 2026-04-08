@@ -64,5 +64,5 @@ jobs:
       - name: cargo test
         run: cargo test
       # TODO: christian: get this to work
-      # - name: cargo test with foundry flags
-      #   run: cargo test --features arbitrary --features seismic
+      - name: cargo test with foundry flags
+        run: cargo test --features arbitrary,eip712,seismic,rlp

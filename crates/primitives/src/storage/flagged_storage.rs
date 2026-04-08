@@ -152,24 +152,41 @@ mod rlp {
     use alloy_rlp::{Decodable, Encodable, Result as RlpResult};
     use bytes::BufMut;
 
+    /// RLP encoding for FlaggedStorage, used only for trie leaf value encoding
+    /// (not for database storage, which uses Compact encoding via `StorageEntry`).
+    ///
+    /// Uses a varint-style scheme:
+    /// - Public values encode identically to bare U256 (no extra bytes), so public storage produces
+    ///   the same trie root as upstream Ethereum.
+    /// - Private values append an extra `0x01` byte (RLP-encoded `true`) after the U256.
+    ///
+    /// Note that the 1 byte saving is purely for ethereum compatibility, and doesn't actually
+    /// matter for performance. This RLP encoding is only used to compute trie roots, and these
+    /// RLP encoded leaves are not stored to the DB. When writing to the DB, Compact encoding
+    /// via `StorageEntry` is used instead. Also keccak256 pads in 136 byte blocks so the extra
+    /// 1 byte really doesn't affect performance.
     impl Encodable for FlaggedStorage {
-        #[inline]
         fn length(&self) -> usize {
-            self.value.length() + self.is_private.length()
+            self.value.length() + if self.is_private { 1 } else { 0 }
         }
 
-        #[inline]
         fn encode(&self, out: &mut dyn BufMut) {
             self.value.encode(out);
-            self.is_private.encode(out);
+            if self.is_private {
+                true.encode(out);
+            }
         }
     }
 
+    /// Decoding relies on buffer length: after decoding the U256, any remaining bytes
+    /// indicate a private value. This means callers must pass exactly the leaf value
+    /// bytes — a larger buffer with trailing data would be falsely decoded as private.
+    // TODO(samlaf): should we assert the length then? Or that the value is 1? Or would that break
+    // something?
     impl Decodable for FlaggedStorage {
-        #[inline]
         fn decode(buf: &mut &[u8]) -> RlpResult<Self> {
             let value = U256::decode(buf)?;
-            let is_private = bool::decode(buf)?;
+            let is_private = !buf.is_empty();
             Ok(Self { value, is_private })
         }
     }
@@ -188,19 +205,67 @@ mod rlp {
     unsafe impl MaxEncodedLenAssoc for FlaggedStorage {
         const LEN: usize = <U256 as MaxEncodedLenAssoc>::LEN + 1;
     }
+}
+
+#[cfg(all(test, feature = "rlp"))]
+mod rlp_tests {
+    use super::{FlaggedStorage, U256};
+    use alloy_rlp::{Decodable, Encodable};
 
     #[test]
     fn rlp_encode_decode() {
-        let buf = &mut vec![];
-        let flagged_a = FlaggedStorage::new(U256::from(1), false);
-        flagged_a.encode(buf);
-        let decoded = FlaggedStorage::decode(&mut buf.as_slice()).unwrap();
-        assert_eq!(flagged_a, decoded);
+        // Public value encodes the same as bare U256
+        let public_42 = FlaggedStorage::new(U256::from(42), false);
+        let mut buf_public = vec![];
+        public_42.encode(&mut buf_public);
+        let mut buf_u256 = vec![];
+        U256::from(42).encode(&mut buf_u256);
+        assert_eq!(
+            buf_public, buf_u256,
+            "public FlaggedStorage should encode the same as bare U256"
+        );
 
-        let buf = &mut vec![];
-        let flagged_b = FlaggedStorage::new(U256::from(1), true);
-        flagged_b.encode(buf);
-        let decoded = FlaggedStorage::decode(&mut buf.as_slice()).unwrap();
-        assert_eq!(flagged_b, decoded);
+        // Roundtrip public
+        let decoded = FlaggedStorage::decode(&mut buf_public.as_slice()).unwrap();
+        assert_eq!(public_42, decoded);
+
+        // Private value encodes as U256 bytes followed by bool(true) byte
+        let private_42 = FlaggedStorage::new(U256::from(42), true);
+        let mut buf_private = vec![];
+        private_42.encode(&mut buf_private);
+        let mut expected = vec![];
+        U256::from(42).encode(&mut expected);
+        true.encode(&mut expected);
+        assert_eq!(
+            buf_private, expected,
+            "private FlaggedStorage should encode as U256 ++ bool(true)"
+        );
+
+        // Roundtrip private
+        let decoded = FlaggedStorage::decode(&mut buf_private.as_slice()).unwrap();
+        assert_eq!(private_42, decoded);
+
+        // Public zero encodes the same as bare U256(0)
+        let public_zero = FlaggedStorage::new(U256::ZERO, false);
+        let mut buf_pub_zero = vec![];
+        public_zero.encode(&mut buf_pub_zero);
+        let mut buf_u256_zero = vec![];
+        U256::ZERO.encode(&mut buf_u256_zero);
+        assert_eq!(
+            buf_pub_zero, buf_u256_zero,
+            "public zero FlaggedStorage should encode the same as bare U256(0)"
+        );
+        println!("{}", buf_pub_zero.len());
+
+        // Roundtrip public zero
+        let decoded = FlaggedStorage::decode(&mut buf_pub_zero.as_slice()).unwrap();
+        assert_eq!(public_zero, decoded);
+
+        // Roundtrip private zero
+        let private_zero = FlaggedStorage::new(U256::ZERO, true);
+        let mut buf_priv_zero = vec![];
+        private_zero.encode(&mut buf_priv_zero);
+        let decoded = FlaggedStorage::decode(&mut buf_priv_zero.as_slice()).unwrap();
+        assert_eq!(private_zero, decoded);
     }
 }
